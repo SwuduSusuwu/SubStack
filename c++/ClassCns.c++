@@ -1,21 +1,8 @@
 #ifndef INCLUDE_GUARD_c__ClassCns__c__
 #define INCLUDE_GUARD_c__ClassCns__c__
-#include <ctypes>
+#include <ctypes> /* size_t */
+#include "ClassCns.h" /* CnsMode */
 namespace Susuwu {
-typedef enum CnsMode {
- cnsModeInt,
- cnsModeUint,
- cnsModeFloat,
- cnsModeDouble,
- cnsModeChar,
- cnsModeVectorInt,
- cnsModeVectorUint,
- cnsModeVectorFloat,
- cnsModeVectorDouble,
- cnsModeVectorChar,
- cnsModeString = cnsModeVectorChar
-} CnsMode;
-
 typedef class Cns {
  template<Input>
   virtual void inputsToSetup(Input inputs);

@@ -1,6 +1,6 @@
 #ifndef INCLUDE_GUARD_c___VirusAnalysis_c__
 #define INCLUDE_GUARD_c___VirusAnalysis_c__
-#include <string> /* std::string */
+#include <string> /* std::string std::vector */
 #include "VirusAnalysis.h" /* passList, abortList, localPassList */
 #include "ClassCns.c++" /* Cns, CnsMode */
 #include "ClassResultList.c++" /* ResultList, smallestUniqueSubstr */

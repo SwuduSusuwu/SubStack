@@ -1,6 +1,6 @@
 #ifndef INCLUDE_GUARD_c__ClassResultList_h__
 #define INCLUDE_GUARD_c__ClassResultList_h__
-#include <string>
+#include <string> /* std::string */
 #include <ctype>
 namespace Susuwu {
 typedef struct ResultList { /* Lists of files (or pages) */

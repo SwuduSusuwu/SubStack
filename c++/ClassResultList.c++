@@ -1,7 +1,9 @@
 #ifndef INCLUDE_GUARD_c__ClassResultList_c__
 #define INCLUDE_GUARD_c__ClassResultList_c__
-#include <string>
-#include <ctype>
+#include <ctype> /* size_t */
+#include <string> /* std::string */
+#include <container> /* map unordered_map */
+#include "ClassResultList.h" /* ResultList */
 namespace Susuwu {
 const bool resultListHashesHas(const ResultList *haystack, ResultList *caches, std::string bytes) {
  if(caches->hashes.has(Sha2(bytes))) {
