@@ -1,24 +1,8 @@
 #ifndef INCLUDE_GUARD_c__ClassCns__c__
 #define INCLUDE_GUARD_c__ClassCns__c__
-#include <ctypes> /* size_t */
+#include <ctype.h> /* size_t */
 #include "ClassCns.h" /* CnsMode */
 namespace Susuwu {
-typedef class Cns {
- template<Input>
-  virtual void inputsToSetup(Input inputs);
- template<Output>
-  virtual void outputsToSetup(Output outputs);
- virtual void setInputMode(CnsMode);
- virtual void setOutputMode(CnsMode);
- virtual void setInputNeurons(size_t x);
- virtual void setOutputNeurons(size_t x);
- virtual void setLayersOfNeurons(size_t x);
- virtual void setNeuronsPerLayer(size_t x);
- virtual void setupSynapses();
- template<Input, Output>
-  virtual const Output process(Input input);
-} Cns;
-
 #ifdef USE_HSOM /* Todo. ( https://stackoverflow.com/questions/3286448/calling-a-python-method-from-c-c-and-extracting-its-return-value ) suggests various syntaxes to use for this, with unanswered comments such as "Does this support classes?" */
 /* "If you're using Python >3.5, PyString_FromString() is PyUnicode_FromString()" */
 #include <Python.h>
@@ -40,6 +24,19 @@ typedef class HsomCns : Cns { /* https://github.com/CarsonScott/HSOM */
   Py_Finalize();
 #endif /* PYTHON3 */
  }
+ template<Input>
+  virtual void inputsToSetup(Input inputs);
+ template<Output>
+  virtual void outputsToSetup(Output outputs);
+ virtual void setInputMode(CnsMode);
+ virtual void setOutputMode(CnsMode);
+ virtual void setInputNeurons(size_t x);
+ virtual void setOutputNeurons(size_t x);
+ virtual void setLayersOfNeurons(size_t x);
+ virtual void setNeuronsPerLayer(size_t x);
+ virtual void setupSynapses();
+ template<Input, Output>
+  virtual const Output process(Input input);
 } HsomCns;
 #endif /* Todo */
 

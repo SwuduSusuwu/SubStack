@@ -1,8 +1,7 @@
 #ifndef INCLUDE_GUARD_c__ClassResultList_c__
 #define INCLUDE_GUARD_c__ClassResultList_c__
-#include <ctype> /* size_t */
-#include <string> /* std::string */
-#include <container> /* map unordered_map */
+#include <ctype.h> /* size_t */
+#include <iostream> /* std::string */
 #include "ClassResultList.h" /* ResultList */
 namespace Susuwu {
 const bool resultListHashesHas(const ResultList *haystack, ResultList *caches, std::string bytes) {
@@ -14,21 +13,22 @@ const bool resultListHashesHas(const ResultList *haystack, ResultList *caches, s
  }
  return false;
 }
-template<Container>
 #if ALL_USES_TEXT
-const size_t maxOfSizes(Container<const char *> &list) {
+template<class Container<const char *>>
+const size_t maxOfSizes(Container> &list) {
  auto it = std::max_element(list.begin(), list.end(), [](const auto &s, const auto &x) { return strlen(s) < strlen(x); });
  return strlen(*it); /* WARNING! `strlen()` just does UTF8-strings/hex-strings; if binary, must use `it->size()` */
 }
 #else
-const size_t maxOfSizes(Container<const std::string> &list) {
+template<class Container<const std::string>>
+const size_t maxOfSizes(Container &list) {
  auto it = std::max_element(list.begin(), list.end(), [](const auto &s, const auto &x) { return s.size() < x.size(); });
  return it->size();
 }
 #endif /* if ALL_USES_TEXT */
 
-template<Container>
-bool haystackHas(Container<std::string> &haystack, std::string::iterator s, std::string::iterator x) {
+template<class Container>
+const bool haystackHas(Container<std::string> &haystack, std::string::const_iterator s, std::string::const_iterator x) {
  foreach(haystack as executable) {
   if(std::search(executable.begin(), executable.end(), s, x) {
    return true;
@@ -37,8 +37,8 @@ bool haystackHas(Container<std::string> &haystack, std::string::iterator s, std:
  return false;
 }
 
-template<Container>
-std::tuple<std::string::iterator, std::string::iterator> smallestUniqueSubstr(std::string &needle, Container<std::string> &haystack) {
+template<class Container>
+const std::tuple<std::string::const_iterator, std::string::const_iterator> smallestUniqueSubstr(std::string &needle, Container<std::string> &haystack) {
  size_t smallest = needle.length();
  auto retBegin = needle.begin(), retEnd = needle.end();
  for(auto s = retBegin; needle.end() != s; ++s) {

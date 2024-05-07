@@ -1,9 +1,9 @@
 #ifndef INCLUDE_GUARD_c___VirusAnalysis_h__
 #define INCLUDE_GUARD_c___VirusAnalysis_h__
-#include <string> /* std::string */
-#include "ClassCns.c++" /* Cns, CnsMode */
-#include "ClassResultList.c++" /* ResultList, smallestUniqueSubstr */
-#include "ClassPortableExecutable.c++" /* Not included */
+#include <iostream> /* std::string */
+#include "ClassCns.h" /* Cns, CnsMode */
+#include "ClassResultList.h" /* ResultList, smallestUniqueSubstr */
+#include "ClassPortableExecutable.h" /* Not included */
 /* (Work-in-progress) virus analysis (can use hashes, signatures, functional analysis, sandboxes, and artificial CNS (central nervous systems */
 namespace Susuwu {
 ResultList passList, abortList; /* Stored on disk, all clients use clones of this */

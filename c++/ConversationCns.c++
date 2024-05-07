@@ -1,6 +1,6 @@
 #ifndef INCLUDE_GUARD_c__ConversationCns_c__
 #define INCLUDE_GUARD_c__ConversationCns_c__
-#include <string> /* std::string std::vector */
+#include <iostream> /* std::string std::vector */
 #include "ConversationCns.h"
 #include "ClassCns.h" /* Cns, CnsMode */
 #include "ClassResultList.h" /* ResultList */

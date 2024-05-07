@@ -1,6 +1,6 @@
 #ifndef INCLUDE_GUARD_c__ClassCns__h__
 #define INCLUDE_GUARD_c__ClassCns__h__
-#include <ctypes>
+#include <ctype.h> /* size_t */
 namespace Susuwu {
 typedef enum CnsMode {
  cnsModeInt, cnsModeUint, cnsModeFloat, cnsModeDouble, cnsModeChar,
