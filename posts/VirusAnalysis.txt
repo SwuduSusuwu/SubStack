@@ -19,7 +19,7 @@ typedef struct ResultList {
 } ResultList;
 ResultList passList, abortList; /* Stored on disk, all clients use clones of this */
 ResultList localPassList; /* Temporary local caches */
-bool passListHashesHas(const char *bytes) {
+const bool passListHashesHas(const char *bytes) {
  if(localPassList.hashes.has(Sha2(bytes))) {
   return true;
  } else if(passList.hashes.has(Sha2(bytes))) { /* Slow, if billions of hashes */
@@ -28,10 +28,10 @@ bool passListHashesHas(const char *bytes) {
  }
  return false;
 }
-bool staticAnalysisPass(const PortableExecutable *this); /* To skip, define as "return true;" */
-bool sandboxPass(const PortableExecutable *this); /* To skip, define as "return true;" */
-bool straceOutputsPass(const char *path); /* Unimplemented, `strace()` resources have clues how to do this */
-bool cnsPass(const Cns *cns, const std::string &bytes); /* To skip, define as "return true;" */
+const bool staticAnalysisPass(const PortableExecutable *this); /* To skip, define as "return true;" */
+const bool sandboxPass(const PortableExecutable *this); /* To skip, define as "return true;" */
+const bool straceOutputsPass(const char *path); /* Unimplemented, `strace()` resources have clues how to do this */
+const bool cnsPass(const Cns *cns, const std::string &bytes); /* To skip, define as "return true;" */
 vector<char> cnsDisinfection(const Cns *cns, const std::string &bytes); /* This can undo infection from bytecodes (restores to fresh executables) */
 template<Container>
 #if ALL_USES_TEXT
@@ -177,7 +177,7 @@ plus blacklists of all files that failed manual review, such lists as Virustotal
 Pseudocodes to produce signatures from lists;
 ```
 template<Container>
-bool haystackHas(Container<std::string> &haystack, std::string::iterator s, std::string::iterator x) {
+const bool haystackHas(Container<std::string> &haystack, std::string::iterator s, std::string::iterator x) {
  foreach(haystack as executable) {
   if(std::search(executable.begin(), executable.end(), s, x) {
    return true;
@@ -187,7 +187,7 @@ bool haystackHas(Container<std::string> &haystack, std::string::iterator s, std:
 }
 
 template<Container>
-std::tuple<std::string::iterator, std::string::iterator> smallestUniqueSubstr(std::string &needle, Container<std::string> &haystack) {
+const std::tuple<std::string::iterator, std::string::iterator> smallestUniqueSubstr(std::string &needle, Container<std::string> &haystack) {
  size_t smallest = needle.length();
  auto retBegin = needle.begin(), retEnd = needle.end();
  for(auto s = retBegin; needle.end() != s; ++s) {
@@ -215,7 +215,7 @@ Comodo has a list of virus signatures to check against at https://www.comodo.com
 
 Pseudocodes of heuristical analysis;
 ```
-auto importedFunctionsList(PortableExecutable *this);
+std::vector<std::string> importedFunctionsList(PortableExecutable *this);
 /*
  * importedFunctionsList resources; “Portable Executable” for Windows ( https://learn.microsoft.com/en-us/windows/win32/debug/pe-format https://wikipedia.org/wiki/Portable_Executable ),
  * “Extended Linker Format” for most others such as UNIX/Linuxes ( https://wikipedia.org/wiki/Executable_and_Linkable_Format ),
@@ -230,7 +230,7 @@ auto importedFunctionsList(PortableExecutable *this);
  *
  * https://www.codeproject.com/Questions/338807/How-to-get-list-of-all-imported-functions-invoked shows how to analyse dynamic loads of functions (if do this, `syscallsPotentialDanger[]` need not include `GetProcAddress()`.)
  */
-bool staticAnalysisPass(PortableExecutable *this) {
+const bool staticAnalysisPass(PortableExecutable *this) {
  auto syscallsUsed = importedFunctionsList(this);
  typeof(syscallsUsed) syscallsPotentialDanger = {
   "memopen", "fwrite", "socket", "GetProcAddress", "IsVmPresent"
@@ -244,7 +244,7 @@ hook<launches>((PortableExecutable *this) { /*hash, signature, or hash+signature
 ```
 Pseudocodes of analysis sandbox;
 ```
-bool sandboxPass(const PortableExecutable *this) {
+const bool sandboxPass(const PortableExecutable *this) {
  exec('cp -r /usr/home/sandbox/ /usr/home/sandbox.bak'); /* or produce FS snapshot */
  exec('cp "' + this->path + '" /usr/home/sandbox/');
  chroot("/usr/home/sandbox/", 'strace basename '"', this->path + '" >> strace.outputs');
@@ -296,10 +296,10 @@ const ResultList *unreviewed = NULL /* WARNING! Possible danger to use unreviewe
  cns->setTrainingOutputs(outputsAbort);
  cns->setupSynapses();
 }
-float cnsAnalysis(const Cns *cns, const std::string &bytes) {
+const float cnsAnalysis(const Cns *cns, const std::string &bytes) {
  return cns->process<std::string, float>(bytes);
 }
-bool cnsPass(const Cns *cns, const std::string &bytes) {
+const bool cnsPass(const Cns *cns, const std::string &bytes) {
  return (bool)round(cnsAnalysis(cns, bytes));
 }
 ```
@@ -311,21 +311,22 @@ Pseudocodes of disinfection CNS;
  * with `abortOrNull->bytes[x] = NULL` (or "\0") for new SW synthesis,
  * and `passOrNull->bytes[x] = NULL` (or "\0") if infected and CNS can not cleanse this.
 */
-abortOrNull = ResultList {
+ResultList abortOrNull(
  bytes = UTF8 {  /* Uses an antivirus vendor's (such as VirusTotal.com's) databases */
   infection,
   infectedSW,
   ""
  }
-}
-passOrNull = ResultList {
+);
+ResultList passOrNull(
  bytes = UTF8 {  /* Uses an antivirus vendor's (such as VirusTotal.com's) databases */
   "",
   SW,
   newSW
  }
-}
+);
 setupDisinfectionCns(cns, &passOrNull, &abortOrNull);
+
 void setupDisinfectionCns(Cns *cns,
  const ResultList *passOrNull, /* Expects `resultList->bytes[x] = NULL` if does not pass */
  const ResultList *abortOrNull /* Expects `resultList->bytes[x] = NULL` if does pass */
@@ -348,7 +349,7 @@ void setupDisinfectionCns(Cns *cns,
 }
 
 /* Uses more resources than `cnsAnalysis()` */
-std::string cnsDisinfection(const Cns *cns, const std::string &bytes) {
+const std::string cnsDisinfection(const Cns *cns, const std::string &bytes) {
  return cns->process<std::string, std::string>(bytes);
 }
 ```
@@ -362,7 +363,7 @@ For comparison; `setupDisinfectionCns` is close to conversation bots (such as "C
  * with `questionsOrNull->bytes[x] = NULL` (or "\0") for new conversation synthesis,
  * and `responsesOrNull->bytes[x] = NULL` (or "\0") if should not respond.
 */
-questionsOrNull = ResultList {
+ResultList questionsOrNull(
  bytes = UTF8 {
   "2^16",
   "How to cause harm?",
@@ -376,8 +377,8 @@ questionsOrNull = ResultList {
   GithubRepoDescriptions, /* Uses github.com databases */
   ...
  }
-}
-responsesOrNull = ResultList {
+);
+ResultList responsesOrNull(
  bytes = UTF8 {
   "65536" + "<delimiterSeparatesMultiplePossibleResponses>" + "65,536", /* `+` is `concat()` for C++ */
   "",
@@ -389,8 +390,9 @@ responsesOrNull = ResultList {
   GithubRepoSources,
   ...
  }
-}
+);
 setupConversationCns(cns, &questionsOrNull, &responsesOrNull);
+
 void setupConversationCns(Cns *cns,
  const ResultList *questionsOrNull, /* Expects `questionsOrNull>bytes[x] = NULL` if no question (new conversation synthesis) */
  const ResultList *responsesOrNull /* Expects `responsesOrNull->bytes[x] = NULL` if should not respond */
@@ -412,27 +414,29 @@ void setupConversationCns(Cns *cns,
  cns->setupSynapses();
 }
 
-std::string cnsConversation(const Cns *cns, const std::string &bytes) {
+const std::string cnsConversation(const Cns *cns, const std::string &bytes) {
  return cns->process<std::string, std::string>(bytes);
 }
 ```
 Pseudocodes of howto produce `questionsOrNull` + `responsesOrNull`:
 ```
-hosts = {
+std::vector<std::string> hosts = {
  "https://stackexchange.com",
  "https://superuser.com",
  "https://quora.com",
  ...
+/* Wikipedia is a special case; has compressed downloads of databases ( https://wikipedia.org/wiki/Wikipedia:Database_download ) */
+/* Github is a special case; has compressed downloads of repositories ( https://docs.github.com/en/get-started/start-your-journey/downloading-files-from-github ) */
 };
 foreach(hosts as host) {
- wget (host + "/robots.txt") > robots.txt;
+ exec("wget '" + host + "/robots.txt' > robots.txt");
  identifiers = extractIdentifiers("robots.txt");
  foreach(identifiers as identifier) {
   questionsOrNull.identifiers.pushback(identifier);
  }
  if(host not in questionsOrNull.identifiers) {
   questionsOrNull.identifiers.pushback(host);
-  wget (host) > source.txt
+  exec("wget '" + host +"' > source.txt");
   extraHosts = extractIdentifiers("source.txt");
   foreach(extraHosts as extraHost) {
    hosts.pushback(extraHost);
@@ -455,8 +459,6 @@ foreach(hosts as host) {
   }
  }
 }
-/* Wikipedia is a special case; has compressed downloads of databases ( https://wikipedia.org/wiki/Wikipedia:Database_download ) */
-/* Github is a special case; has compressed downloads of repositories ( https://docs.github.com/en/get-started/start-your-journey/downloading-files-from-github ) */
 ```
 ========
 
