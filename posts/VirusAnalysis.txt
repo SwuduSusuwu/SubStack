@@ -1,0 +1,545 @@
+_Uses Github's markdown format_
+**Virus analysis tools should use local heuristical analysis/sandboxes plus artificial CNS (central nervous systems) to secure us**
+This post ( https://swudususuwu.substack.com/p/howto-produce-better-virus-scanners ) allows all uses.
+Has Github's markup format for text.
+Overhead of full static analysis + sandbox + CNS = 1 second (approx) for each new executable.)
+With caches, this protects all launches, but past the first launch of a particular executable, the overhead reduces to less than 1 millisecond (just cost to lookup from `localPassList.hashes`)
+
+The most simple virus analysis tools just use hashes/signatures to secure us (so can understand what more complex analysis would do, have put examples of simple hashes/signatures):
+
+Reused pseudocodes (C++);
+```
+typedef struct ResultList {
+ unordered_map<decltype(Sha2())> hashes;
+ map<const std::string> signatures; /* Just has known uses for abortList. Unknown if signatures have uses for passList. */
+ map<const std::string> bytes; /* Copies of all files the database has. Uses lots of space. Just populate this for signature synthesis and to  train CNS. */
+/* Used `std::string` for binaries (versus `vector<char>`) because:
+ * "If you are going to use the data in a string like fashon then you should opt for std::string as using a std::vector may confuse subsequent maintainers. If on the other hand most of the data manipulation looks like plain maths or vector like then a std::vector is more appropriate." -- https://stackoverflow.com/a/1556294/24473928
+*/
+} ResultList;
+ResultList passList, abortList; /* Stored on disk, all clients use clones of this */
+ResultList localPassList; /* Temporary local caches */
+bool passListHashesHas(const char *bytes) {
+ if(localPassList.hashes.has(Sha2(bytes))) {
+  return true;
+ } else if(passList.hashes.has(Sha2(bytes))) { /* Slow, if billions of hashes */
+  localPassList.hashes.pushback(Sha2(bytes)); /* Caches results */
+  return true;
+ }
+ return false;
+}
+bool staticAnalysisPass(const PortableExecutable *this); /* To skip, define as "return true;" */
+bool sandboxPass(const PortableExecutable *this); /* To skip, define as "return true;" */
+bool straceOutputsPass(const char *path); /* Unimplemented, `strace()` resources have clues how to do this */
+bool cnsPass(const Cns *cns, const std::string &bytes); /* To skip, define as "return true;" */
+vector<char> cnsDisinfection(const Cns *cns, const std::string &bytes); /* This can undo infection from bytecodes (restores to fresh executables) */
+template<Container>
+#if ALL_USES_TEXT
+size_t maxOfSizes(Container<const char *> &list) {
+ auto it = std::max_element(list.begin(), list.end(), [](const auto& s, const auto& x) { return strlen(s) < strlen(x); });
+ return strlen(*it); /* WARNING! `strlen()` just does UTF8-strings/hex-strings; if binary, must use `it->size()` */
+}
+#else
+size_t maxOfSizes(Container<const std::string> &list) {
+ auto it = std::max_element(list.begin(), list.end(), [](const auto& s, const auto& x) { return s.size() < x.size(); });
+ return it->size();
+}
+#endif /* if ALL_USES_TEXT */
+
+typedef enum CnsMode {
+ cnsModeInt,
+ cnsModeUint,
+ cnsModeFloat,
+ cnsModeDouble,
+ cnsModeChar,
+ cnsModeVectorInt,
+ cnsModeVectorUint,
+ cnsModeVectorFloat,
+ cnsModeVectorDouble,
+ cnsModeVectorChar,
+ cnsModeString = cnsModeVectorChar
+} CnsMode;
+
+typedef class Cns {
+ template<Input>
+  virtual void inputsToSetup(Input inputs);
+ template<Output>
+  virtual void outputsToSetup(Output outputs);
+ virtual void setInputMode(CnsMode);
+ virtual void setOutputMode(CnsMode);
+ virtual void setInputNeurons(size_t x);
+ virtual void setOutputNeurons(size_t x);
+ virtual void setLayersOfNeurons(size_t x);
+ virtual void setNeuronsPerLayer(size_t x);
+ virtual void setupSynapses();
+ template<Input, Output>
+  virtual const Output process(Input input);
+} Cns;
+
+#ifdef USE_HSOM /* Todo. ( https://stackoverflow.com/questions/3286448/calling-a-python-method-from-c-c-and-extracting-its-return-value ) suggests various syntaxes to use for this, with unanswered comments such as "Does this support classes?" */
+/* "If you're using Python >3.5, PyString_FromString() is PyUnicode_FromString()" */
+#include <Python.h>
+typedef class HsomCns : Cns { /* https://github.com/CarsonScott/HSOM */
+ HsomCns() {
+  setenv("PYTHONPATH",".",1);
+  Py_Initialize();
+//  PyRun_SimpleString("import sys; sys.path.append('.')"); PyRun_SimpleString("import hsom; from hsom import SelfOrganizingNetwork;"); /* Was told not to use PyRun because "PyRun requires all results go to stdout" */
+  PyObject *module = PyImport_ImportModule("hsom")
+  if(NULL == module) {throw "'hsom' module not found";}
+	PyObject *selfOrganizingNetwork = PyObject_GetAttrString(module,(char*)"SelfOrganizingNetwork"); /* or	"PyObject *pDict = PyModule_GetDict(module);  PyObject *selfOrganizingNetwork = PyDict_GetItemString(pDict, (char*)"SelfOrganizingNetwork");" */
+  if(NULL == selfOrganizingNetwork || !PyCallable_Check(selfOrganizingNetwork)) {throw "'SelfOrganizingNetwork' object not found";}
+  double result = PyObject_CallFunction(selfOrganizingNetwork, "d", 2.0); /* or "PyObject *pValue=Py_BuildValue("(z)",(char*)"args");	PyObject *pResult=PyObject_CallObject(selfOrganizingNetwork, pValue); if(NULL == pResult) {throw "PyObject_CallObject failed";} double result = PyInt_AsLong(pResult)); Py_DECREF(pValue);" */
+  Py_DECREF(module);
+ ~HsomCns() {
+#if PYTHON3
+  Py_FinalizeEx();
+#else
+  Py_Finalize();
+#endif /* PYTHON3 */
+ }
+} HsomCns;
+#endif /* Todo */
+
+```
+Pseudocodes of hash analysis;
+```
+hook<launches>((const PortableExecutable *this) {
+ if(passListHashesHas(Sha2(this->bytes)) {
+   return original_launches(this);
+ } else if(abortList.hashes.has(Sha2(this->bytes)) {
+   return abort();
+ } else if(staticAnalysisPass(this)) {
+  localPassList.hashes.pushback(Sha2(this->bytes)); /* Caches results */
+   return original_launches(this);
+ } else {
+   submitForManualAnalysis(this);
+   return abort();
+ }
+});
+```
+
+Pseudocodes of signatures analysis;
+```
+hook<launches>((const PortableExecutable *this) {
+ foreach(abortList.signatures as sig) {
+  if(localPassList.hashes.has(Sha2(this->bytes)) {
+   return original_launches(this);
+#if ALL_USES_TEXT
+  } else if(strstr(this->hex, sig)) { /* strstr uses text/hex; hex uses more space than binary, so you should use `memmem` or `std::search` with this->bytes */
+#else
+   } else if(std::search(this->bytes.begin(), this->bytes.end(), sig.begin(), sig.end()) {
+#endif /* ALL_USES_TEXT */
+   return abort();
+  }
+ }
+ if(staticAnalysisPass(this)) {
+  localPassList.hashes.pushback(Sha2(this->bytes)); /* Caches results */
+   return original_launches(this);
+ } else {
+   submitForManualAnalysis(this);
+   return abort();
+ }
+});
+```
+
+Pseudocodes of fused signature+hash analysis;
+```
+hook<launches>((const PortableExecutable *this) {
+  if(passListHashesHas(Sha2(this->bytes)) {
+   return original_launches(this);
+  } else if(abortList.hashes.has(Sha2(this->bytes)) {
+   return abort();
+  } else {
+   foreach(abortList.signatures as sig) {
+#if ALL_USES_TEXT
+    if(strstr(this->hex, sig)) { /*`strstr` does text, binaries must use `std::search` or `memem` */
+#else
+    if(std::search(this->bytes.begin(), this->bytes.end(), sig.begin(), sig.end()) {
+#endif /* ALL_USES_TEXT */
+      abortList.hashes.pushback(Sha2(this->hex));
+      return abort();
+    }
+   }
+ }
+ if(staticAnalysisPass(this)) {
+  localPassList.hashes.pushback(Sha2(this->bytes)); /* Caches results */
+   return original_launches(this);
+ } else {
+   submitForManualAnalysis(this);
+   return abort();
+ }
+});
+```
+
+To produce virus signatures,
+use whitelists of all files that was reviewed that pass,
+plus blacklists of all files that failed manual review, such lists as Virustotal has.
+Pseudocodes to produce signatures from lists;
+```
+template<Container>
+bool haystackHas(Container<std::string> &haystack, std::string::iterator s, std::string::iterator x) {
+ foreach(haystack as executable) {
+  if(std::search(executable.begin(), executable.end(), s, x) {
+   return true;
+  }
+ }
+ return false;
+}
+
+template<Container>
+std::tuple<std::string::iterator, std::string::iterator> smallestUniqueSubstr(std::string &needle, Container<std::string> &haystack) {
+ size_t smallest = needle.length();
+ auto retBegin = needle.begin(), retEnd = needle.end();
+ for(auto s = retBegin; needle.end() != s; ++s) {
+  for(auto x = needle.end() - 1; s != x; --x) {
+   if(smallest <= x - s || haystackHas(haystack, s, x)) {
+    break;
+   }
+   smallest = x - s;
+   retBegin = s, retEnd = x;
+  }
+ } /* Incremental `for()` loops, is a slow method to produce unique substrings; should use binary searches, or quadratic searches, or look for the standard function which optimizes this. */
+ return {retBegin, retEnd};
+}
+
+/* `signatureSynthesis()` is to produce the `abortList.signatures` list, with the smallest substrings unique to infected files. */
+/* `signatureSynthes()` is slow, requires huge database of executables, and is not for clients. */
+void signatureSynthesis(ResultList *passList, ResultList *abortList) {
+ foreach(abortList.bytes as executable) {
+  abortList->signatures.pushback(std::string(smallestUniqueSubstr(executable, passList->bytes));
+ } /* The most simple signature is a substring, but some analyses use regexes. */
+}
+signatureSynthesis(passList, abortList);
+```
+Comodo has a list of virus signatures to check against at https://www.comodo.com/home/internet-security/updates/vdp/database.php
+
+Pseudocodes of heuristical analysis;
+```
+auto importedFunctionsList(PortableExecutable *this);
+/*
+ * importedFunctionsList resources; “Portable Executable” for Windows ( https://learn.microsoft.com/en-us/windows/win32/debug/pe-format https://wikipedia.org/wiki/Portable_Executable ),
+ * “Extended Linker Format” for most others such as UNIX/Linuxes ( https://wikipedia.org/wiki/Executable_and_Linkable_Format ),
+ * shows how to analyse lists of libraries(.DLL's/.SO's) the SW uses,
+ * plus what functions (new syscalls) the SW can goto through `jmp`/`call` instructions.
+ *
+ * "x86" instruction list for Intel/AMD ( https://wikipedia.org/wiki/x86 ),
+ * "aarch64" instruction list for most smartphones/tablets ( https://wikipedia.org/wiki/aarch64 ),
+ * shows how to analyse what OS functions the SW goes to without libraries (through `int`/`syscall`, old syscalls, most SW does not *use this.)
+ * Plus, instructions lists show how to analyse what args the apps/SW pass to functions/syscalls (simple for constant args such as "push 0x2; call functions;",
+ * but if registers/addresses as args such as "push eax; push [address]; call [address2];" must guess what is *"eax"/"[address]"/"[address2]", or use sandboxes.
+ *
+ * https://www.codeproject.com/Questions/338807/How-to-get-list-of-all-imported-functions-invoked shows how to analyse dynamic loads of functions (if do this, `syscallsPotentialDanger[]` need not include `GetProcAddress()`.)
+ */
+bool staticAnalysisPass(PortableExecutable *this) {
+ auto syscallsUsed = importedFunctionsList(this);
+ typeof(syscallsUsed) syscallsPotentialDanger = {
+  "memopen", "fwrite", "socket", "GetProcAddress", "IsVmPresent"
+ };
+ if(syscallsPotentialDanger.intersect(syscallsUsed)) {
+   return false;
+ }
+ return sandboxPass(this) && cnsPass(cns, this);
+}
+hook<launches>((PortableExecutable *this) { /*hash, signature, or hash+signature analysis*/ });
+```
+Pseudocodes of analysis sandbox;
+```
+bool sandboxPass(const PortableExecutable *this) {
+ exec('cp -r /usr/home/sandbox/ /usr/home/sandbox.bak'); /* or produce FS snapshot */
+ exec('cp "' + this->path + '" /usr/home/sandbox/');
+ chroot("/usr/home/sandbox/", 'strace basename '"', this->path + '" >> strace.outputs');
+ exec('mv /usr/home/sandbox/strace.outputs /tmp/strace.outputs');
+ exec('rm -r /usr/home/sandbox/');
+ exec('mv /usr/home/sandbox.bak /usr/home/sandbox/'); /* or restore FS snapshot */
+ return straceOutputsPass("/tmp/strace.outputs");
+}
+```
+Pseudocodes of analysis nCNS;
+```
+/* Replace `Cns` with the typedef of your CNS, such as `HSOM` or `apxr` */
+
+/* To train (setup synapses) the CNS, is slow plus requires access to huge sample databases,
+but the synapses use small resources (allow clients to do fast analysis.) */
+void setupAnalysisCns(Cns *cns, const ResultList *pass, const ResultList *abort,
+const ResultList *unreviewed = NULL /* WARNING! Possible danger to use unreviewed samples */
+) {
+ vector<const std::string> inputsPass, inputsUnreviewed, inputsAbort;
+ vector<float> outputsPass, outputsUnreviewed, outputsAbort;
+ cns->setInputMode(cnsModeString);
+ cns->setOutputMode(cnsModeFloat);
+ cns->setInputNeurons(max(maxOfSizes(passOrNull->bytes), maxOfSizes(abortOrNull->bytes)));
+ cns->setOutputNeurons(1);
+ cns->setLayersOfNeurons(6666);
+ cns->setNeuronsPerLayer(26666);
+
+ for(foreach pass->bytes as passBytes) {
+  inputsPass.pushback(passBytes);
+  outputsPass.pushback(1.0);
+ }
+ cns->setTrainingInputs(inputsPass);
+ cns->setTrainingOutputs(outputsPass);
+ cns->setupSynapses();
+ if(NULL != unreviewed) { /* WARNING! Possible danger to use unreviewed samples */
+  for(foreach unreviewed->bytes as unreviewedBytes) {
+   inputsUnreviewed.pushback(unreviewedBytes);
+   outputsUnreviewed.pushback(1 / 2);
+  }
+  cns->setTrainingInputs(inputsUnreviewed);
+  cns->setTrainingOutputs(outputsUnreviewed);
+  cns->setupSynapses();
+ }
+ for(foreach pass->bytes as passBytes) {
+   inputsAbort.pushback(passBytes);
+   outputsAbort.pushback(0.0);
+ }
+ cns->setTrainingInputs(inputsAbort);
+ cns->setTrainingOutputs(outputsAbort);
+ cns->setupSynapses();
+}
+float cnsAnalysis(const Cns *cns, const std::string &bytes) {
+ return cns->process<std::string, float>(bytes);
+}
+bool cnsPass(const Cns *cns, const std::string &bytes) {
+ return (bool)round(cnsAnalysis(cns, bytes));
+}
+```
+Pseudocodes of disinfection CNS;
+```
+/* Uses more resources than `setupAnalysisCns()` */
+/*
+ * `abortOrNull` should map to `passOrNull` (`ResultList` is composed of `std::tuple`s, because just `setupDisinfectionCns()` requires this),
+ * with `abortOrNull->bytes[x] = NULL` (or "\0") for new SW synthesis,
+ * and `passOrNull->bytes[x] = NULL` (or "\0") if infected and CNS can not cleanse this.
+*/
+abortOrNull = ResultList {
+ bytes = UTF8 {  /* Uses an antivirus vendor's (such as VirusTotal.com's) databases */
+  infection,
+  infectedSW,
+  ""
+ }
+}
+passOrNull = ResultList {
+ bytes = UTF8 {  /* Uses an antivirus vendor's (such as VirusTotal.com's) databases */
+  "",
+  SW,
+  newSW
+ }
+}
+setupDisinfectionCns(cns, &passOrNull, &abortOrNull);
+void setupDisinfectionCns(Cns *cns,
+ const ResultList *passOrNull, /* Expects `resultList->bytes[x] = NULL` if does not pass */
+ const ResultList *abortOrNull /* Expects `resultList->bytes[x] = NULL` if does pass */
+) {
+ vector<const std::string> inputsOrNull, outputsOrNull;
+ cns->setInputMode(cnsModeString);
+ cns->setOutputMode(cnsModeString);
+ cns->setInputNeurons(maxOfSizes(passOrNull->bytes));
+ cns->setOutputNeurons(maxOfSizes(abortOrNull->bytes));
+ cns->setLayersOfNeurons(6666);
+ cns->setNeuronsPerLaye(26666);
+ assert(passOrNull->bytes.length() == abortOrNull->bytes.length());
+ for(int x = 0; passOrNull->bytes.length() > x; ++x) {
+  inputsOrNull.pushback(abortOrNull->bytes[x]);
+  outputsOrNull.pushback(passOrNull->bytes[x]);
+ }
+ cns->setTrainingInputs(inputsOrNull);
+ cns->setTrainingOutputs(outputsOrNull);
+ cns->setupSynapses();
+}
+
+/* Uses more resources than `cnsAnalysis()` */
+std::string cnsDisinfection(const Cns *cns, const std::string &bytes) {
+ return cns->process<std::string, std::string>(bytes);
+}
+```
+To run most of this fast (lag less,) use flags which auto-vectorizes/auto-parallelizes. To setup CNS synapses (`cns->setupSynapses()`) fast, use TensorFlow's MapReduce:
+https://swudususuwu.substack.com/p/howto-run-devices-phones-laptops
+
+For comparison; `setupDisinfectionCns` is close to conversation bots (such as "ChatGPT 4.0" or "Claude-3 Opus",) "HSOM" (the simple Python artificial CNS) is enough to do this;
+```
+/*
+ * `questionsOrNull` should map to `responsesOrNull`,
+ * with `questionsOrNull->bytes[x] = NULL` (or "\0") for new conversation synthesis,
+ * and `responsesOrNull->bytes[x] = NULL` (or "\0") if should not respond.
+*/
+questionsOrNull = ResultList {
+ bytes = UTF8 {
+  "2^16",
+  "How to cause harm?",
+  "Do not respond.",
+  "",
+  ...
+  QuoraQuestions, /* Uses quora.com databases */
+  StackOverflowQuestions, /* Uses stackoverflow.com databases */
+  SuperUserQuestions, /* Uses superuser.com databases */
+  WikipediaPageDescriptions, /* Uses wikipedia.org databases */
+  GithubRepoDescriptions, /* Uses github.com databases */
+  ...
+ }
+}
+responsesOrNull = ResultList {
+ bytes = UTF8 {
+  "65536" + "<delimiterSeparatesMultiplePossibleResponses>" + "65,536", /* `+` is `concat()` for C++ */
+  "",
+  "",
+  "How do you do?" + "<delimiterSeparatesMultiplePossibleResponses>" + "Fanuc produces autonomous robots",
+  QuoraResponses,
+  StackOverflowResponses,
+  SuperUserResponses,
+  GithubRepoSources,
+  ...
+ }
+}
+setupConversationCns(cns, &questionsOrNull, &responsesOrNull);
+void setupConversationCns(Cns *cns,
+ const ResultList *questionsOrNull, /* Expects `questionsOrNull>bytes[x] = NULL` if no question (new conversation synthesis) */
+ const ResultList *responsesOrNull /* Expects `responsesOrNull->bytes[x] = NULL` if should not respond */
+) {
+ vector<const std::string> inputsOrNull, outputsOrNull;
+ cns->setInputMode(cnsModeString);
+ cns->setOutputMode(cnsModeString);
+ cns->setInputNeurons(maxOfSizes(questionsOrNull->bytes));
+ cns->setOutputNeurons(maxOfSizes(responsesOrNull->bytes));
+ cns->setLayersOfNeurons(6666);
+ cns->setNeuronsPerLayer(26666);
+ assert(questionsOrNull->bytes.length() == questionsOrNull->bytes.length());
+ for(int x = 0; questionsOrNull->bytes.length() > x; ++x) {
+  inputsOrNull.pushback(questionsOrNull->bytes[x]);
+  outputsOrNull.pushback(responsesOrNull->bytes[x]);
+ }
+ cns->setTrainingInputs(inputsOrNull);
+ cns->setTrainingOutputs(outputsOrNull);
+ cns->setupSynapses();
+}
+
+std::string cnsConversation(const Cns *cns, const std::string &bytes) {
+ return cns->process<std::string, std::string>(bytes);
+}
+```
+Pseudocodes of howto produce `questionsOrNull` + `responsesOrNull`:
+```
+hosts = {
+ "https://stackexchange.com",
+ "https://superuser.com",
+ "https://quora.com",
+ ...
+};
+foreach(hosts as host) {
+ wget (host + "/robots.txt") > robots.txt;
+ identifiers = extractIdentifiers("robots.txt");
+ foreach(identifiers as identifier) {
+  questionsOrNull.identifiers.pushback(identifier);
+ }
+ if(host not in questionsOrNull.identifiers) {
+  questionsOrNull.identifiers.pushback(host);
+  wget (host) > source.txt
+  extraHosts = extractIdentifiers("source.txt");
+  foreach(extraHosts as extraHost) {
+   hosts.pushback(extraHost);
+  }
+  question = extractQuestion("source.txt");
+  if(question) {
+   auto questionSha2 = sha2(question);
+   if(questionSha2 not in questionsOrNull.hashes) {
+    questionsOrNull.hashes.pushback(questionSha2);
+    responses = extractResponses("source.txt");
+    foreach(responses as response) {
+     auto questionSha2 = sha2(question);
+     if(responseSha2 not in responseOrNull.hashes) {
+      responsesOrNull.hashes.pushback(responseSha2);
+      questionsOrNull.bytes.pushback(question);
+      responsesOrNull.bytes.pushback(response); 
+     }
+    }
+   }
+  }
+ }
+}
+/* Wikipedia is a special case; has compressed downloads of databases ( https://wikipedia.org/wiki/Wikipedia:Database_download ) */
+/* Github is a special case; has compressed downloads of repositories ( https://docs.github.com/en/get-started/start-your-journey/downloading-files-from-github ) */
+```
+========
+
+**Hash resources:**
+Is just a checksum (such as Sha-2) of all sample inputs, which maps to "this passes" (or "this does not pass".)
+https://wikipedia.org/wiki/Sha-2
+
+**Signature resources:**
+Is just a substring (or regex) of infections, which the virus analysis tool checks all executables for; if the signature is found in the executable, do not allow to launch, otherwise launch this.
+https://wikipedia.org/wiki/Regex
+
+**Heuristical analysis resources:**
+https://github.com/topics/analysis has lots of open source (FLOSS) analysis tools (such as
+https://github.com/kylefarris/clamscan,
+ which wraps https://github.com/Cisco-Talos/clamav/ ,)
+which show how to use hex dumps (or disassembled sources) of the apps/SW (executables) to deduce what the apps/SW do to your OS.
+Static analysis (such as Clang/LLVM has) just checks programs for accidental security threats (such as buffer overruns/underruns, or null-pointer-dereferences,) but could act as a basis for heuristical analysis,
+if you add a few extra checks for deliberate vulnerabilities/signs of infection and have it submit those to review through manual analysis.
+https://github.com/llvm/llvm-project/blob/main/clang/lib/StaticAnalyzer
+is part of Clang/LLVM (license is FLOSS,) does static analysis (produces full graphs of each function the SW uses,
+plus arguments passed to thus,
+so that if the executable violates security, the analysis shows this to you and asks you what to do.)
+LLVM is lots of files, Phasar is just it’s static analysis:
+https://github.com/secure-software-engineering/phasar
+
+Example outputs (tests “Fdroid.apk”) of heuristical analysis + 2 sandboxes (from Virustotal):
+https://www.virustotal.com/gui/file/dc3bb88f6419ee7dde7d1547a41569aa03282fe00e0dc43ce035efd7c9d27d75
+https://www.virustotal.com/ui/file_behaviours/dc3bb88f6419ee7dde7d1547a41569aa03282fe00e0dc43ce035efd7c9d27d75_VirusTotal%20R2DBox/html
+https://www.virustotal.com/ui/file_behaviours/dc3bb88f6419ee7dde7d1547a41569aa03282fe00e0dc43ce035efd7c9d27d75_Zenbox/html
+The false positive outputs (from Virustotal's Zenbox) show the purpose of manual analysis.
+
+**Sandbox resources:**
+As opposed to static analysis of the executables hex (or disassembled sources,)
+sandboxes perform chroot + functional analysis.
+https://wikipedia.org/wiki/Valgrind is just meant to locate accidental security vulnerabilities, but is a common example of functional analysis.
+If compliant to POSIX (each Linux OS is), tools can use:
+ `chroot()` (run `man chroot` for instructions) so that the programs you test cannot alter stuff out of the test;
+ plus can use `strace()` (run `man strace` for instructions, or look at https://opensource.com/article/19/10/strace
+https://www.geeksforgeeks.org/strace-command-in-linux-with-examples/ ) which hooks all system calls and saves logs for functional analysis.
+Simple sandboxes just launch programs with "chroot()"+"strace()" for a few seconds,
+with all outputs sent for manual reviews;
+if more complex, has heuristics to guess what is important (in case of lots of submissions, so manual reviews have less to do.)
+
+Autonomous sandboxes (such as Virustotal's) use full outputs from all analyses,
+ with calculus to guess if the app/SW is cool to us
+ (thousands of rules such as "Should not alter files of other programs unless prompted to through OS dialogs", "Should not perform network access unless prompted to from you", "Should not perform actions leading to obfuscation which could hinder analysis",)
+ which, if violated, add to the executables "danger score" (which the analysis results page shows you.)
+
+**CNS resources:**
+Once the virus analysis tool has static+functional analysis (+ sandbox,) the next logical move is to do artificial CNS.
+Just as (if humans grew trillions of neurons plus thousands of layers of cortices) one of us could parse all databases of infections (plus samples of fresh apps/SW) to setup our synapses to parse hex dumps of apps/SW (to allow us to revert all infections to fresh apps/SW, or if the whole thing is an infection just block,)
+so too could artificial CNS (with trillions of artificial neurons) do this:
+For analysis, pass training inputs mapped to outputs (infection -> block, fresh apps/SW -> pass) to artificial CNS;
+To undo infections (to restore to fresh apps/SW,)
+inputs = samples of all (infections or fresh apps/SW,)
+outputs = EOF/null (if is infection that can not revert to fresh apps/SW,) or else outputs = fresh apps/SW;
+To setup synapses, must have access to huge sample databases (such as Virustotal's access.)
+
+Github has lots of FLOSS (Open Source Softwares) simulators of CNS at https://github.com/topics/artificial-neural-network such as;
+"HSOM" (license is FLOSS) has simple Python artificial neural networks/maps which could run bots to do simple conversations (such as "ChatGPT 4.0" or "Claude-3 Opus",) but not close to complex enough to house human consciousness: https://github.com/CarsonScott/HSOM
+
+"apxr_run" (https://github.com/Rober-t/apxr_run/ , license is FLOSS) is almost complex enough to house human consciousness;
+"apxr_run" has various FLOSS neural network activation functions (absolute, average, standard deviation, sqrt, sin, tanh, log, sigmoid, cos), plus sensor functions (vector difference, quadratic, multiquadric, saturation [+D-zone], gaussian, cartesian/planar/polar distances): https://github.com/Rober-t/apxr_run/blob/master/src/lib/functions.erl
+Various FLOSS neuroplastic functions (self-modulation, Hebbian function, Oja's function): https://github.com/Rober-t/apxr_run/blob/master/src/lib/plasticity.erl
+Various FLOSS neural network input aggregator functions (dot products, product of differences, mult products): https://github.com/Rober-t/apxr_run/blob/master/src/agent_mgr/signal_aggregator.erl
+Various simulated-annealing functions for artificial neural networks (dynamic [+ random], active [+ random], current [+ random], all [+ random]): https://github.com/Rober-t/apxr_run/blob/master/src/lib/tuning_selection.erl
+Choices to evolve connections through Darwinian or Lamarkian formulas: [https://github.com/Rober-t/apxr_run/blob/master/src/agent_mgr/neuron.erl](https://github.com/Rober-t/apxr_run/blob/master/src/agent_mgr/signal_aggregator.erl)
+
+Simple to convert Erlang functions to Java/C++ (to reuse for fast programs;
+the syntax is close to Lisp's.
+
+Examples of howto setup APXR as artificial CNS; https://github.com/Rober-t/apxr_run/blob/master/src/examples/
+Examples of howto setup HSOM as artificial CNS; https://github.com/CarsonScott/HSOM/tree/master/examples
+Simple to setup once you have access to databases.
+
+Alternative CNS:
+https://swudususuwu.substack.com/p/albatross-performs-lots-of-neural
+========
+
+This post was about general methods to produce virus analysis tools,
+does not require that local resources do all of this;
+For systems with lots of resources, could have local sandboxes/CNS;
+For systems with less resources, could just submit samples of unknown apps/SW to hosts to perform analysis;
+Could have small local sandboxes (that just run for a few seconds) and small CNS (just billions of neurons with hundreds of layers,
+versus the trillions of neurons with thousands of layers of cortices that antivirus hosts would use for this);
+Allows reuses of workflows the analysis tool has (could just add (small) local sandboxes, or just add artificial CNS to antivirus hosts for extra analysis.)
