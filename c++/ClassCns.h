@@ -1,18 +1,10 @@
-#ifndef INCLUDE_GUARD_c__ClassCns__c__
-#define INCLUDE_GUARD_c__ClassCns__c__
+#ifndef INCLUDE_GUARD_c__ClassCns__h__
+#define INCLUDE_GUARD_c__ClassCns__h__
 #include <ctypes>
 namespace Susuwu {
 typedef enum CnsMode {
- cnsModeInt,
- cnsModeUint,
- cnsModeFloat,
- cnsModeDouble,
- cnsModeChar,
- cnsModeVectorInt,
- cnsModeVectorUint,
- cnsModeVectorFloat,
- cnsModeVectorDouble,
- cnsModeVectorChar,
+ cnsModeInt, cnsModeUint, cnsModeFloat, cnsModeDouble, cnsModeChar,
+ cnsModeVectorInt, cnsModeVectorUint, cnsModeVectorFloat, cnsModeVectorDouble, cnsModeVectorChar,
  cnsModeString = cnsModeVectorChar
 } CnsMode;
 
@@ -33,26 +25,9 @@ typedef class Cns {
 } Cns;
 
 #ifdef USE_HSOM /* Todo. ( https://stackoverflow.com/questions/3286448/calling-a-python-method-from-c-c-and-extracting-its-return-value ) suggests various syntaxes to use for this, with unanswered comments such as "Does this support classes?" */
-/* "If you're using Python >3.5, PyString_FromString() is PyUnicode_FromString()" */
-#include <Python.h>
 typedef class HsomCns : Cns { /* https://github.com/CarsonScott/HSOM */
- HsomCns() {
-  setenv("PYTHONPATH",".",1);
-  Py_Initialize();
-//  PyRun_SimpleString("import sys; sys.path.append('.')"); PyRun_SimpleString("import hsom; from hsom import SelfOrganizingNetwork;"); /* Was told not to use PyRun because "PyRun requires all results go to stdout" */
-  PyObject *module = PyImport_ImportModule("hsom")
-  if(NULL == module) {throw "'hsom' module not found";}
-	PyObject *selfOrganizingNetwork = PyObject_GetAttrString(module,(char*)"SelfOrganizingNetwork"); /* or	"PyObject *pDict = PyModule_GetDict(module);  PyObject *selfOrganizingNetwork = PyDict_GetItemString(pDict, (char*)"SelfOrganizingNetwork");" */
-  if(NULL == selfOrganizingNetwork || !PyCallable_Check(selfOrganizingNetwork)) {throw "'SelfOrganizingNetwork' object not found";}
-  double result = PyObject_CallFunction(selfOrganizingNetwork, "d", 2.0); /* or "PyObject *pValue=Py_BuildValue("(z)",(char*)"args");	PyObject *pResult=PyObject_CallObject(selfOrganizingNetwork, pValue); if(NULL == pResult) {throw "PyObject_CallObject failed";} double result = PyInt_AsLong(pResult)); Py_DECREF(pValue);" */
-  Py_DECREF(module);
- ~HsomCns() {
-#if PYTHON3
-  Py_FinalizeEx();
-#else
-  Py_Finalize();
-#endif /* PYTHON3 */
- }
+ HsomCns();
+ ~HsomCns();
 } HsomCns;
 #endif /* Todo */
 
@@ -70,5 +45,5 @@ typedef class HsomCns : Cns { /* https://github.com/CarsonScott/HSOM */
  * https://swudususuwu.substack.com/p/howto-run-devices-phones-laptops
  */
 }; /* namespace Susuwu */
-#endif /* ndef INCLUDE_GUARD_c__ClassCns__c__ */
+#endif /* ndef INCLUDE_GUARD_c__ClassCns__h__ */
 

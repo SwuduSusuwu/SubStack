@@ -1,3 +1,5 @@
+#ifndef INCLUDE_GUARD_c__ConversationCns_c__
+#define INCLUDE_GUARD_c__ConversationCns_c__
 #include <string>
 #include "ClassCns.c++" /* Cns, CnsMode */
 #include "ClassResultList.c++" /* ResultList */
@@ -95,7 +97,7 @@ void cnsMultipleInputsProcess(const Cns *cns) {
  }
 }
 
-/* Pseudocodes of howto setup `questionsOrNull` + `responsesOrNull`: */
+/* `questionsOrNull` + `responsesOrNull` synthesis */
 std::vector<std::string> hosts = {
  "https://stackexchange.com",
  "https://superuser.com",
@@ -104,6 +106,7 @@ std::vector<std::string> hosts = {
 /* Wikipedia is a special case; has compressed downloads of databases ( https://wikipedia.org/wiki/Wikipedia:Database_download ) */
 /* Github is a special case; has compressed downloads of repositories ( https://docs.github.com/en/get-started/start-your-journey/downloading-files-from-github ) */
 };
+void questionsResponsesSynthesis(std::vector<std::string> hosts, ResultList *questionsOrNull, ResultList *responsesOrNull) {
 foreach(hosts as host) {
  exec("wget '" + host + "/robots.txt' > robots.txt");
  identifiers = extractIdentifiers("robots.txt");
@@ -154,4 +157,5 @@ foreach(hosts as host) {
  * https://swudususuwu.substack.com/p/destructive-unreversible-upload-of
  */
 };
+#endif /* ndef INCLUDE_GUARD_c__ConversationCns_c__ */
 

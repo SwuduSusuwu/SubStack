@@ -1,60 +1,62 @@
+#ifndef INCLUDE_GUARD_c___VirusAnalysis_c__
+#define INCLUDE_GUARD_c___VirusAnalysis_c__
 #include <string> /* std::string */
+#include "VirusAnalysis.h" /* passList, abortList, localPassList */
 #include "ClassCns.c++" /* Cns, CnsMode */
 #include "ClassResultList.c++" /* ResultList, smallestUniqueSubstr */
 #include "ClassPortableExecutable.c++" /* Not included */
 /* Pseudocodes (work-in-progress) of virus analysis (can use hashes, signatures, functional analysis, sandboxes, and artificial CNS (central nervous systems */
 namespace Susuwu {
-ResultList passList, abortList; /* Stored on disk, all clients use clones of this */
-ResultList localPassList; /* Temporary local caches */
-const bool staticAnalysisPass(const PortableExecutable *this); /* To skip, define as "return true;" */
-const bool sandboxPass(const PortableExecutable *this); /* To skip, define as "return true;" */
-const bool straceOutputsPass(const char *path); /* Unimplemented, `strace()` resources have clues how to do this */
-const bool cnsPass(const Cns *cns, const std::string &bytes); /* To skip, define as "return true;" */
-vector<char> cnsDisinfection(const Cns *cns, const std::string &bytes); /* This can undo infection from bytecodes (restores to fresh executables) */
-
-/* Pseudocodes of hash analysis */
-hook<launches>((const PortableExecutable *this) {
- if(resultListHashesHas(passList, localPassList, Sha2(this->bytes)) {
-   return original_launches(this);
- } else if(abortList.hashes.has(Sha2(this->bytes)) {
-   return abort();
- } else if(staticAnalysisPass(this)) {
-  localPassList.hashes.pushback(Sha2(this->bytes)); /* Caches results */
-   return original_launches(this);
+hook<launches>((const PortableExecutable *this) { /* Should use OS-specific "hook"/"callback" for `exec()`/app-launches */
+ if(hashAnalysisPass(this)) { /* or `signatureAnalysisPass()`, or `hashPlusSignatureAnalysisPass()` */
+  return original_launches(this);
  } else {
-   submitForManualAnalysis(this);
-   return abort();
- }
+  return abort();
 });
 
-/* Pseudocodes of signatures analysis */
-hook<launches>((const PortableExecutable *this) {
+/* Hash analysis */
+const bool hashAnalysisPass(const PortableExecutable *this) {
+ if(resultListHashesHas(passList, localPassList, Sha2(this->bytes)) {
+   return true;
+ } else if(abortList.hashes.has(Sha2(this->bytes)) {
+   return false;
+ } else if(functionalAnalysisPass(this)) {
+  localPassList.hashes.pushback(Sha2(this->bytes)); /* Caches results */
+   return true;
+ } else {
+   submitForManualAnalysis(this);
+   return false;
+ }
+};
+
+/* Signatures analysis */
+const bool signatureAnalysisPass(const PortableExecutable *this) {
  foreach(abortList.signatures as sig) {
   if(localPassList.hashes.has(Sha2(this->bytes)) {
-   return original_launches(this);
+   return true;
 #if ALL_USES_TEXT
   } else if(strstr(this->hex, sig)) { /* strstr uses text/hex; hex uses more space than binary, so you should use `memmem` or `std::search` with this->bytes */
 #else
    } else if(std::search(this->bytes.begin(), this->bytes.end(), sig.begin(), sig.end()) {
 #endif /* ALL_USES_TEXT */
-   return abort();
+   return false;
   }
  }
- if(staticAnalysisPass(this)) {
+ if(functionalAnalysisPass(this)) {
   localPassList.hashes.pushback(Sha2(this->bytes)); /* Caches results */
-   return original_launches(this);
+   return true;
  } else {
    submitForManualAnalysis(this);
-   return abort();
+   return false;
  }
-});
+};
 
-/* Pseudocodes of fused signature+hash analysis */
-hook<launches>((const PortableExecutable *this) {
+/* Fused signature+hash analysis */
+const bool signaturePlusHashAnalysisPass(const PortableExecutable *this) {
   if(resultListHashesHas(passList, localPassList, Sha2(this->bytes)) {
-   return original_launches(this);
+   return true;
   } else if(abortList.hashes.has(Sha2(this->bytes)) {
-   return abort();
+   return false;
   } else {
    foreach(abortList.signatures as sig) {
 #if ALL_USES_TEXT
@@ -63,23 +65,21 @@ hook<launches>((const PortableExecutable *this) {
     if(std::search(this->bytes.begin(), this->bytes.end(), sig.begin(), sig.end()) {
 #endif /* ALL_USES_TEXT */
       abortList.hashes.pushback(Sha2(this->hex));
-      return abort();
+      return false;
     }
    }
  }
- if(staticAnalysisPass(this)) {
+ if(functionalAnalysisPass(this)) {
   localPassList.hashes.pushback(Sha2(this->bytes)); /* Caches results */
-   return original_launches(this);
+   return true;
  } else {
    submitForManualAnalysis(this);
-   return abort();
+   return false;
  }
-});
+};
 
 
-/* Pseudocodes to produce signatures from lists: */
-
-/* To produce virus signatures,
+/* To produce virus signatures:
  * use passlists of all files that was reviewed that pass,
  * plus abortlists of all files that failed manual review, such lists as Virustotal has.
  * `signatureSynthesis()` is to produce the `abortList.signatures` list, with the smallest substrings unique to infected files;
@@ -93,8 +93,8 @@ void signatureSynthesis(ResultList *passList, ResultList *abortList) {
 signatureSynthesis(passList, abortList);
 /* Comodo has a list of virus signatures to check against at https://www.comodo.com/home/internet-security/updates/vdp/database.php */
 
-/* Pseudocodes of heuristical analysis */
-const auto importedFunctionsList(PortableExecutable *this);
+/* Functional analysis */
+const std::vector<std::string> importedFunctionsList(PortableExecutable *this);
 /*
  * importedFunctionsList resources; “Portable Executable” for Windows ( https://learn.microsoft.com/en-us/windows/win32/debug/pe-format https://wikipedia.org/wiki/Portable_Executable ),
  * “Extended Linker Format” for most others such as UNIX/Linuxes ( https://wikipedia.org/wiki/Executable_and_Linkable_Format ),
@@ -109,7 +109,7 @@ const auto importedFunctionsList(PortableExecutable *this);
  *
  * https://www.codeproject.com/Questions/338807/How-to-get-list-of-all-imported-functions-invoked shows how to analyse dynamic loads of functions (if do this, `syscallsPotentialDanger[]` need not include `GetProcAddress()`.)
  */
-const bool staticAnalysisPass(PortableExecutable *this) {
+const bool functionalAnalysisPass(PortableExecutable *this) {
  const auto syscallsUsed = importedFunctionsList(this);
  typeof(syscallsUsed) syscallsPotentialDanger = {
   "memopen", "fwrite", "socket", "GetProcAddress", "IsVmPresent"
@@ -121,7 +121,7 @@ const bool staticAnalysisPass(PortableExecutable *this) {
 }
 hook<launches>((PortableExecutable *this) { /*hash, signature, or hash+signature analysis*/ });
 
-/* Pseudocodes of analysis sandbox */
+/* Analysis sandbox */
 const bool sandboxPass(const PortableExecutable *this) {
  exec('cp -r /usr/home/sandbox/ /usr/home/sandbox.bak'); /* or produce FS snapshot */
  exec('cp "' + this->path + '" /usr/home/sandbox/');
@@ -132,7 +132,7 @@ const bool sandboxPass(const PortableExecutable *this) {
  return straceOutputsPass("/tmp/strace.outputs");
 }
 
-/* Pseudocodes of analysis CNS */
+/* Analysis CNS */
 /* Replace `Cns` with the typedef of your CNS, such as `HSOM` or `apxr` */
 
 /* To train (setup synapses) the CNS, is slow plus requires access to huge sample databases,
@@ -179,13 +179,12 @@ const bool cnsPass(const Cns *cns, const std::string &bytes) {
  return (bool)round(cnsAnalysis(cns, bytes));
 }
 
-/* Pseudocodes of disinfection CNS; */
-/* Uses more resources than `setupAnalysisCns()` */
-/*
- * `abortOrNull` should map to `passOrNull` (`ResultList` is composed of `std::tuple`s, because just `setupDisinfectionCns()` requires this),
+/* Disinfection CNS */
+
+/* `abortOrNull` should map to `passOrNull` (`ResultList` is composed of `std::tuple`s, because just `setupDisinfectionCns()` requires this),
  * with `abortOrNull->bytes[x] = NULL` (or "\0") for new SW synthesis,
  * and `passOrNull->bytes[x] = NULL` (or "\0") if infected and CNS can not cleanse this.
-*/
+ */
 ResultList abortOrNull(
  bytes = UTF8 {  /* Uses an antivirus vendor's (such as VirusTotal.com's) databases */
   infection,
@@ -202,6 +201,7 @@ ResultList passOrNull(
 );
 setupDisinfectionCns(cns, &passOrNull, &abortOrNull);
 
+/* Uses more resources than `setupAnalysisCns()` */
 void setupDisinfectionCns(Cns *cns,
  const ResultList *passOrNull, /* Expects `resultList->bytes[x] = NULL` if does not pass */
  const ResultList *abortOrNull /* Expects `resultList->bytes[x] = NULL` if does pass */
@@ -249,4 +249,5 @@ const std::string cnsDisinfection(const Cns *cns, const std::string &bytes) {
  * https://swudususuwu.substack.com/p/destructive-unreversible-upload-of
  */
 }; /* namespace Susuwu */
+#endif /* ndef INCLUDE_GUARD_c___VirusAnalysis_c__ */
 
