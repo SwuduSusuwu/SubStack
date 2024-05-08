@@ -6,9 +6,9 @@
 #include <ctype.h>
 namespace Susuwu {
 typedef struct ResultList { /* Lists of files (or pages) */
- std::unordered_set<decltype(Sha2())> hashes; /* Unique checksums of files (or pages), to avoid duplicates, plus to do fast checks for existance */
- std::set<const std::string> signatures; /* Smallest substrings (or regexes, or Universal Resource Identifiers) unique to this, has uses close to `hashes` but can match if files have small differences */
- std::set<const std::string> bytes; /* Whole files (or pages); uses lots of space, just populate this for signature synthesis (or training CNS). */
+	std::unordered_set<decltype(Sha2())> hashes; /* Unique checksums of files (or pages), to avoid duplicates, plus to do fast checks for existance */
+	std::set<const std::string> signatures; /* Smallest substrings (or regexes, or Universal Resource Identifiers) unique to this, has uses close to `hashes` but can match if files have small differences */
+	std::set<const std::string> bytes; /* Whole files (or pages); uses lots of space, just populate this for signature synthesis (or training CNS). */
 /* Used `std::string` for binaries (versus `vector<char>`) because:
  * "If you are going to use the data in a string like fashon then you should opt for std::string as using a std::vector may confuse subsequent maintainers. If on the other hand most of the data manipulation looks like plain maths or vector like then a std::vector is more appropriate." -- https://stackoverflow.com/a/1556294/24473928
 */

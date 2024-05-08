@@ -15,8 +15,8 @@ ResultList questionsOrNull;
 ResultList responsesOrNull;
 
 void setupConversationCns(Cns *cns,
- const ResultList *questionsOrNull, /* Expects `questionsOrNull>bytes[x] = NULL` if no question (new conversation synthesis) */
- const ResultList *responsesOrNull /* Expects `responsesOrNull->bytes[x] = NULL` if should not respond */
+	const ResultList *questionsOrNull, /* Expects `questionsOrNull>bytes[x] = NULL` if no question (new conversation synthesis) */
+	const ResultList *responsesOrNull /* Expects `responsesOrNull->bytes[x] = NULL` if should not respond */
 );
 
 const std::string cnsConversation(const Cns *cns, const std::string &bytes);
@@ -30,7 +30,7 @@ std::vector<std::string> hosts; /* Universal Resources Identifiers of home pages
  */
 
 void questionsResponsesSynthesis(ResultList *questionsOrNull, /* Sets `questionsOrNull>bytes[x] = NULL` if no question (new conversation synthesis). */
- ResultList *responsesOrNull /* Sets `responsesOrNull->bytes[x] = NULL` if should not respond */
+	ResultList *responsesOrNull /* Sets `responsesOrNull->bytes[x] = NULL` if should not respond */
 ); /* Sets `ResulstList.hashes[x] = Sha2(ResultList.bytes[x]);`, `ResultList.signatures[x] = Universal Resource Identifier` */
 
 /* Related to this:

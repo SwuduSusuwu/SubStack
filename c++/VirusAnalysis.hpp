@@ -53,8 +53,8 @@ ResultList passOrNull;
 
 /* Uses more resources than `setupAnalysisCns()` */
 void setupDisinfectionCns(Cns *cns,
- const ResultList *passOrNull, /* Expects `resultList->bytes[x] = NULL` if does not pass */
- const ResultList *abortOrNull /* Expects `resultList->bytes[x] = NULL` if does pass */
+	const ResultList *passOrNull, /* Expects `resultList->bytes[x] = NULL` if does not pass */
+	const ResultList *abortOrNull /* Expects `resultList->bytes[x] = NULL` if does pass */
 );
 
 /* Uses more resources than `cnsAnalysis()` */

@@ -8,75 +8,76 @@
 /* (Work-in-progress) virus analysis (can use hashes, signatures, functional analysis, sandboxes, and artificial CNS (central nervous systems */
 namespace Susuwu {
 hook<launches>((const PortableExecutable *this) { /* Should use OS-specific "hook"/"callback" for `exec()`/app-launches */
- if(hashAnalysisPass(this)) { /* or `signatureAnalysisPass()`, or `hashPlusSignatureAnalysisPass()` */
-  return original_launches(this);
- } else {
-  return abort();
+	if(hashAnalysisPass(this)) { /* or `signatureAnalysisPass()`, or `hashPlusSignatureAnalysisPass()` */
+		return original_launches(this);
+	} else {
+		return abort();
+	}
 });
 
 /* Hash analysis */
 const bool hashAnalysisPass(const PortableExecutable *this) {
- if(resultListHashesHas(passList, localPassList, Sha2(this->bytes)) {
-   return true;
- } else if(abortList.hashes.has(Sha2(this->bytes)) {
-   return false;
- } else if(functionalAnalysisPass(this)) {
+	if(resultListHashesHas(passList, localPassList, Sha2(this->bytes)) {
+  	return true;
+	} else if(abortList.hashes.has(Sha2(this->bytes)) {
+  	return false;
+	} else if(functionalAnalysisPass(this)) {
   localPassList.hashes.pushback(Sha2(this->bytes)); /* Caches results */
-   return true;
- } else {
-   submitForManualAnalysis(this);
-   return false;
- }
+  	return true;
+	} else {
+  	submitForManualAnalysis(this);
+  	return false;
+	}
 };
 
 /* Signatures analysis */
 const bool signatureAnalysisPass(const PortableExecutable *this) {
- foreach(abortList.signatures as sig) {
-  if(localPassList.hashes.has(Sha2(this->bytes)) {
-   return true;
+	foreach(abortList.signatures as sig) {
+ 	if(localPassList.hashes.has(Sha2(this->bytes)) {
+  	return true;
 #if ALL_USES_TEXT
-  } else if(strstr(this->hex, sig)) { /* strstr uses text/hex; hex uses more space than binary, so you should use `memmem` or `std::search` with this->bytes */
+ 	} else if(strstr(this->hex, sig)) { /* strstr uses text/hex; hex uses more space than binary, so you should use `memmem` or `std::search` with this->bytes */
 #else
-   } else if(std::search(this->bytes.begin(), this->bytes.end(), sig.begin(), sig.end()) {
+		} else if(std::search(this->bytes.begin(), this->bytes.end(), sig.begin(), sig.end()) {
 #endif /* ALL_USES_TEXT */
-   return false;
-  }
- }
- if(functionalAnalysisPass(this)) {
-  localPassList.hashes.pushback(Sha2(this->bytes)); /* Caches results */
-   return true;
- } else {
-   submitForManualAnalysis(this);
-   return false;
- }
-};
+  		return false;
+	 	}
+	}
+	if(functionalAnalysisPass(this)) {
+ 	localPassList.hashes.pushback(Sha2(this->bytes)); /* Caches results */
+  	return true;
+	} else {
+  	submitForManualAnalysis(this);
+  	return false;
+	}
+}
 
 /* Fused signature+hash analysis */
 const bool signaturePlusHashAnalysisPass(const PortableExecutable *this) {
   if(resultListHashesHas(passList, localPassList, Sha2(this->bytes)) {
-   return true;
-  } else if(abortList.hashes.has(Sha2(this->bytes)) {
-   return false;
-  } else {
-   foreach(abortList.signatures as sig) {
+  	return true;
+ 	} else if(abortList.hashes.has(Sha2(this->bytes)) {
+  	return false;
+	} else {
+  	foreach(abortList.signatures as sig) {
 #if ALL_USES_TEXT
-    if(strstr(this->hex, sig)) { /*`strstr` does text, binaries must use `std::search` or `memem` */
+			if(strstr(this->hex, sig)) { /*`strstr` does text, binaries must use `std::search` or `memem` */
 #else
-    if(std::search(this->bytes.begin(), this->bytes.end(), sig.begin(), sig.end()) {
+			if(std::search(this->bytes.begin(), this->bytes.end(), sig.begin(), sig.end()) {
 #endif /* ALL_USES_TEXT */
-      abortList.hashes.pushback(Sha2(this->hex));
-      return false;
-    }
-   }
- }
- if(functionalAnalysisPass(this)) {
-  localPassList.hashes.pushback(Sha2(this->bytes)); /* Caches results */
-   return true;
- } else {
-   submitForManualAnalysis(this);
-   return false;
- }
-};
+      	abortList.hashes.pushback(Sha2(this->hex));
+      	return false;
+			}
+		}
+	}
+	if(functionalAnalysisPass(this)) {
+		localPassList.hashes.pushback(Sha2(this->bytes)); /* Caches results */
+ 		return true;
+	} else {
+  	submitForManualAnalysis(this);
+  	return false;
+	}
+}
 
 
 /* To produce virus signatures:
@@ -86,9 +87,9 @@ const bool signaturePlusHashAnalysisPass(const PortableExecutable *this) {
  * is slow, requires huge database of executables, and is not for clients.
  */
 void signatureSynthesis(ResultList *passList, ResultList *abortList) {
- foreach(abortList.bytes as executable) {
-  abortList->signatures.pushback(std::string(smallestUniqueSubstr(executable, passList->bytes));
- } /* The most simple signature is a substring, but some analyses use regexes. */
+	foreach(abortList.bytes as executable) {
+		abortList->signatures.pushback(std::string(smallestUniqueSubstr(executable, passList->bytes));
+	} /* The most simple signature is a substring, but some analyses use regexes. */
 }
 signatureSynthesis(passList, abortList);
 /* Comodo has a list of virus signatures to check against at https://www.comodo.com/home/internet-security/updates/vdp/database.php */
@@ -110,26 +111,26 @@ const std::vector<std::string> importedFunctionsList(PortableExecutable *this);
  * https://www.codeproject.com/Questions/338807/How-to-get-list-of-all-imported-functions-invoked shows how to analyse dynamic loads of functions (if do this, `syscallsPotentialDanger[]` need not include `GetProcAddress()`.)
  */
 const bool functionalAnalysisPass(PortableExecutable *this) {
- const auto syscallsUsed = importedFunctionsList(this);
- typeof(syscallsUsed) syscallsPotentialDanger = {
-  "memopen", "fwrite", "socket", "GetProcAddress", "IsVmPresent"
- };
- if(syscallsPotentialDanger.intersect(syscallsUsed)) {
-   return false;
- }
- return sandboxPass(this) && cnsPass(cns, this);
+	const auto syscallsUsed = importedFunctionsList(this);
+	typeof(syscallsUsed) syscallsPotentialDanger = {
+		"memopen", "fwrite", "socket", "GetProcAddress", "IsVmPresent"
+	};
+	if(syscallsPotentialDanger.intersect(syscallsUsed)) {
+  	return false;
+	}
+	return sandboxPass(this) && cnsPass(cns, this);
 }
 hook<launches>((PortableExecutable *this) { /*hash, signature, or hash+signature analysis*/ });
 
 /* Analysis sandbox */
 const bool sandboxPass(const PortableExecutable *this) {
- exec('cp -r /usr/home/sandbox/ /usr/home/sandbox.bak'); /* or produce FS snapshot */
- exec('cp "' + this->path + '" /usr/home/sandbox/');
- chroot("/usr/home/sandbox/", 'strace basename '"', this->path + '" >> strace.outputs');
- exec('mv /usr/home/sandbox/strace.outputs /tmp/strace.outputs');
- exec('rm -r /usr/home/sandbox/');
- exec('mv /usr/home/sandbox.bak /usr/home/sandbox/'); /* or restore FS snapshot */
- return straceOutputsPass("/tmp/strace.outputs");
+	exec('cp -r /usr/home/sandbox/ /usr/home/sandbox.bak'); /* or produce FS snapshot */
+	exec('cp "' + this->path + '" /usr/home/sandbox/');
+	chroot("/usr/home/sandbox/", 'strace basename '"', this->path + '" >> strace.outputs');
+	exec('mv /usr/home/sandbox/strace.outputs /tmp/strace.outputs');
+	exec('rm -r /usr/home/sandbox/');
+	exec('mv /usr/home/sandbox.bak /usr/home/sandbox/'); /* or restore FS snapshot */
+	return straceOutputsPass("/tmp/strace.outputs");
 }
 
 /* Analysis CNS */
@@ -140,43 +141,43 @@ but the synapses use small resources (allow clients to do fast analysis.) */
 void setupAnalysisCns(Cns *cns, const ResultList *pass, const ResultList *abort,
 const ResultList *unreviewed = NULL /* WARNING! Possible danger to use unreviewed samples */
 ) {
- vector<const std::string> inputsPass, inputsUnreviewed, inputsAbort;
- vector<float> outputsPass, outputsUnreviewed, outputsAbort;
- cns->setInputMode(cnsModeString);
- cns->setOutputMode(cnsModeFloat);
- cns->setInputNeurons(max(maxOfSizes(passOrNull->bytes), maxOfSizes(abortOrNull->bytes)));
- cns->setOutputNeurons(1);
- cns->setLayersOfNeurons(6666);
- cns->setNeuronsPerLayer(26666);
- for(foreach pass->bytes as passBytes) {
-  inputsPass.pushback(passBytes);
-  outputsPass.pushback(1.0);
- }
- cns->setTrainingInputs(inputsPass);
- cns->setTrainingOutputs(outputsPass);
- cns->setupSynapses();
- if(NULL != unreviewed) { /* WARNING! Possible danger to use unreviewed samples */
-  for(foreach unreviewed->bytes as unreviewedBytes) {
-   inputsUnreviewed.pushback(unreviewedBytes);
-   outputsUnreviewed.pushback(1 / 2);
-  }
-  cns->setTrainingInputs(inputsUnreviewed);
-  cns->setTrainingOutputs(outputsUnreviewed);
-  cns->setupSynapses();
- }
- for(foreach pass->bytes as passBytes) {
-   inputsAbort.pushback(passBytes);
-   outputsAbort.pushback(0.0);
- }
- cns->setTrainingInputs(inputsAbort);
- cns->setTrainingOutputs(outputsAbort);
- cns->setupSynapses();
+	vector<const std::string> inputsPass, inputsUnreviewed, inputsAbort;
+	vector<float> outputsPass, outputsUnreviewed, outputsAbort;
+	cns->setInputMode(cnsModeString);
+	cns->setOutputMode(cnsModeFloat);
+	cns->setInputNeurons(max(maxOfSizes(passOrNull->bytes), maxOfSizes(abortOrNull->bytes)));
+	cns->setOutputNeurons(1);
+	cns->setLayersOfNeurons(6666);
+	cns->setNeuronsPerLayer(26666);
+	for(foreach pass->bytes as passBytes) {
+		inputsPass.pushback(passBytes);
+		outputsPass.pushback(1.0);
+	}
+	cns->setTrainingInputs(inputsPass);
+	cns->setTrainingOutputs(outputsPass);
+	cns->setupSynapses();
+	if(NULL != unreviewed) { /* WARNING! Possible danger to use unreviewed samples */
+		for(foreach unreviewed->bytes as unreviewedBytes) {
+			inputsUnreviewed.pushback(unreviewedBytes);
+			outputsUnreviewed.pushback(1 / 2);
+		}
+		cns->setTrainingInputs(inputsUnreviewed);
+		cns->setTrainingOutputs(outputsUnreviewed);
+		cns->setupSynapses();
+	}
+	for(foreach pass->bytes as passBytes) {
+		inputsAbort.pushback(passBytes);
+		outputsAbort.pushback(0.0);
+	}
+	cns->setTrainingInputs(inputsAbort);
+	cns->setTrainingOutputs(outputsAbort);
+	cns->setupSynapses();
 }
 const float cnsAnalysis(const Cns *cns, const std::string &bytes) {
- return cns->process<std::string, float>(bytes);
+	return cns->process<std::string, float>(bytes);
 }
 const bool cnsPass(const Cns *cns, const std::string &bytes) {
- return (bool)round(cnsAnalysis(cns, bytes));
+	return (bool)round(cnsAnalysis(cns, bytes));
 }
 
 /* Disinfection CNS */
@@ -186,46 +187,46 @@ const bool cnsPass(const Cns *cns, const std::string &bytes) {
  * and `passOrNull->bytes[x] = NULL` (or "\0") if infected and CNS can not cleanse this.
  */
 ResultList abortOrNull(
- bytes = UTF8 {  /* Uses an antivirus vendor's (such as VirusTotal.com's) databases */
-  infection,
-  infectedSW,
-  ""
- }
+	bytes = UTF8 {  /* Uses an antivirus vendor's (such as VirusTotal.com's) databases */
+		infection,
+		infectedSW,
+		""
+	}
 );
 ResultList passOrNull(
- bytes = UTF8 {  /* Uses an antivirus vendor's (such as VirusTotal.com's) databases */
-  "",
-  SW,
-  newSW
- }
+	bytes = UTF8 {  /* Uses an antivirus vendor's (such as VirusTotal.com's) databases */
+		"",
+		SW,
+		newSW
+	}
 );
 setupDisinfectionCns(cns, &passOrNull, &abortOrNull);
 
 /* Uses more resources than `setupAnalysisCns()` */
 void setupDisinfectionCns(Cns *cns,
- const ResultList *passOrNull, /* Expects `resultList->bytes[x] = NULL` if does not pass */
- const ResultList *abortOrNull /* Expects `resultList->bytes[x] = NULL` if does pass */
+	const ResultList *passOrNull, /* Expects `resultList->bytes[x] = NULL` if does not pass */
+	const ResultList *abortOrNull /* Expects `resultList->bytes[x] = NULL` if does pass */
 ) {
- vector<const std::string> inputsOrNull, outputsOrNull;
- cns->setInputMode(cnsModeString);
- cns->setOutputMode(cnsModeString);
- cns->setInputNeurons(maxOfSizes(passOrNull->bytes));
- cns->setOutputNeurons(maxOfSizes(abortOrNull->bytes));
- cns->setLayersOfNeurons(6666);
- cns->setNeuronsPerLaye(26666);
- assert(passOrNull->bytes.length() == abortOrNull->bytes.length());
- for(int x = 0; passOrNull->bytes.length() > x; ++x) {
-  inputsOrNull.pushback(abortOrNull->bytes[x]);
-  outputsOrNull.pushback(passOrNull->bytes[x]);
- }
- cns->setTrainingInputs(inputsOrNull);
- cns->setTrainingOutputs(outputsOrNull);
- cns->setupSynapses();
+	vector<const std::string> inputsOrNull, outputsOrNull;
+	cns->setInputMode(cnsModeString);
+	cns->setOutputMode(cnsModeString);
+	cns->setInputNeurons(maxOfSizes(passOrNull->bytes));
+	cns->setOutputNeurons(maxOfSizes(abortOrNull->bytes));
+	cns->setLayersOfNeurons(6666);
+	cns->setNeuronsPerLaye(26666);
+	assert(passOrNull->bytes.length() == abortOrNull->bytes.length());
+	for(int x = 0; passOrNull->bytes.length() > x; ++x) {
+		inputsOrNull.pushback(abortOrNull->bytes[x]);
+		outputsOrNull.pushback(passOrNull->bytes[x]);
+	}
+	cns->setTrainingInputs(inputsOrNull);
+	cns->setTrainingOutputs(outputsOrNull);
+	cns->setupSynapses();
 }
 
 /* Uses more resources than `cnsAnalysis()` */
 const std::string cnsDisinfection(const Cns *cns, const std::string &bytes) {
- return cns->process<std::string, std::string>(bytes);
+	return cns->process<std::string, std::string>(bytes);
 }
 
 /* Related to this:

@@ -7,36 +7,36 @@ namespace Susuwu {
 /* "If you're using Python >3.5, PyString_FromString() is PyUnicode_FromString()" */
 #include <Python.h>
 typedef class HsomCns : Cns { /* https://github.com/CarsonScott/HSOM */
- HsomCns() {
-  setenv("PYTHONPATH",".",1);
-  Py_Initialize();
+	HsomCns() {
+ 	setenv("PYTHONPATH",".",1);
+ 	Py_Initialize();
 //  PyRun_SimpleString("import sys; sys.path.append('.')"); PyRun_SimpleString("import hsom; from hsom import SelfOrganizingNetwork;"); /* Was told not to use PyRun because "PyRun requires all results go to stdout" */
-  PyObject *module = PyImport_ImportModule("hsom")
-  if(NULL == module) {throw "'hsom' module not found";}
+ 	PyObject *module = PyImport_ImportModule("hsom")
+ 	if(NULL == module) {throw "'hsom' module not found";}
 	PyObject *selfOrganizingNetwork = PyObject_GetAttrString(module,(char*)"SelfOrganizingNetwork"); /* or	"PyObject *pDict = PyModule_GetDict(module);  PyObject *selfOrganizingNetwork = PyDict_GetItemString(pDict, (char*)"SelfOrganizingNetwork");" */
-  if(NULL == selfOrganizingNetwork || !PyCallable_Check(selfOrganizingNetwork)) {throw "'SelfOrganizingNetwork' object not found";}
-  double result = PyObject_CallFunction(selfOrganizingNetwork, "d", 2.0); /* or "PyObject *pValue=Py_BuildValue("(z)",(char*)"args");	PyObject *pResult=PyObject_CallObject(selfOrganizingNetwork, pValue); if(NULL == pResult) {throw "PyObject_CallObject failed";} double result = PyInt_AsLong(pResult)); Py_DECREF(pValue);" */
-  Py_DECREF(module);
+ 	if(NULL == selfOrganizingNetwork || !PyCallable_Check(selfOrganizingNetwork)) {throw "'SelfOrganizingNetwork' object not found";}
+ 	double result = PyObject_CallFunction(selfOrganizingNetwork, "d", 2.0); /* or "PyObject *pValue=Py_BuildValue("(z)",(char*)"args");	PyObject *pResult=PyObject_CallObject(selfOrganizingNetwork, pValue); if(NULL == pResult) {throw "PyObject_CallObject failed";} double result = PyInt_AsLong(pResult)); Py_DECREF(pValue);" */
+ 	Py_DECREF(module);
  ~HsomCns() {
 #if PYTHON3
-  Py_FinalizeEx();
+ 	Py_FinalizeEx();
 #else
-  Py_Finalize();
+ 	Py_Finalize();
 #endif /* PYTHON3 */
  }
- template<Input>
-  virtual void inputsToSetup(Input inputs);
- template<Output>
-  virtual void outputsToSetup(Output outputs);
- virtual void setInputMode(CnsMode);
- virtual void setOutputMode(CnsMode);
- virtual void setInputNeurons(size_t x);
- virtual void setOutputNeurons(size_t x);
- virtual void setLayersOfNeurons(size_t x);
- virtual void setNeuronsPerLayer(size_t x);
- virtual void setupSynapses();
- template<Input, Output>
-  virtual const Output process(Input input);
+	template<Input>
+ 	virtual void inputsToSetup(Input inputs);
+	template<Output>
+ 	virtual void outputsToSetup(Output outputs);
+	virtual void setInputMode(CnsMode);
+	virtual void setOutputMode(CnsMode);
+	virtual void setInputNeurons(size_t x);
+	virtual void setOutputNeurons(size_t x);
+	virtual void setLayersOfNeurons(size_t x);
+	virtual void setNeuronsPerLayer(size_t x);
+	virtual void setupSynapses();
+	template<Input, Output>
+ 	virtual const Output process(Input input);
 } HsomCns;
 #endif /* Todo */
 
