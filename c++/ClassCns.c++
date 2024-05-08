@@ -1,7 +1,7 @@
 #ifndef INCLUDE_GUARD_c__ClassCns__c__
 #define INCLUDE_GUARD_c__ClassCns__c__
 #include <ctype.h> /* size_t */
-#include "ClassCns.h" /* CnsMode */
+#include "ClassCns.hpp" /* CnsMode */
 namespace Susuwu {
 #ifdef USE_HSOM /* Todo. ( https://stackoverflow.com/questions/3286448/calling-a-python-method-from-c-c-and-extracting-its-return-value ) suggests various syntaxes to use for this, with unanswered comments such as "Does this support classes?" */
 /* "If you're using Python >3.5, PyString_FromString() is PyUnicode_FromString()" */

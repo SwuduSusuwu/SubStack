@@ -1,10 +1,10 @@
 #ifndef INCLUDE_GUARD_c___VirusAnalysis_c__
 #define INCLUDE_GUARD_c___VirusAnalysis_c__
 #include <iostream> /* std::string std::vector */
-#include "VirusAnalysis.h" /* passList, abortList, localPassList */
-#include "ClassCns.h" /* Cns, CnsMode */
-#include "ClassResultList.h" /* ResultList, smallestUniqueSubstr */
-#include "ClassPortableExecutable.h" /* Not included */
+#include "VirusAnalysis.hpp" /* passList, abortList, localPassList */
+#include "ClassCns.hpp" /* Cns, CnsMode */
+#include "ClassResultList.hpp" /* ResultList, smallestUniqueSubstr */
+#include "ClassPortableExecutable.hpp" /* Not included */
 /* (Work-in-progress) virus analysis (can use hashes, signatures, functional analysis, sandboxes, and artificial CNS (central nervous systems */
 namespace Susuwu {
 hook<launches>((const PortableExecutable *this) { /* Should use OS-specific "hook"/"callback" for `exec()`/app-launches */

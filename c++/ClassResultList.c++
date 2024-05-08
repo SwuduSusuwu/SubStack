@@ -2,7 +2,7 @@
 #define INCLUDE_GUARD_c__ClassResultList_c__
 #include <ctype.h> /* size_t */
 #include <iostream> /* std::string */
-#include "ClassResultList.h" /* ResultList */
+#include "ClassResultList.hpp" /* ResultList */
 namespace Susuwu {
 const bool resultListHashesHas(const ResultList *haystack, ResultList *caches, std::string bytes) {
  if(caches->hashes.has(Sha2(bytes))) {

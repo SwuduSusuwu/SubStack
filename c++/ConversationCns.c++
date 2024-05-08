@@ -1,9 +1,9 @@
 #ifndef INCLUDE_GUARD_c__ConversationCns_c__
 #define INCLUDE_GUARD_c__ConversationCns_c__
 #include <iostream> /* std::string std::vector */
-#include "ConversationCns.h"
-#include "ClassCns.h" /* Cns, CnsMode */
-#include "ClassResultList.h" /* ResultList */
+#include "ConversationCns.hpp"
+#include "ClassCns.hpp" /* Cns, CnsMode */
+#include "ClassResultList.hpp" /* ResultList */
 namespace Susuwu {
 /* (Work-in-progress) conversation bots with artificial CNS.
  * `HSOM` (the simple Python artificial CNS) can do this with results almost as complex as "ChatGPT 4.0" (or as "Claude-3 Opus"); */
