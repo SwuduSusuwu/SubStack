@@ -1,3 +1,4 @@
+/* Licenses: allows all uses ("Creative Commons"/"Apache 2") */
 #ifndef INCLUDE_GUARD_c___VirusAnalysis_h__
 #define INCLUDE_GUARD_c___VirusAnalysis_h__
 #include <iostream> /* std::string */

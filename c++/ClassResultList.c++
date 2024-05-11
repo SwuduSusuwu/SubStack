@@ -1,3 +1,4 @@
+/* Licenses: allows all uses ("Creative Commons"/"Apache 2") */
 #ifndef INCLUDE_GUARD_c__ClassResultList_c__
 #define INCLUDE_GUARD_c__ClassResultList_c__
 #include <ctype.h> /* size_t */

@@ -1,3 +1,4 @@
+/* Licenses: allows all uses ("Creative Commons"/"Apache 2") */
 #ifndef INCLUDE_GUARD_c__ConversationCns_c__
 #define INCLUDE_GUARD_c__ConversationCns_c__
 #include <iostream> /* std::string std::vector */

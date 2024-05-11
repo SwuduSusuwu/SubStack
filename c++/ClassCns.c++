@@ -1,3 +1,4 @@
+/* Licenses: allows all uses ("Creative Commons"/"Apache 2") */
 #ifndef INCLUDE_GUARD_c__ClassCns__c__
 #define INCLUDE_GUARD_c__ClassCns__c__
 #include <ctype.h> /* size_t */
