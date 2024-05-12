@@ -2,6 +2,7 @@
 #ifndef INCLUDE_GUARD_c___VirusAnalysis_c__
 #define INCLUDE_GUARD_c___VirusAnalysis_c__
 #include <iostream> /* std::string std::vector */
+#include <tuple> /* std::tuple */
 #include "VirusAnalysis.hpp" /* passList, abortList, localPassList */
 #include "ClassCns.hpp" /* Cns, CnsMode */
 #include "ClassResultList.hpp" /* ResultList, smallestUniqueSubstr */
@@ -142,8 +143,7 @@ but the synapses use small resources (allow clients to do fast analysis.) */
 void setupAnalysisCns(Cns *cns, const ResultList *pass, const ResultList *abort,
 const ResultList *unreviewed = NULL /* WARNING! Possible danger to use unreviewed samples */
 ) {
-	vector<const std::string> inputsPass, inputsUnreviewed, inputsAbort;
-	vector<float> outputsPass, outputsUnreviewed, outputsAbort;
+	std::vector<const std::tuple<const std::string, float>> inputsToPass, inputsToUnreviewed, inputsToAbort;
 	cns->setInputMode(cnsModeString);
 	cns->setOutputMode(cnsModeFloat);
 	cns->setInputNeurons(max(maxOfSizes(passOrNull->bytes), maxOfSizes(abortOrNull->bytes)));
@@ -151,31 +151,22 @@ const ResultList *unreviewed = NULL /* WARNING! Possible danger to use unreviewe
 	cns->setLayersOfNeurons(6666);
 	cns->setNeuronsPerLayer(26666);
 	for(foreach pass->bytes as passBytes) {
-		inputsPass.pushback(passBytes);
-		outputsPass.pushback(1.0);
+		inputsToPass.pushback({passBytes, 1.0});
 	}
-	cns->setTrainingInputs(inputsPass);
-	cns->setTrainingOutputs(outputsPass);
-	cns->setupSynapses();
+	cns->setupSynapses(inputsToPass);
 	if(NULL != unreviewed) { /* WARNING! Possible danger to use unreviewed samples */
 		for(foreach unreviewed->bytes as unreviewedBytes) {
-			inputsUnreviewed.pushback(unreviewedBytes);
-			outputsUnreviewed.pushback(1 / 2);
+			inputsToUnreviewed.pushback({unreviewedBytes, 1 / 2});
 		}
-		cns->setTrainingInputs(inputsUnreviewed);
-		cns->setTrainingOutputs(outputsUnreviewed);
-		cns->setupSynapses();
+		cns->setupSynapses(inputsToUnreviewed);
 	}
 	for(foreach pass->bytes as passBytes) {
-		inputsAbort.pushback(passBytes);
-		outputsAbort.pushback(0.0);
+		inputsToAbort.pushback({passBytes, 0.0});
 	}
-	cns->setTrainingInputs(inputsAbort);
-	cns->setTrainingOutputs(outputsAbort);
-	cns->setupSynapses();
+	cns->setupSynapses(inputsToAbort);
 }
 const float cnsAnalysis(const Cns *cns, const std::string &bytes) {
-	return cns->process<std::string, float>(bytes);
+	return cns->processToFloat(bytes);
 }
 const bool cnsPass(const Cns *cns, const std::string &bytes) {
 	return (bool)round(cnsAnalysis(cns, bytes));
@@ -208,7 +199,7 @@ void setupDisinfectionCns(Cns *cns,
 	const ResultList *passOrNull, /* Expects `resultList->bytes[x] = NULL` if does not pass */
 	const ResultList *abortOrNull /* Expects `resultList->bytes[x] = NULL` if does pass */
 ) {
-	vector<const std::string> inputsOrNull, outputsOrNull;
+	std::vector<const std::tuple<const std::string, const std::string>> inputsToOutputs;
 	cns->setInputMode(cnsModeString);
 	cns->setOutputMode(cnsModeString);
 	cns->setInputNeurons(maxOfSizes(passOrNull->bytes));
@@ -217,17 +208,14 @@ void setupDisinfectionCns(Cns *cns,
 	cns->setNeuronsPerLaye(26666);
 	assert(passOrNull->bytes.length() == abortOrNull->bytes.length());
 	for(int x = 0; passOrNull->bytes.length() > x; ++x) {
-		inputsOrNull.pushback(abortOrNull->bytes[x]);
-		outputsOrNull.pushback(passOrNull->bytes[x]);
+		inputsToOutputsl.pushback({abortOrNull->bytes[x], passOrNull->bytes[x]});
 	}
-	cns->setTrainingInputs(inputsOrNull);
-	cns->setTrainingOutputs(outputsOrNull);
-	cns->setupSynapses();
+	cns->setupSynapses(inputsToOutputs);
 }
 
 /* Uses more resources than `cnsAnalysis()` */
 const std::string cnsDisinfection(const Cns *cns, const std::string &bytes) {
-	return cns->process<std::string, std::string>(bytes);
+	return cns->processToString(bytes);
 }
 
 /* Related to this:

@@ -2,6 +2,7 @@
 #ifndef INCLUDE_GUARD_c__ConversationCns_c__
 #define INCLUDE_GUARD_c__ConversationCns_c__
 #include <iostream> /* std::string std::vector */
+#include <tuple> /* std::tuple */
 #include "ConversationCns.hpp"
 #include "ClassCns.hpp" /* Cns, CnsMode */
 #include "ClassResultList.hpp" /* ResultList */
@@ -50,7 +51,7 @@ void setupConversationCns(Cns *cns,
 	const ResultList *questionsOrNull, /* Expects `questionsOrNull>bytes[x] = NULL` if no question (new conversation synthesis) */
 	const ResultList *responsesOrNull /* Expects `responsesOrNull->bytes[x] = NULL` if should not respond */
 ) {
-	vector<const std::string> inputsOrNull, outputsOrNull;
+	std::vector<const std::tuple<const std::string, const std::string>> inputToOutputs;
 	cns->setInputMode(cnsModeString);
 	cns->setOutputMode(cnsModeString);
 	cns->setInputNeurons(maxOfSizes(questionsOrNull->bytes));
@@ -59,16 +60,13 @@ void setupConversationCns(Cns *cns,
 	cns->setNeuronsPerLayer(26666);
 	assert(questionsOrNull->bytes.length() == questionsOrNull->bytes.length());
 	for(int x = 0; questionsOrNull->bytes.length() > x; ++x) {
-  inputsOrNull.pushback(questionsOrNull->bytes[x]);
-  outputsOrNull.pushback(responsesOrNull->bytes[x]);
+		inputsToOutputs.pushback({questionsOrNull->bytes[x], responsesOrNull->bytes[x]});
 	}
-	cns->setTrainingInputs(inputsOrNull);
-	cns->setTrainingOutputs(outputsOrNull);
-	cns->setupSynapses();
+	cns->setupSynapses(inputsToOutputs);
 }
 
 const std::string cnsConversation(const Cns *cns, const std::string &bytes) {
-	return cns->process<std::string, std::string>(bytes);
+	return cns->processToString(bytes);
 }
 
 void cnsMultipleInputsProcess(const Cns *cns) {
@@ -88,7 +86,7 @@ void cnsMultipleInputsProcess(const Cns *cns) {
 	}
 #else
 	while(utf8Bytes << std::cin) {
-	vector<std::string> responses = explode(cns->process<std::string, std::string>(bytes), "<delimiterSeparatesMultiplePossibleResponses>");
+	vector<std::string> responses = explode(cns->processToString(bytes), "<delimiterSeparatesMultiplePossibleResponses>");
  	if(utf8Bytes == previous && responses.size() > 1 + nthResponse) {
    ++nthResponse; /* Similar to "suggestions" for next questions, but just uses previous question to give new responses */
  	} else {
