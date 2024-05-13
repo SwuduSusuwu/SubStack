@@ -5,12 +5,15 @@
 #include <ctype.h> /* size_t */
 #include "ClassCns.hpp" /* CnsMode */
 namespace Susuwu {
-#ifdef USE_HSOM_CNS /* Todo. ( https://stackoverflow.com/questions/3286448/calling-a-python-method-from-c-c-and-extracting-its-return-value ) suggests various syntaxes to use for this, with unanswered comments such as "Does this support classes?" */
+#ifdef USE_HSOM_CNS
+/* Sources: `git clone https://github.com/CarsonScott/HSOM.git`
+ * Install: `pip install pynum && pip install json && pip install git+https://github.com/CarsonScott/HSOM.git`
+ * Documentation: `less HSOM/README.md` `less HSOM/Documentation.md` */
 /* "If you're using Python >3.5, PyString_FromString() is PyUnicode_FromString()" */
 #include <Python.h> /* Sources: `pkg install python` */
-typedef class HsomCns : Cns { /* Sources: `git clone https://github.com/CarsonScott/HSOM.git` */
-	//template<Input, Output> void setupSynapses(const std::vector<std::tuple<Input, Output>) { /* TODO: templates not allowed for virtual functions with C++ ( https://stackoverflow.com/a/78440416/24473928 ), so must produce codes for each combination of inputMode+outputMode */
-	void setupSynapses(const std::vector<std::tuple<float, float>) {
+typedef class HsomCns : Cns { /* Todo. ( https://stackoverflow.com/questions/3286448/calling-a-python-method-from-c-c-and-extracting-its-return-value ) suggests various syntaxes to use for this, with unanswered comments such as "Does this support classes?" */
+	//template<Input, Output> void setupSynapses(const std::vector<std::tuple<Input, Output>>) { /* TODO: templates not allowed for virtual functions with C++ ( https://stackoverflow.com/a/78440416/24473928 ), so must produce codes for each combination of inputMode+outputMode */
+	void setupSynapses(const std::vector<std::tuple<float, float>>) {
  	setenv("PYTHONPATH",".",1);
  	Py_Initialize();
 //  PyRun_SimpleString("import sys; sys.path.append('.')"); PyRun_SimpleString("import hsom; from hsom import SelfOrganizingNetwork;"); 
@@ -70,23 +73,13 @@ samples = []");
 #endif /* PYTHON3 */
  }
 #endif /* USE_PYRUN else */
-	template<Input>
- 	virtual void inputsToSetup(Input inputs);
-	template<Output>
- 	virtual void outputsToSetup(Output outputs);
-	virtual void setInputMode(CnsMode);
-	virtual void setOutputMode(CnsMode);
-	virtual void setInputNeurons(size_t x);
-	virtual void setOutputNeurons(size_t x);
-	virtual void setLayersOfNeurons(size_t x);
-	virtual void setNeuronsPerLayer(size_t x);
-	virtual void setupSynapses();
-	template<Input, Output>
- 	virtual const Output process(Input input);
 } HsomCns;
 #endif /* USE_HSOM_CNS */
+
 #ifdef USE_APXR_CNS
-typedef class ApxrCns : Cns { /* Sources: `git clone https://github.com/Rober-t/apxr_run.git` */
+/* Sources: `git clone https://github.com/Rober-t/apxr_run.git` 
+ * Howto install apxr_run: `less apxr_run/README.md` or `lynx https://github.com/Rober-t/apxr_run/blob/master/README.md` */
+typedef class ApxrCns : Cns {
 /* Todo: https://stackoverflow.com/questions/1811516/integrating-erlang-with-c (first result for "Howto use Erlang functions from C/C++"):
  * ""Port drivers: you can link a C code to the Erlang VM, and access it using port_command."" references https://www.erlang.org/doc/tutorial/c_portdriver.html , which appears to just show howto use C/C++ functions from Erlang (not vice versa)
  * ""C Nodes: With the ei library you can mimic a VM and talk to your Erlang VMs using the Erlang distribution format."" references https://www.erlang.org/doc/man/ei.html , which shows some promises

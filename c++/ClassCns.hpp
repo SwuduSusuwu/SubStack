@@ -65,7 +65,7 @@ private:
 
 #ifdef USE_HSOM_CNS
 typedef class HsomCns : Cns {
-/* Todo: `HSOM` is simple Python-based CNS from https://github.com/CarsonScott/HSOM 
+/* Work-in-progress (`ClassCns.c++` for more information): `HSOM` is simple Python-based CNS from https://github.com/CarsonScott/HSOM 
  * Examples of howto setup `HSOM` as artificial CNS; https://github.com/CarsonScott/HSOM/tree/master/examples
  * [ https://stackoverflow.com/questions/3286448/calling-a-python-method-from-c-c-and-extracting-its-return-value ] suggests various syntaxes to use for this, with unanswered comments such as "Does this support classes?"
  */
@@ -76,7 +76,7 @@ typedef class HsomCns : Cns {
 
 #ifdef USE_APXR_CNS
 typedef class ApxrCns : Cns {
-/* Todo: `apxr` is complex Erlang-based CNS from https://github.com/Rober-t/apxr_run/
+/* Work-in-progress (`ClassCns.c++` for more information): `apxr` is complex Erlang-based CNS from https://github.com/Rober-t/apxr_run/
  * Examples of howto setup `apxr` as artificial CNS; https://github.com/Rober-t/apxr_run/blob/master/src/examples/
  * "apxr_run" has various FLOSS neural network activation functions (absolute, average, standard deviation, sqrt, sin, tanh, log, sigmoid, cos), plus sensor functions (vector difference, quadratic, multiquadric, saturation [+D-zone], gaussian, cartesian/planar/polar distances): https://github.com/Rober-t/apxr_run/blob/master/src/lib/functions.erl
  * Various FLOSS neuroplastic functions (self-modulation, Hebbian function, Oja's function): https://github.com/Rober-t/apxr_run/blob/master/src/lib/plasticity.erl
