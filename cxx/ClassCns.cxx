@@ -2,16 +2,35 @@
 #ifndef INCLUDES_cxx_ClassCns_cxx
 #define INCLUDES_cxx_ClassCns_cxx
 #include <tuple> /* std::tuple */
+#include <vector> /* std::vector */
 #include <ctype.h> /* size_t */
+#ifdef _POSIX_VERSION
+#include <unistd.h> /* execve */
+#endif /* def _POSIX_VERSION */
 #include "ClassCns.hxx" /* CnsMode */
 namespace Susuwu {
+const int posixExec(const std::string &executable, const std::string &argsS, const std::string &envVarsS) {
+#ifdef _POSIX_VERSION
+	char *args[] = {
+		const_cast<char *>(executable.c_str()),
+		const_cast<char *>(argsS.c_str()),
+		NULL
+	};
+	char *envVars[] = {
+		const_cast<char *>(envVarsS.c_str()),
+		NULL
+	};
+	return execve(args[0], args, envVars);
+#endif /* def _POSIX_VERSION */
+}
+
 #ifdef USE_HSOM_CNS
 /* Sources: `git clone https://github.com/CarsonScott/HSOM.git`
  * Install: `pip install pynum && pip install json && pip install git+https://github.com/CarsonScott/HSOM.git`
  * Documentation: `less HSOM/README.md` `less HSOM/Documentation.md` */
 /* "If you're using Python >3.5, PyString_FromString() is PyUnicode_FromString()" */
 #include <Python.h> /* Sources: `pkg install python` */
-typedef class HsomCns : Cns { /* Todo. ( https://stackoverflow.com/questions/3286448/calling-a-python-method-from-c-c-and-extracting-its-return-value ) suggests various syntaxes to use for this, with unanswered comments such as "Does this support classes?" */
+typedef class HsomCns : Cns { /* TODO. ( https://stackoverflow.com/questions/3286448/calling-a-python-method-from-c-c-and-extracting-its-return-value ) suggests various syntaxes to use for this, with unanswered comments such as "Does this support classes?" */
 	//template<Input, Output> void setupSynapses(const std::vector<std::tuple<Input, Output>>) { /* TODO: templates not allowed for virtual functions with C++ ( https://stackoverflow.com/a/78440416/24473928 ), so must produce codes for each combination of inputMode+outputMode */
 	void setupSynapses(const std::vector<std::tuple<float, float>>) {
  	setenv("PYTHONPATH",".",1);
@@ -58,7 +77,7 @@ samples = []");
 	PyRun_SimpleString("for i in range(200):
     self_organizing_network.train(samples)
 	");
-#else /* USE_PYRUN else */
+#else /* else !USE_PYRUN */
  	PyObject *module = PyImport_ImportModule("hsom")
  	if(NULL == module) {throw "'hsom' module not found";}
 	PyObject *selfOrganizingNetwork = PyObject_GetAttrString(module,(char*)"SelfOrganizingNetwork"); /* or	"PyObject *pDict = PyModule_GetDict(module);  PyObject *selfOrganizingNetwork = PyDict_GetItemString(pDict, (char*)"SelfOrganizingNetwork");" */
@@ -68,9 +87,9 @@ samples = []");
  ~HsomCns() {
 #if PYTHON3
  	Py_FinalizeEx();
-#else
+#else /* else !PYTHON */
  	Py_Finalize();
-#endif /* PYTHON3 */
+#endif /* PYTHON3 else */
  }
 #endif /* USE_PYRUN else */
 } HsomCns;
@@ -80,7 +99,7 @@ samples = []");
 /* Sources: `git clone https://github.com/Rober-t/apxr_run.git` 
  * Howto install apxr_run: `less apxr_run/README.md` or `lynx https://github.com/Rober-t/apxr_run/blob/master/README.md` */
 typedef class ApxrCns : Cns {
-/* Todo: https://stackoverflow.com/questions/1811516/integrating-erlang-with-c (first result for "Howto use Erlang functions from C/C++"):
+/* TODO: https://stackoverflow.com/questions/1811516/integrating-erlang-with-c (first result for "Howto use Erlang functions from C/C++"):
  * ""Port drivers: you can link a C code to the Erlang VM, and access it using port_command."" references https://www.erlang.org/doc/tutorial/c_portdriver.html , which appears to just show howto use C/C++ functions from Erlang (not vice versa)
  * ""C Nodes: With the ei library you can mimic a VM and talk to your Erlang VMs using the Erlang distribution format."" references https://www.erlang.org/doc/man/ei.html , which shows some promises
  * ""The closest thing I know for interfacing Erlang with C++ directly is EPAPI. Of course it relies on the tried and tested C erl_interface that comes standard with the Erlang distribution."" references https://epapi.googlecode.com/ , which returns "404 not found".

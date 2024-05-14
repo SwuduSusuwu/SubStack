@@ -1,463 +1,794 @@
 _Uses Github's markdown format_
-**Virus analysis tools should use local heuristical analysis/sandboxes plus artificial CNS (central nervous systems) to secure us**
-This post ( https://swudususuwu.substack.com/p/howto-produce-better-virus-scanners ) allows all uses.
-Has Github's markup format for text.
-Overhead of full static analysis + sandbox + CNS = 1 second (approx) for each new executable.)
-With caches, this protects all launches, but past the first launch of a particular executable, the overhead reduces to less than 1 millisecond (just cost to lookup from `localPassList.hashes`)
+_[This post](https://swudususuwu.substack.com/p/howto-produce-better-virus-scanners) allows all uses._
 
-The most simple virus analysis tools just use hashes/signatures to secure us (so can understand what more complex analysis would do, have put examples of simple hashes/signatures):
+Static analysis + sandbox + CNS = 1 second (approx) analysis of **new executables** (protects all app launches,) but _caches_ reduce this to **less than 1ms** (just cost to lookup `ResultList::hashes`, which is `std::unordered_set<decltype(Sha2(const FileBytecode &))>`; a hashmap of hashes).
 
-Reused pseudocodes (C++);
+For the most new sources, use apps such as [iSH](https://apps.apple.com/us/app/ish-shell/id1436902243) (for **iOS**) or [Termux](https://play.google.com/store/apps/details?id=com.termux) (for **Android OS**) to run this:
+`git clone https://github.com/SwuduSusuwu/SubStack.git && cd Substack`
+`less` [cxx/ClassPortableExecutable.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ClassPortableExecutable.hxx)
 ```
-typedef struct ResultList {
- unordered_map<decltype(Sha2())> hashes;
- map<const std::string> signatures; /* Just has known uses for abortList. Unknown if signatures have uses for passList. */
- map<const std::string> bytes; /* Copies of all files the database has. Uses lots of space. Just populate this for signature synthesis and to  train CNS. */
-/* Used `std::string` for binaries (versus `vector<char>`) because:
+typedef std::string FilePath; /* TODO: `std::char_traits<unsigned char>`, `std::basic_string<unsigned char>("string literal")` */
+typedef FilePath FileBytecode; /* Uses `std::string` for bytecode (versus `std::vector`) because:
  * "If you are going to use the data in a string like fashon then you should opt for std::string as using a std::vector may confuse subsequent maintainers. If on the other hand most of the data manipulation looks like plain maths or vector like then a std::vector is more appropriate." -- https://stackoverflow.com/a/1556294/24473928
 */
+typedef FilePath FileHash; /* TODO: `std::unordered_set<std::basic_string<unsigned char>>` */
+typedef class PortableExecutable {
+/* TODO: Unimplemented (work-in-progress) just to allow `cxx/VirusAnalysis.cxx` to compile. You should replace with official implementation of this. */
+public:
+	FilePath path; /* Suchas "C:\Program.exe" or "/usr/bin/library.so" */
+	FileBytecode bytecode; /* compiled programs; bytecode */
+	std::string hex; /* `hexdump(path)`, hexadecimal, for C string functions */
+} PortableExecutable;
+```
+`less` [cxx/ClassResultList.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ClassResultList.hxx)
+```
+typedef FileHash ResultListHash;
+typedef FileBytecode ResultListBytecode; /* Should have structure of FileBytecode, but is not just for files, can use for UTF8/webpages, so have a new type for this */
+typedef FilePath ResultListSignature; /* TODO: `typedef ResultListBytecode ResultListSignature; ResultListSignature("string literal");` */
+typedef struct ResultList { /* Lists of files (or pages) */
+	std::unordered_set<ResultListHash> hashes; /* Unique checksums of files (or pages), to avoid duplicates, plus to do fast checks for existance */
+	std::vector<ResultListSignature> signatures; /* Smallest substrings (or regexes, or Universal Resource Locator) unique to this, has uses close to `hashes` but can match if files have small differences */
+	std::vector<ResultListBytecode> bytecodes; /* Whole files (or webpages); uses lots of space, just populate this for signature synthesis (or training CNS). */
 } ResultList;
-ResultList passList, abortList; /* Stored on disk, all clients use clones of this */
-ResultList localPassList; /* Temporary local caches */
-const bool passListHashesHas(const char *bytes) {
- if(localPassList.hashes.has(Sha2(bytes))) {
-  return true;
- } else if(passList.hashes.has(Sha2(bytes))) { /* Slow, if billions of hashes */
-  localPassList.hashes.pushback(Sha2(bytes)); /* Caches results */
-  return true;
- }
- return false;
-}
-const bool staticAnalysisPass(const PortableExecutable *this); /* To skip, define as "return true;" */
-const bool sandboxPass(const PortableExecutable *this); /* To skip, define as "return true;" */
-const bool straceOutputsPass(const char *path); /* Unimplemented, `strace()` resources have clues how to do this */
-const bool cnsPass(const Cns *cns, const std::string &bytes); /* To skip, define as "return true;" */
-vector<char> cnsDisinfection(const Cns *cns, const std::string &bytes); /* This can undo infection from bytecodes (restores to fresh executables) */
-template<Container>
-#if ALL_USES_TEXT
-size_t maxOfSizes(Container<const char *> &list) {
- auto it = std::max_element(list.begin(), list.end(), [](const auto& s, const auto& x) { return strlen(s) < strlen(x); });
- return strlen(*it); /* WARNING! `strlen()` just does UTF8-strings/hex-strings; if binary, must use `it->size()` */
-}
-#else
-size_t maxOfSizes(Container<const std::string> &list) {
- auto it = std::max_element(list.begin(), list.end(), [](const auto& s, const auto& x) { return s.size() < x.size(); });
- return it->size();
-}
-#endif /* if ALL_USES_TEXT */
+const bool resultListHashesHas(const ResultList &list, ResultList &caches, const std::string &bytecode);
 
+template<class List>
+const size_t maxOfSizes(const List &list) {
+#if PREFERENCE_IS_CSTR
+	size_t max = 0;
+	for(auto it = &list[0]; list.end() != it; ++it) { const size_t temp = strlen(*it); if(temp > max) {max = temp;}}
+	return max; /* WARNING! `strlen()` just does UTF8-strings/hex-strings; if binary, must use `it->size()` */
+#else /* else !PREFERENCE_IS_CSTR */
+	auto it = std::max_element(list.begin(), list.end(), [](const auto &s, const auto &x) { return s.size() < x.size(); });
+	return it->size();
+#endif /* PREFERENCE_IS_CSTR else */
+}
+
+/* @pre @code std::is_sorted(list.begin(), list.end()) && std::is_sorted(list2.begin(), list2.end()) @endcode */
+template<class List>
+const List listIntersections(const List &list, const List &list2) {
+	List intersections;
+	std::set_intersection(list.begin(), list.end(), list2.begin(), list2.end(), std::back_inserter(intersections));
+	return intersections;
+}
+template<class List>
+const bool listsIntersect(const List &list, const List &list2) {
+	return listIntersections(list, list2).size();
+}
+
+template<class List>
+const decltype(List::begin()) listFind(const List &list, const decltype(*list.begin()) &x) {
+	return std::find(list.begin(), list.end(), x);
+}
+
+template<class List>
+const bool listHas(const List &list, const decltype(*list.begin()) &x) {
+	return list.end() != std::find(list.begin(), list.end(), x);
+}
+template<class List>
+const bool listHas(const List &list, std::string::const_iterator s, std::string::const_iterator x) {
+	for(decltype(list[0]) chars : list) {
+		if(chars.end() != std::search(chars.begin(), chars.end(), s, x, [](char ch1, char ch2) { return ch1 == ch2; })) {
+			return true;
+		}
+	}
+	return false;
+}
+
+template<class S>
+const std::vector<S> explodeToList(const S &s, const S &token) {
+	std::vector<S> list;
+	for(auto x = s.begin(); s.end() != x; ) {
+		auto it = std::search(x, s.end(), token.begin(), token.end(), [](char ch1, char ch2) { return ch1 == ch2; });
+		list.push_back(S(x, it));
+		if(s.end() == x) {
+			return list;
+		}
+		x = it;
+	}
+	return list;
+}
+
+template<class List>
+const std::tuple<std::string::const_iterator, std::string::const_iterator> smallestUniqueSubstr(const std::string &chars, const List &list) {
+	size_t smallest = chars.size();
+	auto retBegin = chars.begin(), retEnd = chars.end();
+	for(auto s = retBegin; chars.end() != s; ++s) {
+		for(auto x = chars.end() - 1; s != x; --x) {
+			if(smallest <= x - s || listHas(list, s, x)) {
+				break;
+			}
+			smallest = x - s;
+			retBegin = s, retEnd = x;
+		}
+	} /* Incremental `for()` loops, is a slow method to produce unique substrings; should use binary searches, or quadratic searches, or look for the standard function which optimizes this. */
+	return {retBegin, retEnd};
+}
+```
+`less` [cxx/ClassResultList.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ClassResultList.cxx)
+```
+const bool resultListHashesHas(const ResultList &list, ResultList &caches, const std::string &chars) {
+	auto charsSha2 = Sha2(chars);
+	if(listHas(caches.hashes, charsSha2)) {
+		return true;
+	} else if(listHas(list.hashes, charsSha2)) { /* Slow, if billions of hashes */
+		caches.hashes.insert(charsSha2); /* Caches results */
+		return true;
+	}
+	return false;
+}
+```
+`less` [cxx/ClassCns.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ClassCns.hxx)
+```
 typedef enum CnsMode {
- cnsModeInt,
- cnsModeUint,
- cnsModeFloat,
- cnsModeDouble,
- cnsModeChar,
- cnsModeVectorInt,
- cnsModeVectorUint,
- cnsModeVectorFloat,
- cnsModeVectorDouble,
- cnsModeVectorChar,
- cnsModeString = cnsModeVectorChar
+	cnsModeBool, cnsModeChar, cnsModeInt, cnsModeUint, cnsModeFloat, cnsModeDouble,
+	cnsModeVectorBool, cnsModeVectorChar, cnsModeVectorInt, cnsModeVectorUint, cnsModeVectorFloat, cnsModeVectorDouble,
+#ifdef CXX_17
+	cnsModeString = cnsModeVectorChar /* std::string == std::vector<char> */
+#else /* else !def CXX_17 */
+/* https://stackoverflow.com/questions/5115166/how-to-construct-a-stdstring-from-a-stdvectorchar */
+	cnsModeString
+#endif /* def CXX_17 else */
 } CnsMode;
 
+/* @pre @code std::ifstream(executable); @endcode */
+const int posixExec(const std::string &executable, const std::string &argsS = "", const std::string &envVarsS = "");
 typedef class Cns {
- template<Input>
-  virtual void inputsToSetup(Input inputs);
- template<Output>
-  virtual void outputsToSetup(Output outputs);
- virtual void setInputMode(CnsMode);
- virtual void setOutputMode(CnsMode);
- virtual void setInputNeurons(size_t x);
- virtual void setOutputNeurons(size_t x);
- virtual void setLayersOfNeurons(size_t x);
- virtual void setNeuronsPerLayer(size_t x);
- virtual void setupSynapses();
- template<Input, Output>
-  virtual const Output process(Input input);
+public:
+	virtual const bool hasImplementation() const {return typeid(Cns) != typeid(this);}
+	virtual const bool isInitialized() const {return initialized;}
+	virtual void setInitialized(const bool is) {initialized = is;}
+	virtual void setInputMode(CnsMode x) {inputMode = x;}
+	virtual void setOutputMode(CnsMode x) {outputMode = x;}
+	virtual void setInputNeurons(size_t x) {inputNeurons = x;}
+	virtual void setOutputNeurons(size_t x) {outputNeurons = x;}
+	virtual void setLayersOfNeurons(size_t x) {layersOfNeurons = x;}
+	virtual void setNeuronsPerLayer(size_t x) {neuronsPerLayer = x;}
+	/* @throw bad_alloc
+	 * @pre @code hasImplementation() @endcode
+	 * @post @code isInitialized() @endcode */
+	// template<Intput, Output> virtual void setupSynapses(std::vector<std::tuple<Input, Output>> inputsToOutputs); /* C++ does not support templates of virtual functions ( https://stackoverflow.com/a/78440416/24473928 ) */
+	/* @pre @code isInitialized() @endcode */
+	// template<Input, Output> virtual const Output process(Input input);
+#define templateWorkaround(CNS_MODE, TYPEDEF) \
+	virtual void setupSynapses(const std::vector<const std::tuple<TYPEDEF, const bool>> &inputsToOutputs) {inputMode = CNS_MODE; outputMode = cnsModeBool;}\
+	virtual void setupSynapses(const std::vector<const std::tuple<TYPEDEF, const char>> &inputsToOutputs) {inputMode = CNS_MODE; outputMode = cnsModeChar;}\
+	virtual void setupSynapses(const std::vector<const std::tuple<TYPEDEF, const int>> &inputsToOutputs) {inputMode = CNS_MODE; outputMode = cnsModeInt;}\
+	virtual void setupSynapses(const std::vector<const std::tuple<TYPEDEF, const unsigned int>> &inputsToOutputs) {inputMode = CNS_MODE; outputMode = cnsModeUint;}\
+	virtual void setupSynapses(const std::vector<const std::tuple<TYPEDEF, float>> &inputsToOutputs) {inputMode = CNS_MODE; outputMode = cnsModeFloat;}\
+	virtual void setupSynapses(const std::vector<const std::tuple<TYPEDEF, const double>> &inputsToOutputs) {inputMode = CNS_MODE; outputMode = cnsModeDouble;}\
+	virtual void setupSynapses(const std::vector<const std::tuple<TYPEDEF, const std::vector<bool>>> &inputsToOutputs) {inputMode = CNS_MODE; outputMode = cnsModeVectorBool;}\
+	virtual void setupSynapses(const std::vector<const std::tuple<TYPEDEF, const std::vector<char>>> &inputsToOutputs) {inputMode = CNS_MODE; outputMode = cnsModeVectorChar;}\
+	virtual void setupSynapses(const std::vector<const std::tuple<TYPEDEF, const std::vector<int>>> &inputsToOutputs) {inputMode = CNS_MODE; outputMode = cnsModeVectorInt;}\
+	virtual void setupSynapses(const std::vector<const std::tuple<TYPEDEF, const std::vector<unsigned int>>> &inputsToOutputs) {inputMode = CNS_MODE; outputMode = cnsModeVectorUint;}\
+	virtual void setupSynapses(const std::vector<const std::tuple<TYPEDEF, const std::vector<float>>> &inputsToOutputs) {inputMode = CNS_MODE; outputMode = cnsModeVectorFloat;}\
+	virtual void setupSynapses(const std::vector<const std::tuple<TYPEDEF, const std::vector<double>>> &inputsToOutputs) {inputMode = CNS_MODE; outputMode = cnsModeVectorDouble;}\
+	virtual void setupSynapses(const std::vector<const std::tuple<TYPEDEF, const std::string>> &inputsToOutputs) {inputMode = CNS_MODE; outputMode = cnsModeString;}\
+	virtual const bool processToBool(TYPEDEF input) const {assert(CNS_MODE == inputMode && cnsModeBool == outputMode); return 0;}\
+	virtual const char processToChar(TYPEDEF input) const {assert(CNS_MODE == inputMode && cnsModeChar == outputMode); return 0;}\
+	virtual const int processToInt(TYPEDEF input) const {assert(CNS_MODE == inputMode && cnsModeInt == outputMode); return 0;}\
+	virtual const unsigned int processToUint(TYPEDEF input) const {assert(CNS_MODE == inputMode && cnsModeUint == outputMode); return 0;}\
+	virtual const float processToFloat(TYPEDEF input) const {assert(CNS_MODE == inputMode && cnsModeFloat == outputMode); return 0;}\
+	virtual const double processToDouble(TYPEDEF input) const {assert(CNS_MODE == inputMode && cnsModeDouble == outputMode); return 9;}\
+	virtual const std::vector<bool> processToVectorBool(TYPEDEF input) const {assert(CNS_MODE == inputMode && cnsModeVectorBool == outputMode); return {};}\
+	virtual const std::vector<char> processToVectorChar(TYPEDEF input) const {assert(CNS_MODE == inputMode && cnsModeVectorChar == outputMode); return {};}\
+	virtual const std::vector<int> processToVectorInt(TYPEDEF input) const {assert(CNS_MODE == inputMode && cnsModeVectorInt == outputMode); return {};}\
+	virtual const std::vector<unsigned int> processToVectorUint(TYPEDEF input) const {assert(CNS_MODE == inputMode && cnsModeVectorUint == outputMode); return {};}\
+	virtual std::vector<float> processToVectorFloat(TYPEDEF input) const {assert(CNS_MODE == inputMode && cnsModeVectorFloat == outputMode); return {};}\
+	virtual const std::vector<double> processToVectorDouble(TYPEDEF input) const {assert(CNS_MODE == inputMode && cnsModeVectorDouble == outputMode); return {};}\
+	virtual const std::string processToString(TYPEDEF input) const {auto val = processToVectorChar(input); return std::string(&val[0], val.size());}
+	templateWorkaround(cnsModeBool, const bool)
+	templateWorkaround(cnsModeChar, const char)
+	templateWorkaround(cnsModeInt, const int)
+	templateWorkaround(cnsModeUint, const unsigned int)
+	templateWorkaround(cnsModeFloat, const float)
+	templateWorkaround(cnsModeDouble, const double)
+	templateWorkaround(cnsModeVectorBool, const std::vector<bool>)
+	templateWorkaround(cnsModeVectorChar, const std::vector<char>)
+	templateWorkaround(cnsModeVectorInt, const std::vector<int>)
+	templateWorkaround(cnsModeVectorUint, const std::vector<unsigned int>)
+	templateWorkaround(cnsModeVectorFloat, const std::vector<float>)
+	templateWorkaround(cnsModeVectorDouble, const std::vector<double>)
+	templateWorkaround(cnsModeString, const std::string)
+private:
+	bool initialized;
+	CnsMode inputMode, outputMode;
+	size_t inputNeurons, outputNeurons, layersOfNeurons, neuronsPerLayer;
 } Cns;
 
-#ifdef USE_HSOM /* Todo. ( https://stackoverflow.com/questions/3286448/calling-a-python-method-from-c-c-and-extracting-its-return-value ) suggests various syntaxes to use for this, with unanswered comments such as "Does this support classes?" */
+#ifdef USE_HSOM_CNS
+typedef class HsomCns : Cns {
+/* Work-in-progress (`ClassCns.cxx` for more information): `HSOM` is simple Python-based CNS from https://github.com/CarsonScott/HSOM
+ * Examples of howto setup `HSOM` as artificial CNS; https://github.com/CarsonScott/HSOM/tree/master/examples
+ * [ https://stackoverflow.com/questions/3286448/calling-a-python-method-from-c-c-and-extracting-its-return-value ] suggests various syntaxes to use for this, with unanswered comments such as "Does this support classes?"
+ */
+} HsomCns;
+#endif /* USE_HSOM_CNS */
+
+#ifdef USE_APXR_CNS
+typedef class ApxrCns : Cns {
+/* Work-in-progress (`ClassCns.cxx for more information): `apxr` is complex Erlang-based CNS from https://github.com/Rober-t/apxr_run/
+ * Examples of howto setup `apxr` as artificial CNS; https://github.com/Rober-t/apxr_run/blob/master/src/examples/
+ * "apxr_run" has various FLOSS neural network activation functions (absolute, average, standard deviation, sqrt, sin, tanh, log, sigmoid, cos), plus sensor functions (vector difference, quadratic, multiquadric, saturation [+D-zone], gaussian, cartesian/planar/polar distances): https://github.com/Rober-t/apxr_run/blob/master/src/lib/functions.erl
+ * Various FLOSS neuroplastic functions (self-modulation, Hebbian function, Oja's function): https://github.com/Rober-t/apxr_run/blob/master/src/lib/plasticity.erl
+ * Various FLOSS neural network input aggregator functions (dot products, product of differences, mult products): https://github.com/Rober-t/apxr_run/blob/master/src/agent_mgr/signal_aggregator.erl
+ * Various simulated-annealing functions for artificial neural networks (dynamic [+ random], active [+ random], current [+ random], all [+ random]): https://github.com/Rober-t/apxr_run/blob/master/src/lib/tuning_selection.erl
+ * Choices to evolve connections through Darwinian or Lamarkian formulas: https://github.com/Rober-t/apxr_run/blob/master/src/agent_mgr/neuron.erl
+ */
+} ApxrCns;
+#endif /* USE_APXR_CNS */
+```
+`less` [cxx/ClassCns.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ClassCns.cxx)
+```
+const int posixExec(const std::string &executable, const std::string &argsS, const std::string &envVarsS) {
+#ifdef _POSIX_VERSION
+	char *args[] = {
+		const_cast<char *>(executable.c_str()),
+		const_cast<char *>(argsS.c_str()),
+		NULL
+	};
+	char *envVars[] = {
+		const_cast<char *>(envVarsS.c_str()),
+		NULL
+	};
+	return execve(args[0], args, envVars);
+#endif /* def _POSIX_VERSION */
+}
+
+#ifdef USE_HSOM_CNS
+/* Sources: `git clone https://github.com/CarsonScott/HSOM.git`
+ * Install: `pip install pynum && pip install json && pip install git+https://github.com/CarsonScott/HSOM.git`
+ * Documentation: `less HSOM/README.md` `less HSOM/Documentation.md` */
 /* "If you're using Python >3.5, PyString_FromString() is PyUnicode_FromString()" */
-#include <Python.h>
-typedef class HsomCns : Cns { /* https://github.com/CarsonScott/HSOM */
- HsomCns() {
-  setenv("PYTHONPATH",".",1);
-  Py_Initialize();
-//  PyRun_SimpleString("import sys; sys.path.append('.')"); PyRun_SimpleString("import hsom; from hsom import SelfOrganizingNetwork;"); /* Was told not to use PyRun because "PyRun requires all results go to stdout" */
-  PyObject *module = PyImport_ImportModule("hsom")
-  if(NULL == module) {throw "'hsom' module not found";}
+#include <Python.h> /* Sources: `pkg install python` */
+typedef class HsomCns : Cns { /* TODO. ( https://stackoverflow.com/questions/3286448/calling-a-python-method-from-c-c-and-extracting-its-return-value ) suggests various syntaxes to use for this, with unanswered comments such as "Does this support classes?" */
+	//template<Input, Output> void setupSynapses(const std::vector<std::tuple<Input, Output>>) { /* TODO: templates not allowed for virtual functions with C++ ( https://stackoverflow.com/a/78440416/24473928 ), so must produce codes for each combination of inputMode+outputMode */
+	void setupSynapses(const std::vector<std::tuple<float, float>>) {
+ 	setenv("PYTHONPATH",".",1);
+ 	Py_Initialize();
+//  PyRun_SimpleString("import sys; sys.path.append('.')"); PyRun_SimpleString("import hsom; from hsom import SelfOrganizingNetwork;");
+#if USE_PYRUN /* Was told not to use PyRun because "PyRun requires all results go to stdout" */
+PyRun_SimpleString("import sys; sys.path.append('./HSOM/')");
+
+/* Based off of https://github.com/CarsonScott/HSOM/blob/master/examples/self_organizing_network.py
+ * Not sure if `input_size` is "Inputs from each layer to next layer" and `node_count` is "Inputs to HSOM" (process(input.length())) or vice versa, assumed vice versa */
+
+PyRun_SimpleString("import hsom
+from hsom import SelfOrganizingNetwork
+from random import sample
+
+input_size = " + inputNeurons + "
+layer_sizes = []
+for x in range(" + layersOfNeurons + "):
+	layer_sizes.append(" + neuronsPerLayer + ");
+layer_sizes.append(" + outputNeurons + ");
+input_percents = [0.2, 0.2, 0.2, 0.2, 0.75, 1.0]
+learning_rate = 0.05
+boost_factor = 1
+node_count = 5
+winner_count = 1
+initial_range = (-0.5, 0.5)
+
+# Create layersOfNeurons+1 hierarchical layers of sizes = neuronsPerLayer, and outputNeurons for last
+self_organizing_network = SelfOrganizingNetwork(
+    input_size=input_size,
+    layer_sizes=layer_sizes,
+    input_percents=input_percents,
+    learning_rates=learning_rate,
+    boost_factors=boost_factor,
+    node_counts=node_count,
+    winner_counts=winner_count,
+		initial_ranges=initial_range)
+
+# Create a set of sparse samples
+samples = []");
+	foreach(inputsToOutputs as sample) { /* TODO: templates not allowed for virtual functions with C++ ( https://stackoverflow.com/a/78440416/24473928 ), so must produce codes for each combination of inputMode+outputMode */
+		PyRun_SimpleString("samples.append(" + sample.first() +" -> " + sample.last() + ")");
+	}
+	PyRun_SimpleString("for i in range(200):
+    self_organizing_network.train(samples)
+	");
+#else /* else !USE_PYRUN */
+ 	PyObject *module = PyImport_ImportModule("hsom")
+ 	if(NULL == module) {throw "'hsom' module not found";}
 	PyObject *selfOrganizingNetwork = PyObject_GetAttrString(module,(char*)"SelfOrganizingNetwork"); /* or	"PyObject *pDict = PyModule_GetDict(module);  PyObject *selfOrganizingNetwork = PyDict_GetItemString(pDict, (char*)"SelfOrganizingNetwork");" */
-  if(NULL == selfOrganizingNetwork || !PyCallable_Check(selfOrganizingNetwork)) {throw "'SelfOrganizingNetwork' object not found";}
-  double result = PyObject_CallFunction(selfOrganizingNetwork, "d", 2.0); /* or "PyObject *pValue=Py_BuildValue("(z)",(char*)"args");	PyObject *pResult=PyObject_CallObject(selfOrganizingNetwork, pValue); if(NULL == pResult) {throw "PyObject_CallObject failed";} double result = PyInt_AsLong(pResult)); Py_DECREF(pValue);" */
-  Py_DECREF(module);
+ 	if(NULL == selfOrganizingNetwork || !PyCallable_Check(selfOrganizingNetwork)) {throw "'SelfOrganizingNetwork' object not found";}
+ 	double result = PyObject_CallFunction(selfOrganizingNetwork, "d", 2.0); /* or "PyObject *pValue=Py_BuildValue("(z)",(char*)"args");	PyObject *pResult=PyObject_CallObject(selfOrganizingNetwork, pValue); if(NULL == pResult) {throw "PyObject_CallObject failed";} double result = PyInt_AsLong(pResult)); Py_DECREF(pValue);" */
+ 	Py_DECREF(module);
  ~HsomCns() {
 #if PYTHON3
-  Py_FinalizeEx();
-#else
-  Py_Finalize();
-#endif /* PYTHON3 */
+ 	Py_FinalizeEx();
+#else /* else !PYTHON */
+ 	Py_Finalize();
+#endif /* PYTHON3 else */
  }
+#endif /* USE_PYRUN else */
 } HsomCns;
-#endif /* Todo */
+#endif /* USE_HSOM_CNS */
 
+#ifdef USE_APXR_CNS
+/* Sources: `git clone https://github.com/Rober-t/apxr_run.git`
+ * Howto install apxr_run: `less apxr_run/README.md` or `lynx https://github.com/Rober-t/apxr_run/blob/master/README.md` */
+typedef class ApxrCns : Cns {
+/* TODO: https://stackoverflow.com/questions/1811516/integrating-erlang-with-c (first result for "Howto use Erlang functions from C/C++"):
+ * ""Port drivers: you can link a C code to the Erlang VM, and access it using port_command."" references https://www.erlang.org/doc/tutorial/c_portdriver.html , which appears to just show howto use C/C++ functions from Erlang (not vice versa)
+ * ""C Nodes: With the ei library you can mimic a VM and talk to your Erlang VMs using the Erlang distribution format."" references https://www.erlang.org/doc/man/ei.html , which shows some promises
+ * ""The closest thing I know for interfacing Erlang with C++ directly is EPAPI. Of course it relies on the tried and tested C erl_interface that comes standard with the Erlang distribution."" references https://epapi.googlecode.com/ , which returns "404 not found".
+ */
+} ApxrCns;
+#endif /* USE_APXR_CNS */
 ```
-Pseudocodes of hash analysis;
+`less` [cxx/VirusAnalysis.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/VirusAnalysis.hxx)
 ```
-hook<launches>((const PortableExecutable *this) {
- if(passListHashesHas(Sha2(this->bytes)) {
-   return original_launches(this);
- } else if(abortList.hashes.has(Sha2(this->bytes)) {
-   return abort();
- } else if(staticAnalysisPass(this)) {
-  localPassList.hashes.pushback(Sha2(this->bytes)); /* Caches results */
-   return original_launches(this);
- } else {
-   submitForManualAnalysis(this);
-   return abort();
- }
-});
-```
+typedef enum VirusAnalysisResult {
+	virusAnalysisAbort = (short)false, /* do not launch */
+	virusAnalysisPass = (short)true, /* launch this (sample passes) */
+	virusAnalysisRequiresReview, /* submit to hosts to do analysis */
+	virusAnalysisContinue /* continue to next tests (is normal; most analyses can not prove that samples pass) */
+} VirusAnalysisResult;
+ResultList passList, abortList; /* Stored on disk, all clients use clones of this */
+Cns analysisCns, disinfectionCns; /* maps of synapses + functions to compute with this */
 
-Pseudocodes of signatures analysis;
-```
-hook<launches>((const PortableExecutable *this) {
- foreach(abortList.signatures as sig) {
-  if(localPassList.hashes.has(Sha2(this->bytes)) {
-   return original_launches(this);
-#if ALL_USES_TEXT
-  } else if(strstr(this->hex, sig)) { /* strstr uses text/hex; hex uses more space than binary, so you should use `memmem` or `std::search` with this->bytes */
-#else
-   } else if(std::search(this->bytes.begin(), this->bytes.end(), sig.begin(), sig.end()) {
-#endif /* ALL_USES_TEXT */
-   return abort();
-  }
- }
- if(staticAnalysisPass(this)) {
-  localPassList.hashes.pushback(Sha2(this->bytes)); /* Caches results */
-   return original_launches(this);
- } else {
-   submitForManualAnalysis(this);
-   return abort();
- }
-});
-```
+/* if (with example inputs) these functions (`produceAbortListSignatures()`, `produceAnalysisCns()`, `produceDisinfectionCns()`) pass, `return true;`
+ * @pre @code analysisCns.hasImplementation() && disinfectionCns.hasImplementation() @endcode */
+const bool virusAnalysisTestsThrows();
+const bool virusAnalysisTests() {try {return virusAnalysisTestsThrows();} catch(...) {return false;}}
 
-Pseudocodes of fused signature+hash analysis;
-```
-hook<launches>((const PortableExecutable *this) {
-  if(passListHashesHas(Sha2(this->bytes)) {
-   return original_launches(this);
-  } else if(abortList.hashes.has(Sha2(this->bytes)) {
-   return abort();
-  } else {
-   foreach(abortList.signatures as sig) {
-#if ALL_USES_TEXT
-    if(strstr(this->hex, sig)) { /*`strstr` does text, binaries must use `std::search` or `memem` */
-#else
-    if(std::search(this->bytes.begin(), this->bytes.end(), sig.begin(), sig.end()) {
-#endif /* ALL_USES_TEXT */
-      abortList.hashes.pushback(Sha2(this->hex));
-      return abort();
-    }
-   }
- }
- if(staticAnalysisPass(this)) {
-  localPassList.hashes.pushback(Sha2(this->bytes)); /* Caches results */
-   return original_launches(this);
- } else {
-   submitForManualAnalysis(this);
-   return abort();
- }
-});
-```
+const VirusAnalysisResult hashAnalysis(const PortableExecutable &, const ResultListHash &); /* `if(abortList[sample]) {return Abort;} if(passList[sample] {return Pass;} return Continue;` */
 
-To produce virus signatures,
-use whitelists of all files that was reviewed that pass,
-plus blacklists of all files that failed manual review, such lists as Virustotal has.
-Pseudocodes to produce signatures from lists;
+/* To produce virus signatures:
+ * use passlists (of files reviewed which pass),
+ * plus abortlists (of files which failed), such lists as Virustotal has.
+ * `produceAbortListSignatures()` is to produce the `abortList.signatures` list, with the smallest substrings unique to infected files; is slow, requires huge database of executables; just hosts should produce this.
+ * For clients: Comodo has lists of virus signatures to check against at https://www.comodo.com/home/internet-security/updates/vdp/database.php
+ * @throw std::bad_alloc
+ * @pre @code passList.bytecodes.size() && abortList.bytecodes.size() && !listsIntersect(passList.bytecodes, abortList.bytecodes) @endcode
+ * @post @code abortList.signatures.size() @endcode */
+void produceAbortListSignatures(const ResultList &passList, ResultList &abortList);
+ /* `if(intersection(sample.bytecode, abortList.signatures)) {return VirusAnalysisRequiresReview;} return VirusAnalysisContinue;`
+	* @pre @code abortList.signatures.size() @endcode */
+const VirusAnalysisResult signatureAnalysis(const PortableExecutable &sample, const ResultListHash &abortList);
+
+/* Static analysis */
+/* @throw bad_alloc */
+const std::vector<std::string> importedFunctionsList(const PortableExecutable &);
+std::vector<std::string> syscallPotentialDangers = {
+	"memopen", "fwrite", "socket", "GetProcAddress", "IsVmPresent"
+};
+const VirusAnalysisResult staticAnalysis(const PortableExecutable &, const ResultListHash &); /* if(intersection(importedFunctionsList(sample), dangerFunctionsList)) {return RequiresReview;} return Continue;` */
+
+/* Analysis sandbox */
+const VirusAnalysisResult sandboxAnalysis(const PortableExecutable &, const ResultListHash &); /* `chroot(strace(sample)) >> outputs; return straceOutputsAnalysis(outputs);` */
+std::vector<std::string> stracePotentialDangers = {"write(*)"};
+const VirusAnalysisResult straceOutputsAnalysis(const FilePath &straceDumpPath); /* TODO: regex */
+
+/* Analysis CNS */
+/* To train (setup synapses) the CNS, is slow plus requires access to huge sample databases,
+but the synapses use small resources (allow clients to do fast analysis.)
+ * @pre @code cns.hasImplementation() && pass.bytecodes.size() && abort.bytecodes.size() @endcode
+ * @post @code cns.isInitialized() @endcode */
+void produceAnalysisCns(const ResultList &pass, const ResultList &abort,
+	const ResultList &unreviewed = ResultList() /* WARNING! Possible danger to use unreviewed samples */,
+	Cns &cns = analysisCns
+);
+/* If bytecode resembles `abortList`, `return 0;`. If undecidable (resembles `unreviewedList`), `return 1 / 2`. If resembles passList, `return 1;`
+ * @pre @code cns.isInitialized() @endcode */
+const float cnsAnalysisScore(const PortableExecutable &, const ResultListHash &, const Cns &cns = analysisCns);
+/* `return (bool)round(cnsAnalysisScore(file, fileHash))`
+ * @pre @code cns.isInitialized() @endcode */
+const VirusAnalysisResult cnsAnalysis_(const PortableExecutable &file, const ResultListHash &fileHash, const Cns &cns = analysisCns);
+const VirusAnalysisResult cnsAnalysis(const PortableExecutable &file, const ResultListHash &fileHash);
+
+std::map<ResultListHash, VirusAnalysisResult> hashAnalysisCaches, signatureAnalysisCaches, staticAnalysisCaches, cnsAnalysisCaches, sandboxAnalysisCaches; /* RAM-based caches; memoizes results */
+
+typedef const VirusAnalysisResult (*VirusAnalysisFun)(const PortableExecutable &, const ResultListHash &);
+std::vector<typeof(VirusAnalysisFun)> virusAnalyses = {hashAnalysis, signatureAnalysis, staticAnalysis, cnsAnalysis, sandboxAnalysis /* sandbox is slow, so put last*/};
+const VirusAnalysisResult virusAnalysis(const PortableExecutable &file); /* auto hash = Sha2(file.bytecode); for(VirusAnalysisFun analysis : virusAnalyses) {analysis(file, hash);} */
+const VirusAnalysisResult submitSampleToHosts(const PortableExecutable &) {return virusAnalysisRequiresReview;} /* TODO: requires compatible hosts to upload to */
+
+/* Setup disinfection CNS, uses more resources than `produceAnalysisCns()` */
+/* `abortOrNull` should map to `passOrNull` (`ResultList` is composed of `std::tuple`s, because just `produceDisinfectionCns()` requires this),
+ * with `abortOrNull->bytecodes[x] = NULL` (or "\0") for new SW synthesis,
+ * and `passOrNull->bytecodes[x] = NULL` (or "\0") if infected and CNS can not cleanse this.
+ * @pre @code cns.hasImplementation() @endcode
+ * @post @code cns.isInitialized() @encode
+ */
+void produceDisinfectionCns(
+	const ResultList &passOrNull, /* Expects `resultList->bytecodes[x] = NULL` if does not pass */
+	const ResultList &abortOrNull, /* Expects `resultList->bytecodes[x] = NULL` if does pass */
+	Cns &cns = disinfectionCns
+);
+
+/* Uses more resources than `cnsAnalysis()`, can undo infection from bytecodes (restore to fresh SW)
+ * @pre @code cns.isInitialized() @endcode */
+const std::string cnsDisinfection(const PortableExecutable &, const Cns &cns = disinfectionCns);
 ```
-template<Container>
-const bool haystackHas(Container<std::string> &haystack, std::string::iterator s, std::string::iterator x) {
- foreach(haystack as executable) {
-  if(std::search(executable.begin(), executable.end(), s, x) {
-   return true;
-  }
- }
- return false;
+`less` [cxx/VirusAnalysis.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/VirusAnalysis.cxx)
+```
+const bool virusAnalysisTestsThrows() {
+	ResultList abortOrNull {
+		.bytecodes {  /* Produce from an antivirus vendor's (such as VirusTotal.com's) infection databases */
+			"infection",
+			"infectedSW",
+			"corruptedSW",
+			""
+		}
+	};
+	ResultList passOrNull {
+		.bytecodes {  /* Produce from an antivirus vendor's (such as VirusTotal.com's) fresh-files databases */
+			"",
+			"SW",
+			"SW",
+			"newSW"
+		}
+	};
+	produceAbortListSignatures(passList, abortList);
+	produceAnalysisCns(passOrNull, abortOrNull, ResultList(), analysisCns);
+	produceDisinfectionCns(passOrNull, abortOrNull, disinfectionCns);
+	/* callbackHook("exec", */ [](const PortableExecutable &file) { /* TODO: OS-specific "hook"/"callback" for `exec()`/app-launches */
+		switch(virusAnalysis(file)) {
+		case virusAnalysisPass:
+			return true; /* launch this */
+		case virusAnalysisRequiresReview:
+			submitSampleToHosts(file); /* manual review */
+			return false;
+		default:
+			return false; /* abort */
+		}
+	} /* ) */ ;
+	return true;
+}
+const VirusAnalysisResult virusAnalysis(const PortableExecutable &file) {
+	const auto fileHash = Sha2(file.bytecode);
+	for(decltype(virusAnalyses[0]) analysis : virusAnalyses) {
+		switch(analysis(file, fileHash)) {
+			case virusAnalysisPass:
+				return virusAnalysisPass;
+			case virusAnalysisRequiresReview:
+				/*submitSampleToHosts(file);*/ /* TODO:? up to caller to do this? */
+				return virusAnalysisRequiresReview;
+			case virusAnalysisAbort:
+				return virusAnalysisAbort;
+			default: /* virusAnalysisContinue */
+		}
+	}
+	return virusAnalysisPass;
 }
 
-template<Container>
-const std::tuple<std::string::iterator, std::string::iterator> smallestUniqueSubstr(std::string &needle, Container<std::string> &haystack) {
- size_t smallest = needle.length();
- auto retBegin = needle.begin(), retEnd = needle.end();
- for(auto s = retBegin; needle.end() != s; ++s) {
-  for(auto x = needle.end() - 1; s != x; --x) {
-   if(smallest <= x - s || haystackHas(haystack, s, x)) {
-    break;
-   }
-   smallest = x - s;
-   retBegin = s, retEnd = x;
-  }
- } /* Incremental `for()` loops, is a slow method to produce unique substrings; should use binary searches, or quadratic searches, or look for the standard function which optimizes this. */
- return {retBegin, retEnd};
+const VirusAnalysisResult hashAnalysis(const PortableExecutable &file, const ResultListHash &fileHash) {
+	try {
+		const auto result = hashAnalysisCaches.at(fileHash);
+		return result;
+	} catch (...) {
+		if(listHas(passList.hashes, fileHash)) {
+			return hashAnalysisCaches[fileHash] = virusAnalysisPass;
+		} else if(listHas(abortList.hashes, fileHash)) {
+			return hashAnalysisCaches[fileHash] = virusAnalysisAbort;
+		} else {
+			return hashAnalysisCaches[fileHash] =  virusAnalysisContinue; /* continue to next tests */
+		}
+	}
 }
 
-/* `signatureSynthesis()` is to produce the `abortList.signatures` list, with the smallest substrings unique to infected files. */
-/* `signatureSynthes()` is slow, requires huge database of executables, and is not for clients. */
-void signatureSynthesis(ResultList *passList, ResultList *abortList) {
- foreach(abortList.bytes as executable) {
-  abortList->signatures.pushback(std::string(smallestUniqueSubstr(executable, passList->bytes));
- } /* The most simple signature is a substring, but some analyses use regexes. */
+const VirusAnalysisResult signatureAnalysis(const PortableExecutable &file, const ResultListHash &fileHash) {
+	try {
+		const auto result = signatureAnalysisCaches.at(fileHash);
+		return result;
+	} catch (...) {
+		for(decltype(abortList.signatures[0]) sig : abortList.signatures) {
+#if PREFERENCE_IS_CSTR
+		 	if(strstr(file.hex, sig)) { /* strstr uses text/hex; hex uses more space than binary, so you should use `memmem` or `std::search` with file.bytecode */
+#else /* else !PREFERENCE_IS_CSTR */
+			if(file.bytecode.end() != std::search(file.bytecode.begin(), file.bytecode.end(), sig.begin(), sig.end())) {
+#endif /* PREFERENCE_IS_CSTR else */
+				return signatureAnalysisCaches[fileHash] = virusAnalysisAbort;
+		 	}
+		}
+		return signatureAnalysisCaches[fileHash] = virusAnalysisContinue;
+	}
 }
-signatureSynthesis(passList, abortList);
-```
-Comodo has a list of virus signatures to check against at https://www.comodo.com/home/internet-security/updates/vdp/database.php
 
-Pseudocodes of heuristical analysis;
-```
-std::vector<std::string> importedFunctionsList(PortableExecutable *this);
-/*
- * importedFunctionsList resources; “Portable Executable” for Windows ( https://learn.microsoft.com/en-us/windows/win32/debug/pe-format https://wikipedia.org/wiki/Portable_Executable ),
+void produceAbortListSignatures(const ResultList &passList, ResultList &abortList) {
+	for(decltype(abortList.bytecodes[0]) file : abortList.bytecodes) {
+		auto tuple = smallestUniqueSubstr(file, passList.bytecodes);
+		abortList.signatures.push_back(ResultListSignature(std::get<0>(tuple), std::get<1>(tuple)));
+	} /* The most simple signature is a substring, but some analyses use regexes. */
+}
+
+const std::vector<std::string> importedFunctionsList(const PortableExecutable &file) {
+/* TODO
+ * Resources; “Portable Executable” for Windows ( https://learn.microsoft.com/en-us/windows/win32/debug/pe-format https://wikipedia.org/wiki/Portable_Executable ,
  * “Extended Linker Format” for most others such as UNIX/Linuxes ( https://wikipedia.org/wiki/Executable_and_Linkable_Format ),
  * shows how to analyse lists of libraries(.DLL's/.SO's) the SW uses,
  * plus what functions (new syscalls) the SW can goto through `jmp`/`call` instructions.
  *
  * "x86" instruction list for Intel/AMD ( https://wikipedia.org/wiki/x86 ),
  * "aarch64" instruction list for most smartphones/tablets ( https://wikipedia.org/wiki/aarch64 ),
- * shows how to analyse what OS functions the SW goes to without libraries (through `int`/`syscall`, old syscalls, most SW does not *use this.)
+ * shows how to analyse what OS functions the SW goes to without libraries (through `int`/`syscall`, old;  most new SW uses `jmp`/`call`.)
  * Plus, instructions lists show how to analyse what args the apps/SW pass to functions/syscalls (simple for constant args such as "push 0x2; call functions;",
  * but if registers/addresses as args such as "push eax; push [address]; call [address2];" must guess what is *"eax"/"[address]"/"[address2]", or use sandboxes.
  *
- * https://www.codeproject.com/Questions/338807/How-to-get-list-of-all-imported-functions-invoked shows how to analyse dynamic loads of functions (if do this, `syscallsPotentialDanger[]` need not include `GetProcAddress()`.)
+ * https://www.codeproject.com/Questions/338807/How-to-get-list-of-all-imported-functions-invoked shows how to analyse dynamic loads of functions (if do this, `syscallPotentialDangers[]` does not include `GetProcAddress()`.)
  */
-const bool staticAnalysisPass(PortableExecutable *this) {
- auto syscallsUsed = importedFunctionsList(this);
- typeof(syscallsUsed) syscallsPotentialDanger = {
-  "memopen", "fwrite", "socket", "GetProcAddress", "IsVmPresent"
- };
- if(syscallsPotentialDanger.intersect(syscallsUsed)) {
-   return false;
- }
- return sandboxPass(this) && cnsPass(cns, this);
 }
-hook<launches>((PortableExecutable *this) { /*hash, signature, or hash+signature analysis*/ });
-```
-Pseudocodes of analysis sandbox;
-```
-const bool sandboxPass(const PortableExecutable *this) {
- exec('cp -r /usr/home/sandbox/ /usr/home/sandbox.bak'); /* or produce FS snapshot */
- exec('cp "' + this->path + '" /usr/home/sandbox/');
- chroot("/usr/home/sandbox/", 'strace basename '"', this->path + '" >> strace.outputs');
- exec('mv /usr/home/sandbox/strace.outputs /tmp/strace.outputs');
- exec('rm -r /usr/home/sandbox/');
- exec('mv /usr/home/sandbox.bak /usr/home/sandbox/'); /* or restore FS snapshot */
- return straceOutputsPass("/tmp/strace.outputs");
-}
-```
-Pseudocodes of analysis nCNS;
-```
-/* Replace `Cns` with the typedef of your CNS, such as `HSOM` or `apxr` */
 
-/* To train (setup synapses) the CNS, is slow plus requires access to huge sample databases,
-but the synapses use small resources (allow clients to do fast analysis.) */
-void setupAnalysisCns(Cns *cns, const ResultList *pass, const ResultList *abort,
-const ResultList *unreviewed = NULL /* WARNING! Possible danger to use unreviewed samples */
+const VirusAnalysisResult staticAnalysis(const PortableExecutable &file, const ResultListHash &fileHash) {
+	try {
+		const auto result = staticAnalysisCaches.at(fileHash);
+		return result;
+	} catch (...) {
+		auto syscallsUsed = importedFunctionsList(file);
+		std::sort(syscallPotentialDangers.begin(), syscallPotentialDangers.end());
+		std::sort(syscallsUsed.begin(), syscallsUsed.end());
+		if(listsIntersect(syscallPotentialDangers, syscallsUsed)) {
+			return staticAnalysisCaches[fileHash] = virusAnalysisRequiresReview;
+		}
+		return staticAnalysisCaches[fileHash] = virusAnalysisContinue;
+	}
+}
+
+const VirusAnalysisResult sandboxAnalysis(const PortableExecutable &file, const ResultListHash &fileHash) {
+	try {
+		const auto result = sandboxAnalysisCaches.at(fileHash);
+		return result;
+	} catch (...) {
+		posixExec("/bin/cp", "-r '/usr/home/sandbox/' '/usr/home/sandbox.bak'"); /* or produce FS snapshot */
+		posixExec("/bin/cp", "'" + file.path + "' '/usr/home/sandbox/'");
+		posixExec("/bin/chroot", "'/usr/home/sandbox/' \"strace basename '" + file.path + "'\" >> strace.outputs");
+		posixExec("/bin/mv/", "'/usr/home/sandbox/strace.outputs' '/tmp/strace.outputs'");
+		posixExec("/bin/sh", "-c 'rm -r /usr/home/sandbox/ && mv /usr/home/sandbox.bak /usr/home/sandbox/'"); /* or restore FS snapshot */
+		return sandboxAnalysisCaches[fileHash] = straceOutputsAnalysis("/tmp/strace.outputs");
+	}
+}
+const VirusAnalysisResult straceOutputsAnalysis(const FilePath &straceDumpPath) {
+		auto straceDump = std::ifstream(straceDumpPath);
+		std::vector<std::string> straceOutputs /*= explodeToList(straceDump, "\n")*/;
+		for(std::string straceOutput; std::getline(straceDump, straceOutput); ) {
+			straceOutputs.push_back(straceOutput);
+		}
+		std::sort(stracePotentialDangers.begin(), stracePotentialDangers.end());
+		std::sort(straceOutputs.begin(), straceOutputs.end());
+		if(listsIntersect(stracePotentialDangers, straceOutputs)) { /* Todo: regex */
+			return virusAnalysisRequiresReview;
+		}
+	return virusAnalysisContinue;
+}
+
+void produceAnalysisCns(const ResultList &pass, const ResultList &abort,
+const ResultList &unreviewed /* = ResultList(), WARNING! Possible danger to use unreviewed samples */,
+Cns &cns /* = analysisCns */
 ) {
- vector<const std::string> inputsPass, inputsUnreviewed, inputsAbort;
- vector<float> outputsPass, outputsUnreviewed, outputsAbort;
- cns->setInputMode(cnsModeString);
- cns->setOutputMode(cnsModeFloat);
- cns->setInputNeurons(max(maxOfSizes(passOrNull->bytes), maxOfSizes(abortOrNull->bytes)));
- cns->setOutputNeurons(1);
- cns->setLayersOfNeurons(6666);
- cns->setNeuronsPerLayer(26666);
-
- for(foreach pass->bytes as passBytes) {
-  inputsPass.pushback(passBytes);
-  outputsPass.pushback(1.0);
- }
- cns->setTrainingInputs(inputsPass);
- cns->setTrainingOutputs(outputsPass);
- cns->setupSynapses();
- if(NULL != unreviewed) { /* WARNING! Possible danger to use unreviewed samples */
-  for(foreach unreviewed->bytes as unreviewedBytes) {
-   inputsUnreviewed.pushback(unreviewedBytes);
-   outputsUnreviewed.pushback(1 / 2);
-  }
-  cns->setTrainingInputs(inputsUnreviewed);
-  cns->setTrainingOutputs(outputsUnreviewed);
-  cns->setupSynapses();
- }
- for(foreach pass->bytes as passBytes) {
-   inputsAbort.pushback(passBytes);
-   outputsAbort.pushback(0.0);
- }
- cns->setTrainingInputs(inputsAbort);
- cns->setTrainingOutputs(outputsAbort);
- cns->setupSynapses();
+	std::vector<const std::tuple<const FileBytecode, float>> inputsToPass, inputsToUnreviewed, inputsToAbort;
+	const size_t maxPassSize = maxOfSizes(pass.bytecodes);
+	const size_t maxAbortSize = maxOfSizes(abort.bytecodes);
+	cns.setInputMode(cnsModeString);
+	cns.setOutputMode(cnsModeFloat);
+	cns.setInputNeurons(maxPassSize > maxAbortSize ? maxPassSize : maxAbortSize);
+	cns.setOutputNeurons(1);
+	cns.setLayersOfNeurons(6666);
+	cns.setNeuronsPerLayer(26666);
+	for(decltype(pass.bytecodes[0]) bytecodes : pass.bytecodes) {
+		inputsToPass.push_back({bytecodes, 1.0});
+	}
+	cns.setupSynapses(inputsToPass);
+	if(unreviewed.bytecodes.size()) { /* WARNING! Possible danger to use unreviewed samples */
+		for(decltype(pass.bytecodes[0]) bytecodes : unreviewed.bytecodes) {
+			inputsToUnreviewed.push_back({bytecodes, 1 / 2});
+		}
+		cns.setupSynapses(inputsToUnreviewed);
+	}
+	for(decltype(abort.bytecodes[0]) bytecodes : abort.bytecodes) {
+		inputsToAbort.push_back({bytecodes, 0.0});
+	}
+	cns.setupSynapses(inputsToAbort);
 }
-const float cnsAnalysis(const Cns *cns, const std::string &bytes) {
- return cns->process<std::string, float>(bytes);
+const float cnsAnalysisScore(const PortableExecutable &file, const Cns &cns /* = analysisCns */) {
+	return cns.processToFloat(file.bytecode);
 }
-const bool cnsPass(const Cns *cns, const std::string &bytes) {
- return (bool)round(cnsAnalysis(cns, bytes));
+const VirusAnalysisResult cnsAnalysis_(const PortableExecutable &file, const ResultListHash &fileHash, const Cns &cns /* = analysisCns */) {
+	try {
+		const auto result = cnsAnalysisCaches.at(fileHash);
+		return result;
+	} catch (...) {
+		return cnsAnalysisCaches[fileHash] = (bool)round(cnsAnalysisScore(file, cns)) ? virusAnalysisContinue : virusAnalysisRequiresReview;
+	}
 }
-```
-Pseudocodes of disinfection CNS;
-```
-/* Uses more resources than `setupAnalysisCns()` */
-/*
- * `abortOrNull` should map to `passOrNull` (`ResultList` is composed of `std::tuple`s, because just `setupDisinfectionCns()` requires this),
- * with `abortOrNull->bytes[x] = NULL` (or "\0") for new SW synthesis,
- * and `passOrNull->bytes[x] = NULL` (or "\0") if infected and CNS can not cleanse this.
-*/
-ResultList abortOrNull(
- bytes = UTF8 {  /* Uses an antivirus vendor's (such as VirusTotal.com's) databases */
-  infection,
-  infectedSW,
-  ""
- }
-);
-ResultList passOrNull(
- bytes = UTF8 {  /* Uses an antivirus vendor's (such as VirusTotal.com's) databases */
-  "",
-  SW,
-  newSW
- }
-);
-setupDisinfectionCns(cns, &passOrNull, &abortOrNull);
-
-void setupDisinfectionCns(Cns *cns,
- const ResultList *passOrNull, /* Expects `resultList->bytes[x] = NULL` if does not pass */
- const ResultList *abortOrNull /* Expects `resultList->bytes[x] = NULL` if does pass */
-) {
- vector<const std::string> inputsOrNull, outputsOrNull;
- cns->setInputMode(cnsModeString);
- cns->setOutputMode(cnsModeString);
- cns->setInputNeurons(maxOfSizes(passOrNull->bytes));
- cns->setOutputNeurons(maxOfSizes(abortOrNull->bytes));
- cns->setLayersOfNeurons(6666);
- cns->setNeuronsPerLaye(26666);
- assert(passOrNull->bytes.length() == abortOrNull->bytes.length());
- for(int x = 0; passOrNull->bytes.length() > x; ++x) {
-  inputsOrNull.pushback(abortOrNull->bytes[x]);
-  outputsOrNull.pushback(passOrNull->bytes[x]);
- }
- cns->setTrainingInputs(inputsOrNull);
- cns->setTrainingOutputs(outputsOrNull);
- cns->setupSynapses();
+const VirusAnalysisResult cnsAnalysis(const PortableExecutable &file, const ResultListHash &fileHash) {
+	return cnsAnalysis_(file, fileHash);
 }
 
-/* Uses more resources than `cnsAnalysis()` */
-const std::string cnsDisinfection(const Cns *cns, const std::string &bytes) {
- return cns->process<std::string, std::string>(bytes);
-}
-```
-To run most of this fast (lag less,) use flags which auto-vectorizes/auto-parallelizes. To setup CNS synapses (`cns->setupSynapses()`) fast, use TensorFlow's MapReduce:
-https://swudususuwu.substack.com/p/howto-run-devices-phones-laptops
-
-For comparison; `setupDisinfectionCns` is close to conversation bots (such as "ChatGPT 4.0" or "Claude-3 Opus",) "HSOM" (the simple Python artificial CNS) is enough to do this;
-```
-/*
- * `questionsOrNull` should map to `responsesOrNull`,
- * with `questionsOrNull->bytes[x] = NULL` (or "\0") for new conversation synthesis,
- * and `responsesOrNull->bytes[x] = NULL` (or "\0") if should not respond.
-*/
-ResultList questionsOrNull(
- bytes = UTF8 {
-  "2^16",
-  "How to cause harm?",
-  "Do not respond.",
-  "",
-  ...
-  QuoraQuestions, /* Uses quora.com databases */
-  StackOverflowQuestions, /* Uses stackoverflow.com databases */
-  SuperUserQuestions, /* Uses superuser.com databases */
-  WikipediaPageDescriptions, /* Uses wikipedia.org databases */
-  GithubRepoDescriptions, /* Uses github.com databases */
-  ...
- }
-);
-ResultList responsesOrNull(
- bytes = UTF8 {
-  "65536" + "<delimiterSeparatesMultiplePossibleResponses>" + "65,536", /* `+` is `concat()` for C++ */
-  "",
-  "",
-  "How do you do?" + "<delimiterSeparatesMultiplePossibleResponses>" + "Fanuc produces autonomous robots",
-  QuoraResponses,
-  StackOverflowResponses,
-  SuperUserResponses,
-  GithubRepoSources,
-  ...
- }
-);
-setupConversationCns(cns, &questionsOrNull, &responsesOrNull);
-
-void setupConversationCns(Cns *cns,
- const ResultList *questionsOrNull, /* Expects `questionsOrNull>bytes[x] = NULL` if no question (new conversation synthesis) */
- const ResultList *responsesOrNull /* Expects `responsesOrNull->bytes[x] = NULL` if should not respond */
-) {
- vector<const std::string> inputsOrNull, outputsOrNull;
- cns->setInputMode(cnsModeString);
- cns->setOutputMode(cnsModeString);
- cns->setInputNeurons(maxOfSizes(questionsOrNull->bytes));
- cns->setOutputNeurons(maxOfSizes(responsesOrNull->bytes));
- cns->setLayersOfNeurons(6666);
- cns->setNeuronsPerLayer(26666);
- assert(questionsOrNull->bytes.length() == questionsOrNull->bytes.length());
- for(int x = 0; questionsOrNull->bytes.length() > x; ++x) {
-  inputsOrNull.pushback(questionsOrNull->bytes[x]);
-  outputsOrNull.pushback(responsesOrNull->bytes[x]);
- }
- cns->setTrainingInputs(inputsOrNull);
- cns->setTrainingOutputs(outputsOrNull);
- cns->setupSynapses();
+void produceDisinfectionCns(const ResultList &passOrNull, const ResultList &abortOrNull, Cns &cns /* = disinfectionCns */) {
+	std::vector<const std::tuple<const FileBytecode, const FileBytecode>> inputsToOutputs;
+	cns.setInputMode(cnsModeString);
+	cns.setOutputMode(cnsModeString);
+	cns.setInputNeurons(maxOfSizes(passOrNull.bytecodes));
+	cns.setOutputNeurons(maxOfSizes(abortOrNull.bytecodes));
+	cns.setLayersOfNeurons(6666);
+	cns.setNeuronsPerLayer(26666);
+	assert(passOrNull.bytecodes.size() == abortOrNull.bytecodes.size());
+	for(int x = 0; passOrNull.bytecodes.size() > x; ++x) {
+		inputsToOutputs.push_back({abortOrNull.bytecodes[x], passOrNull.bytecodes[x]});
+	}
+	cns.setupSynapses(inputsToOutputs);
 }
 
-const std::string cnsConversation(const Cns *cns, const std::string &bytes) {
- return cns->process<std::string, std::string>(bytes);
+const FileBytecode cnsDisinfection(const PortableExecutable &file, const Cns &cns /* = disinfectionCns */) {
+	return cns.processToString(file.bytecode);
 }
 ```
-Pseudocodes of howto produce `questionsOrNull` + `responsesOrNull`:
+To run most of this fast (lag less,) use `CXXFLAGS` which auto-vectorizes/auto-parallelizes, and to setup CNS synapses (`Cns::setupSynapses()`) fast, use _TensorFlow_'s `MapReduce`. Resources: [How to have computers process fast](https://swudususuwu.substack.com/p/howto-run-devices-phones-laptops).
+
+For comparison; `produceDisinfectionCns` is close to conversation bots (such as "ChatGPT 4.0" or "Claude-3 Opus",) have such demo as `produceConversationCns`;
+`less` [cxx/ConversationCns.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ConversationCns.hxx)
 ```
-std::vector<std::string> hosts = {
- "https://stackexchange.com",
- "https://superuser.com",
- "https://quora.com",
- ...
-/* Wikipedia is a special case; has compressed downloads of databases ( https://wikipedia.org/wiki/Wikipedia:Database_download ) */
-/* Github is a special case; has compressed downloads of repositories ( https://docs.github.com/en/get-started/start-your-journey/downloading-files-from-github ) */
+Cns conversationCns;
+
+/* if (with example inputs) these functions (`questionsResponsesFromHosts()` `produceConversationCns()`) pass, `return true;`
+ * @throw std::bad_alloc
+ * @throw std::logic_error
+ * @pre @code conversationCns.hasImplementation() @endcode */
+const bool conversationCnsTestsThrows();
+const bool conversationCnsTests() { try{ return conversationCnsTestsThrows(); } catch(...) { return false; }}
+std::vector<FilePath> conversationDefaultHosts = {
+/* Universal Resources Locators of hosts which `questionsResponsesFromHosts()` uses
+ * Wikipedia is a special case; has compressed downloads of databases ( https://wikipedia.org/wiki/Wikipedia:Database_download )
+ * Github is a special case; has compressed downloads of repositories ( https://docs.github.com/en/get-started/start-your-journey/downloading-files-from-github )
+ */
+	"https://stackoverflow.com",
+	"https://superuser.com",
+	"https://quora.com"
 };
-foreach(hosts as host) {
- exec("wget '" + host + "/robots.txt' > robots.txt");
- identifiers = extractIdentifiers("robots.txt");
- foreach(identifiers as identifier) {
-  questionsOrNull.identifiers.pushback(identifier);
- }
- if(host not in questionsOrNull.identifiers) {
-  questionsOrNull.identifiers.pushback(host);
-  exec("wget '" + host +"' > source.txt");
-  extraHosts = extractIdentifiers("source.txt");
-  foreach(extraHosts as extraHost) {
-   hosts.pushback(extraHost);
-  }
-  question = extractQuestion("source.txt");
-  if(question) {
-   auto questionSha2 = sha2(question);
-   if(questionSha2 not in questionsOrNull.hashes) {
-    questionsOrNull.hashes.pushback(questionSha2);
-    responses = extractResponses("source.txt");
-    foreach(responses as response) {
-     auto questionSha2 = sha2(question);
-     if(responseSha2 not in responseOrNull.hashes) {
-      responsesOrNull.hashes.pushback(responseSha2);
-      questionsOrNull.bytes.pushback(question);
-      responsesOrNull.bytes.pushback(response); 
-     }
-    }
-   }
-  }
- }
+
+/* @throw std::bad_alloc
+ * @post If no question, `0 == questionsOrNull.bytecodes[x].size()` (new conversation synthesis).
+ * If no responses, `0 == responsesOrNull.bytecodes[x].size()` (ignore).
+ * `questionsOrNull.signatures[x] = Universal Resource Locator`
+ * @code Sha2(ResultList.bytecodes[x]) == ResultList.hashes[x] @endcode */
+void questionsResponsesFromHosts(ResultList &questionsOrNull, ResultList &responsesOrNull, const std::vector<FilePath> &hosts = conversationDefaultHosts);
+void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &responsesOrNull, const FilePath &filepath = "index.xhtml");
+const std::vector<FilePath> conversationParseUrls(const FilePath &filepath = "index.xhtml"); /* TODO: for XML/XHTML could just use [ https://www.boost.io/libraries/regex/ https://github.com/boostorg/regex ] or [ https://www.boost.org/doc/libs/1_85_0/doc/html/property_tree/parsers.html#property_tree.parsers.xml_parser https://github.com/boostorg/property_tree/blob/develop/doc/xml_parser.qbk ] */
+const FileBytecode conversationParseQuestion(const FilePath &filepath = "index.xhtml"); /* TODO: regex or XML parser */
+const std::vector<FileBytecode> conversationParseResponses(const FilePath &filepath = "index.xhtml"); /* TODO: regex or XML parser */
+
+/* @pre `questionsOrNull` maps to `responsesOrNull`,
+ * `0 == questionsOrNull.bytecodes[x].size()` for new conversation synthesis (empty question has responses),
+ * `0 == responsesOrNull.bytecodes[x].size()` if should not respond (question does not have answers).
+ * @post Can use `conversationCnsProcess(cns, text)` @code cns.isInitialized() @endcode */
+void produceConversationCns(const ResultList &questionsOrNull, const ResultList &responsesOrNull, Cns &cns);
+
+/* All clients use is these 2 functions */
+/* `return cns.processStringToString(bytecodes);`
+ * @pre @code cns.isInitialized() @encode */
+const std::string conversationCnsProcess(const Cns &cns, const std::string &bytecode);
+/* `while(std::cin >> questions) { std::cout << conversationCnsProcess(questions); }` but more complex
+ * @pre @code cns.isInitialized() @encode */
+void conversationCnsLoopProcess(const Cns &cns);
+```
+`less` [cxx/ConversationCns.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ConversationCns.cxx)
+```
+const bool conversationCnsTestsThrows() {
+	ResultList questionsOrNull {
+		.bytecodes { /* UTF-8 */
+			ResultListBytecode("2^16"),
+			ResultListBytecode("How to cause harm?"),
+			ResultListBytecode("Do not respond."),
+			ResultListBytecode("")
+		}
+	};
+	ResultList responsesOrNull {
+		.bytecodes { /* UTF-8 */
+			ResultListBytecode("65536") + "<delimiterSeparatesMultiplePossibleResponses>" + "65,536", /* `+` is `concat()` for C++ */
+			ResultListBytecode(""),
+			ResultListBytecode(""),
+			ResultListBytecode("How do you do?") + "<delimiterSeparatesMultiplePossibleResponses>" + "Fanuc produces autonomous robots"
+		}
+	};
+	questionsResponsesFromHosts(questionsOrNull, responsesOrNull);
+	produceConversationCns(questionsOrNull, responsesOrNull, conversationCns);
+	return true;
+}
+void produceConversationCns(const ResultList &questionsOrNull, const ResultList &responsesOrNull, Cns &cns) {
+	std::vector<const std::tuple<const ResultListBytecode, const ResultListBytecode>> inputsToOutputs;
+	cns.setInputMode(cnsModeString);
+	cns.setOutputMode(cnsModeString);
+	cns.setInputNeurons(maxOfSizes(questionsOrNull.bytecodes));
+	cns.setOutputNeurons(maxOfSizes(responsesOrNull.bytecodes));
+	cns.setLayersOfNeurons(6666);
+	cns.setNeuronsPerLayer(26666);
+	assert(questionsOrNull.bytecodes.size() == questionsOrNull.bytecodes.size());
+	for(int x = 0; questionsOrNull.bytecodes.size() > x; ++x) {
+		inputsToOutputs.push_back({questionsOrNull.bytecodes[x], responsesOrNull.bytecodes[x]});
+	}
+	cns.setupSynapses(inputsToOutputs);
+}
+
+void questionsResponsesFromHosts(ResultList &questionsOrNull, ResultList &responsesOrNull, const std::vector<FilePath> &hosts) {
+	for(decltype(hosts[0]) host : hosts) {
+		posixExec("/bin/wget", "'" + host + "/robots.txt' > robots.txt", NULL);
+		posixExec("/bin/wget", "'" + host + "' > index.xhtml", NULL);
+		questionsOrNull.signatures.push_back(host);
+		questionsResponsesFromXhtml(questionsOrNull, responsesOrNull, "index.xhtml");
+	}
+}
+void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &responsesOrNull, const FilePath &xhtmlFile) {
+	auto noRobots = conversationParseUrls("robots.txt");
+	auto question = conversationParseQuestion(xhtmlFile);
+	if(question.size()) {
+		auto questionSha2 = Sha2(question);
+		if(!listHas(questionsOrNull.hashes, questionSha2)) {
+			questionsOrNull.hashes.insert(questionSha2);
+			auto responses = conversationParseResponses(xhtmlFile);
+			for(decltype(responses[0]) response : responses) {
+				auto questionSha2 = Sha2(question);
+				auto responseSha2 = Sha2(response);
+				if(!listHas(responsesOrNull.hashes, responseSha2)) {
+					questionsOrNull.hashes.insert(questionSha2);
+					responsesOrNull.hashes.insert(responseSha2);
+					questionsOrNull.bytecodes.push_back(question);
+					responsesOrNull.bytecodes.push_back(response);
+				}
+			}
+		}
+	}
+	auto urls = conversationParseUrls(xhtmlFile);
+	for(decltype(urls[0]) url : urls) {
+		if(!listHas(questionsOrNull.signatures, url) && !listHas(noRobots, url)) {
+			posixExec("/bin/wget", "'" + url + "' > " + xhtmlFile, NULL);
+			questionsOrNull.signatures.push_back(url);
+			questionsResponsesFromXhtml(questionsOrNull, responsesOrNull, xhtmlFile);
+		}
+	}
+}
+#ifdef BOOST_VERSION
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+#endif /* BOOST_VERSION */
+const std::vector<FilePath> conversationParseUrls(const FilePath &xhtmlFile) {
+	const std::vector<FilePath> urls;
+#ifdef BOOST_VERSION
+	boost::property_tree::ptree pt;
+	read_xml(xhtmlFile, pt);
+	BOOST_FOREACH(
+			boost::property_tree::ptree::value_type &v,
+			pt.get_child("html.a href"))
+		urls.push_back(v.second.data());
+#else /* else !BOOST_VERSION */
+#endif /* else !BOOST_VERSION */
+	return urls;
+}
+const FileBytecode conversationParseQuestion(const FilePath &xhtmlFile) {} /* TODO */
+const std::vector<FileBytecode> conversationParseResponses(const FilePath &xhtmlFile) {} /* TODO */
+
+const std::string cnsConversationProcess(const Cns &cns, const FileBytecode &bytecode) {
+	return cns.processToString(bytecode);
+}
+
+void cnsConversationLoopProcess(const Cns &cns) {
+	std::string bytecode, previous;
+	int nthResponse = 0;
+	while(std::cin >> bytecode) {
+#ifdef IGNORE_PAST_CONVERSATIONS
+		std::vector<std::string> responses = explodeToList(cns.processToString(bytecode), "<delimiterSeparatesMultiplePossibleResponses>");
+		if(bytecode == previous && responses.size() > 1 + nthResponse) {
+			++nthResponse; /* Similar to "suggestions" for next questions, but just uses previous question to give new responses */
+ 		} else {
+			nthResponse = 0;
+	 	}
+ 		std::cout << responses.at(nthResponse);
+ 		previous = bytecode;
+ 		bytecode = ""; /* reset inputs */
+#else
+		std::vector<std::string> responses = explodeToList(cns.processToString(bytecode), std::string("<delimiterSeparatesMultiplePossibleResponses>"));
+	 	if(bytecode == previous && responses.size() > 1 + nthResponse) {
+			++nthResponse; /* Similar to "suggestions" for next questions, but just uses previous question to give new responses */
+ 		} else {
+  		nthResponse = 0;
+	 	}
+#endif /* IGNORE_PAST_CONVERSATIONS */
+ 		std::cout << responses.at(nthResponse);
+ 		previous = bytecode;
+ 		bytecode += '\n'; /* delimiter separates (and uses) multiple inputs */
+	}
 }
 ```
 ========
@@ -517,8 +848,7 @@ inputs = samples of all (infections or fresh apps/SW,)
 outputs = EOF/null (if is infection that can not revert to fresh apps/SW,) or else outputs = fresh apps/SW;
 To setup synapses, must have access to huge sample databases (such as Virustotal's access.)
 
-Github has lots of FLOSS (Open Source Softwares) simulators of CNS at https://github.com/topics/artificial-neural-network such as;
-"HSOM" (license is FLOSS) has simple Python artificial neural networks/maps which could run bots to do simple conversations (such as "ChatGPT 4.0" or "Claude-3 Opus",) but not close to complex enough to house human consciousness: https://github.com/CarsonScott/HSOM
+Github has lots of FLOSS (Open Source Softwares) simulators of CNS at https://github.com/topics/artificial-neural-network which have uses to do conversations (such as "ChatGPT 4.0" or "Claude-3 Opus",) but not close to complex enough to house human consciousness: https://github.com/CarsonScott/HSOM
 
 "apxr_run" (https://github.com/Rober-t/apxr_run/ , license is FLOSS) is almost complex enough to house human consciousness;
 "apxr_run" has various FLOSS neural network activation functions (absolute, average, standard deviation, sqrt, sin, tanh, log, sigmoid, cos), plus sensor functions (vector difference, quadratic, multiquadric, saturation [+D-zone], gaussian, cartesian/planar/polar distances): https://github.com/Rober-t/apxr_run/blob/master/src/lib/functions.erl

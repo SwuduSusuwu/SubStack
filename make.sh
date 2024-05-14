@@ -14,8 +14,10 @@ else
 	echo "Error: no clang++, no g++. `apt install clang` or `apt install gcc`"
 	exit 1
 fi
+rm *.o
 $GXX -c ${sSRC}/ClassResultList.cxx
 $GXX -c ${sSRC}/ClassCns.cxx
 $GXX -c ${sSRC}/VirusAnalysis.cxx
 $GXX -c ${sSRC}/ConversationCns.cxx
+$GXX  ClassResultList.o ClassCns.o VirusAnalysis.o ConversationCns.o
 

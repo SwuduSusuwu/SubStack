@@ -2,41 +2,58 @@
 #pragma once
 #ifndef INCLUDES_cxx_ConversationCns_hxx
 #define INCLUDES_cxx_ConversationCns_hxx
-#include <iostream>
+#include <string> /* std::string */
+#include <vector> /* std::vector */
 #include "ClassCns.hxx" /* Cns, CnsMode */
 #include "ClassResultList.hxx" /* ResultList */
 /* (Work-in-progress) conversation bots with artificial CNS ("HSOM" (the simple Python artificial CNS) is enough to do this), which should have results almost as complex as "ChatGPT 4.0" (or as "Claude-3 Opus"); */
 namespace Susuwu {
-/*
- * `questionsOrNull` should map to `responsesOrNull`,
- * with `questionsOrNull->bytes[x] = NULL` (or "\0") for new conversation synthesis,
- * and `responsesOrNull->bytes[x] = NULL` (or "\0") if should not respond.
- * Clients do not use this; This is just used for initial setup of synapses of CNS, after which the clients would download the synapses to use the CNS, or submit questions to a hosted CNS
-*/
-ResultList questionsOrNull;
-ResultList responsesOrNull;
+Cns conversationCns;
 
-void setupConversationCns(Cns *cns,
-	const ResultList *questionsOrNull, /* Expects `questionsOrNull>bytes[x] = NULL` if no question (new conversation synthesis) */
-	const ResultList *responsesOrNull /* Expects `responsesOrNull->bytes[x] = NULL` if should not respond */
-);
-
-const std::string cnsConversation(const Cns *cns, const std::string &bytes);
-
-void cnsMultipleInputsProcess(const Cns *cns); /* Inputs from std::cin, outputs to std::cout */
-
-/* For `questionsOrNull` + `responsesOrNull` synthesis: */
-std::vector<std::string> hosts; /* Universal Resources Identifiers of home pages to use for questions+responses.
+/* if (with example inputs) these functions (`questionsResponsesFromHosts()` `produceConversationCns()`) pass, `return true;`
+ * @throw std::bad_alloc
+ * @throw std::logic_error
+ * @pre @code conversationCns.hasImplementation() @endcode */
+const bool conversationCnsTestsThrows();
+const bool conversationCnsTests() { try{ return conversationCnsTestsThrows(); } catch(...) { return false; }}
+std::vector<std::string> conversationDefaultHosts = {
+/* Universal Resources Locators of hosts which `questionsResponsesFromHosts()` uses
  * Wikipedia is a special case; has compressed downloads of databases ( https://wikipedia.org/wiki/Wikipedia:Database_download )
  * Github is a special case; has compressed downloads of repositories ( https://docs.github.com/en/get-started/start-your-journey/downloading-files-from-github )
  */
+	"https://stackoverflow.com",
+	"https://superuser.com",
+	"https://quora.com"
+};
 
-void questionsResponsesSynthesis(ResultList *questionsOrNull, /* Sets `questionsOrNull>bytes[x] = NULL` if no question (new conversation synthesis). */
-	ResultList *responsesOrNull /* Sets `responsesOrNull->bytes[x] = NULL` if should not respond */
-); /* Sets `ResulstList.hashes[x] = Sha2(ResultList.bytes[x]);`, `ResultList.signatures[x] = Universal Resource Identifier` */
+/* @throw std::bad_alloc
+ * @post If no question, `0 == questionsOrNull.bytecodes[x].size()` (new conversation synthesis).
+ * If no responses, `0 == responsesOrNull.bytecodes[x].size()` (ignore).
+ * `questionsOrNull.signatures[x] = Universal Resource Locator`
+ * @code Sha2(ResultList.bytecodes[x]) == ResultList.hashes[x] @endcode */
+void questionsResponsesFromHosts(ResultList &questionsOrNull, ResultList &responsesOrNull, const std::vector<std::string> &hosts = conversationDefaultHosts);
+void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &responsesOrNull, const std::string &filepath = "index.xhtml");
+const std::vector<std::string> conversationParseUrls(const std::string &filepath = "index.xhtml"); /* TODO: for XML/XHTML could just use [ https://www.boost.io/libraries/regex/ https://github.com/boostorg/regex ] or [ https://www.boost.org/doc/libs/1_85_0/doc/html/property_tree/parsers.html#property_tree.parsers.xml_parser https://github.com/boostorg/property_tree/blob/develop/doc/xml_parser.qbk ] */
+const std::string conversationParseQuestion(const std::string &filepath = "index.xhtml"); /* TODO: regex or XML parser */
+const std::vector<std::string> conversationParseResponses(const std::string &filepath = "index.xhtml"); /* TODO: regex or XML parser */
+
+/* @pre `questionsOrNull` maps to `responsesOrNull`,
+ * `0 == questionsOrNull.bytecodes[x].size()` for new conversation synthesis (empty question has responses),
+ * `0 == responsesOrNull.bytecodes[x].size()` if should not respond (question does not have answers).
+ * @post Can use `conversationCnsProcess(cns, text)` @code cns.isInitialized() @endcode */
+void produceConversationCns(const ResultList &questionsOrNull, const ResultList &responsesOrNull, Cns &cns);
+
+/* All clients use is these 2 functions */
+/* `return cns.processStringToString(bytecodes);`
+ * @pre @code cns.isInitialized() @encode */
+const std::string conversationCnsProcess(const Cns &cns, const std::string &bytecode);
+/* `while(std::cin >> questions) { std::cout << conversationCnsProcess(questions); }` but more complex
+ * @pre @code cns.isInitialized() @encode */
+void conversationCnsLoopProcess(const Cns &cns);
+
 
 /* Related to this:
- * To process fast (lag less,) use flags which auto-vectorizes/auto-parallelizes; To do `setupConversationCns` fast, use TensorFlow's `MapReduce`;
+ * To process fast (lag less,) use flags which auto-vectorizes/auto-parallelizes; To do `produceConversationCns` fast, use TensorFlow's `MapReduce`;
  * https://swudususuwu.substack.com/p/howto-run-devices-phones-laptops
  *
  * Alternative CNS's;
