@@ -1,9 +1,9 @@
 /* Licenses: allows all uses ("Creative Commons"/"Apache 2") */
-#ifndef INCLUDE_GUARD_c__ClassCns__c__
-#define INCLUDE_GUARD_c__ClassCns__c__
+#ifndef INCLUDES_cxx_ClassCns_cxx
+#define INCLUDES_cxx_ClassCns_cxx
 #include <tuple> /* std::tuple */
 #include <ctype.h> /* size_t */
-#include "ClassCns.hpp" /* CnsMode */
+#include "ClassCns.hxx" /* CnsMode */
 namespace Susuwu {
 #ifdef USE_HSOM_CNS
 /* Sources: `git clone https://github.com/CarsonScott/HSOM.git`
@@ -102,5 +102,5 @@ typedef class ApxrCns : Cns {
  * https://swudususuwu.substack.com/p/howto-run-devices-phones-laptops
  */
 }; /* namespace Susuwu */
-#endif /* ndef INCLUDE_GUARD_c__ClassCns__c__ */
+#endif /* ndef INCLUDES_cxx_ClassCns_cxx */
 

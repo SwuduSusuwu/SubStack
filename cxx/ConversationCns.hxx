@@ -1,9 +1,10 @@
 /* Licenses: allows all uses ("Creative Commons"/"Apache 2") */
-#ifndef INCLUDE_GUARD_c__ConversationCns_h__
-#define INCLUDE_GUARD_c__ConversationCns_h__
+#pragma once
+#ifndef INCLUDES_cxx_ConversationCns_hxx
+#define INCLUDES_cxx_ConversationCns_hxx
 #include <iostream>
-#include "ClassCns.h" /* Cns, CnsMode */
-#include "ClassResultList.h" /* ResultList */
+#include "ClassCns.hxx" /* Cns, CnsMode */
+#include "ClassResultList.hxx" /* ResultList */
 /* (Work-in-progress) conversation bots with artificial CNS ("HSOM" (the simple Python artificial CNS) is enough to do this), which should have results almost as complex as "ChatGPT 4.0" (or as "Claude-3 Opus"); */
 namespace Susuwu {
 /*
@@ -52,5 +53,5 @@ void questionsResponsesSynthesis(ResultList *questionsOrNull, /* Sets `questions
  * https://swudususuwu.substack.com/p/destructive-unreversible-upload-of
  */
 }; /* namespace Susuwu */
-#endif /* ndef INCLUDE_GUARD_c__ConversationCns_h__ */
+#endif /* ndef INCLUDES_cxx_ConversationCns_hxx */
 

@@ -1,11 +1,11 @@
 /* Licenses: allows all uses ("Creative Commons"/"Apache 2") */
-#ifndef INCLUDE_GUARD_c__ConversationCns_c__
-#define INCLUDE_GUARD_c__ConversationCns_c__
+#ifndef INCLUDES_cxx_ConversationCns_cxx
+#define INCLUDES_cxx_ConversationCns_cxx
 #include <iostream> /* std::string std::vector */
 #include <tuple> /* std::tuple */
-#include "ConversationCns.hpp"
-#include "ClassCns.hpp" /* Cns, CnsMode */
-#include "ClassResultList.hpp" /* ResultList */
+#include "ConversationCns.hxx"
+#include "ClassCns.hxx" /* Cns, CnsMode */
+#include "ClassResultList.hxx" /* ResultList */
 namespace Susuwu {
 /* (Work-in-progress) conversation bots with artificial CNS.
  * `HSOM` (the simple Python artificial CNS) can do this with results almost as complex as "ChatGPT 4.0" (or as "Claude-3 Opus"); */
@@ -157,6 +157,6 @@ foreach(hosts as host) {
  * https://swudususuwu.substack.com/p/want-this-physical-form-gone-so-wont
  * https://swudususuwu.substack.com/p/destructive-unreversible-upload-of
  */
-};
-#endif /* ndef INCLUDE_GUARD_c__ConversationCns_c__ */
+}; /* namespace Susuwu */
+#endif /* ndef INCLUDES_cxx_ConversationCns_cxx */
 

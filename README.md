@@ -2,7 +2,7 @@ Licenses: dual `Creative Commons`/`Apache 2,0` (allows all uses)
 
 Purposes: `/posts/` stages posts (school classes) for https://SwuduSusuwu.substack.com/
 
-Purposes: `/c++/` C++ implementations ( based off of ideas/pseudocodes from https://SwuduSusuwu.substack.com/ , most of which is about autonomous tools, or artificial central nervous systems)
+Purposes: `/cxx/` C++ implementations ( based off of ideas/pseudocodes from https://SwuduSusuwu.substack.com/ , most of which is about autonomous tools, or artificial central nervous systems)
 
 Targets: Windows/Linux/Android/OSX/iOS; all C++ compilers, requires some extensions (such as `for(auto x : s) {}`)
 

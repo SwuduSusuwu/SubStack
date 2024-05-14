@@ -1,6 +1,7 @@
 /* Licenses: allows all uses ("Creative Commons"/"Apache 2") */
-#ifndef INCLUDE_GUARD_c__ClassResultList_h__
-#define INCLUDE_GUARD_c__ClassResultList_h__
+#pragma once
+#ifndef INCLUDES_cxx_ClassResultList_hxx
+#define INCLUDES_cxx_ClassResultList_hxx
 #include <iostream> /* std::string */
 #include <set> /* std::set */
 #include <unordered_set> /* std::unordered_set */
@@ -28,5 +29,5 @@ const bool haystackHas(const Container &haystack, std::string::const_iterator, s
 template<class Container>
 const std::tuple<std::string::const_iterator, std::string::const_iterator> smallestUniqueSubstr(const std::string &needle, const Container &haystack);
 }; /* namespace Susuwu */
-#endif /* ndef INCLUDE_GUARD_c__ClassResultList_h__ */
+#endif /* ndef INCLUDES_cxx_ClassResultList_hxx */
 

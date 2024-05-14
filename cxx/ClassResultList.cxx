@@ -1,9 +1,9 @@
 /* Licenses: allows all uses ("Creative Commons"/"Apache 2") */
-#ifndef INCLUDE_GUARD_c__ClassResultList_c__
-#define INCLUDE_GUARD_c__ClassResultList_c__
-#include <ctype.h> /* size_t */
+#ifndef INCLUDED_cxx_ClassResultList_cxx
+#define INCLUDED_cxx_ClassResultList_cxx
 #include <iostream> /* std::string */
-#include "ClassResultList.hpp" /* ResultList */
+#include <ctype.h> /* size_t */
+#include "ClassResultList.hxx" /* ResultList */
 namespace Susuwu {
 const bool resultListHashesHas(const ResultList *haystack, ResultList *caches, std::string bytes) {
 	if(caches->hashes.has(Sha2(bytes))) {
@@ -54,5 +54,5 @@ const std::tuple<std::string::const_iterator, std::string::const_iterator> small
 	return {retBegin, retEnd};
 }
 }; /* namespace Susuwu */
-#endif /* ndef INCLUDE_GUARD_c__ClassResultList_c__ */
+#endif /* ndef INCLUDED_cxx_ClassResultList_cxx */
 

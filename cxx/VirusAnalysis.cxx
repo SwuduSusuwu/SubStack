@@ -1,12 +1,12 @@
 /* Licenses: allows all uses ("Creative Commons"/"Apache 2") */
-#ifndef INCLUDE_GUARD_c___VirusAnalysis_c__
-#define INCLUDE_GUARD_c___VirusAnalysis_c__
+#ifndef INCLUDES_cxx_VirusAnalysis_cxx
+#define INCLUDES_cxx_VirusAnalysis_cxx
 #include <iostream> /* std::string std::vector */
 #include <tuple> /* std::tuple */
-#include "VirusAnalysis.hpp" /* passList, abortList, localPassList */
-#include "ClassCns.hpp" /* Cns, CnsMode */
-#include "ClassResultList.hpp" /* ResultList, smallestUniqueSubstr */
-#include "ClassPortableExecutable.hpp" /* Not included */
+#include "VirusAnalysis.hxx" /* passList, abortList, localPassList */
+#include "ClassCns.hxx" /* Cns, CnsMode */
+#include "ClassResultList.hxx" /* ResultList, smallestUniqueSubstr */
+#include "ClassPortableExecutable.hxx" /* Not included */
 /* (Work-in-progress) virus analysis (can use hashes, signatures, functional analysis, sandboxes, and artificial CNS (central nervous systems */
 namespace Susuwu {
 hook<launches>((const PortableExecutable *this) { /* Should use OS-specific "hook"/"callback" for `exec()`/app-launches */
@@ -220,7 +220,7 @@ const std::string cnsDisinfection(const Cns *cns, const std::string &bytes) {
 
 /* Related to this:
  * `cnsDisinfection` is close to conversation bots (such as "ChatGPT 4.0" or "Claude-3 Opus",) "HSOM" (the simple Python artificial CNS) is enough to do this;
- * #include "ConversationCns.c++"
+ * #include "ConversationCns.cxx"
  *
  * To process fast (lag less,) use flags which auto-vectorizes/auto-parallelizes; To do `setupConversationCns` fast, use TensorFlow's `MapReduce`;
  * https://swudususuwu.substack.com/p/howto-run-devices-phones-laptops
@@ -239,5 +239,5 @@ const std::string cnsDisinfection(const Cns *cns, const std::string &bytes) {
  * https://swudususuwu.substack.com/p/destructive-unreversible-upload-of
  */
 }; /* namespace Susuwu */
-#endif /* ndef INCLUDE_GUARD_c___VirusAnalysis_c__ */
+#endif /* ndef INCLUDES_cxx_VirusAnalysis_cxx */
 

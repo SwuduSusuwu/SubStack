@@ -1,6 +1,6 @@
 #!/bin/sh
 #cd build
-sSRC="./c++/"
+sSRC="./cxx/"
 #INCLUDES="${sSRC}"
 #export CXX_FLAGS="-I${INCLUDES}"
 if command -v ctags; then
@@ -14,8 +14,8 @@ else
 	echo "Error: no clang++, no g++. `apt install clang` or `apt install gcc`"
 	exit 1
 fi
-$GXX -c ${sSRC}/ClassResultList.c++ 
-$GXX -c ${sSRC}/ClassCns.c++ 
-$GXX -c ${sSRC}/VirusAnalysis.c++ 
-$GXX -c ${sSRC}/ConversationCns.c++ 
+$GXX -c ${sSRC}/ClassResultList.cxx
+$GXX -c ${sSRC}/ClassCns.cxx
+$GXX -c ${sSRC}/VirusAnalysis.cxx
+$GXX -c ${sSRC}/ConversationCns.cxx
 
