@@ -48,48 +48,14 @@ const bool virusAnalysisTestsThrows() {
 }
 const VirusAnalysisResult virusAnalysis(const PortableExecutable &file) {
 	const auto fileHash = Sha2(file.bytecode);
-	static bool hasResourcesToDoSandbox = true; /* set to false on computers which can not backup/restore the directory of the sandbox fast */
-	switch(hashAnalysis(file, fileHash)) {
-		case virusAnalysisPass:
-			return virusAnalysisPass;
-		case virusAnalysisRequiresReview:			/* just possible if one of the next tests requests to submit to manual analysis */
-			return virusAnalysisRequiresReview;
-		case virusAnalysisAbort:
-			return virusAnalysisAbort;
-		default: /* virusAnalysisContinue */
-	}
-	switch(signatureAnalysis(file, fileHash)) {
-		case virusAnalysisRequiresReview:			/* not implemented, but could do signatures which just request review */
-			return virusAnalysisRequiresReview;
-		case virusAnalysisAbort:
-			return virusAnalysisAbort;
-		default: /* virusAnalysisContinue */
-	}
-	switch(staticAnalysis(file, fileHash)) {
-		case virusAnalysisPass:		/* unexpected, unless static analysis can prove the file is harmless */
-			return virusAnalysisPass;
-		case virusAnalysisRequiresReview:		/* if static analysis returns significant risk score */
-			return virusAnalysisRequiresReview;
-		case virusAnalysisAbort:		/* unexpected, unless static analysis can prove the file has infection */
-			return virusAnalysisAbort;
-		default: /* virusAnalysisContinue */
-	}
-	switch(cnsAnalysis(file, fileHash)) {
-		case virusAnalysisPass:
-			return virusAnalysisPass;
-		case virusAnalysisRequiresReview:
-			return virusAnalysisRequiresReview;
-		case virusAnalysisAbort:
-			return virusAnalysisAbort;
-		default: /* virusAnalysisContinue */
-	}
-	if(hasResourcesToDoSandbox) {
-		switch(sandboxAnalysis(file, fileHash)) {
-			case virusAnalysisPass:		/* unexpected, unless sandbox can prove the file is harmless */
+	for(decltype(virusAnalyses[0]) analysis : virusAnalyses) {
+		switch(analysis(file, fileHash)) {
+			case virusAnalysisPass:
 				return virusAnalysisPass;
-			case virusAnalysisRequiresReview:		/* if sandbox returns significant risk score */
+			case virusAnalysisRequiresReview:
+				/*submitSampleToHosts(file);*/ /* TODO:? up to caller to do this? */
 				return virusAnalysisRequiresReview;
-			case virusAnalysisAbort:		/* unexpected, unless sandbox can prove the file has infection */
+			case virusAnalysisAbort:
 				return virusAnalysisAbort;
 			default: /* virusAnalysisContinue */
 		}
@@ -206,7 +172,7 @@ const VirusAnalysisResult straceOutputsAnalysis(const FilePath &straceDumpPath) 
 /* To train (setup synapses) the CNS, is slow plus requires access to huge sample databases,
 but the synapses use small resources (allow clients to do fast analysis.) */
 void produceAnalysisCns(const ResultList &pass, const ResultList &abort,
-const ResultList &unreviewed, /* WARNING! Possible danger to use unreviewed samples */
+const ResultList &unreviewed /* = ResultList(), WARNING! Possible danger to use unreviewed samples */,
 Cns &cns /* = analysisCns */
 ) {
 	std::vector<const std::tuple<const FileBytecode, float>> inputsToPass, inputsToUnreviewed, inputsToAbort;

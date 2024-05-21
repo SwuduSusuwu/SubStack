@@ -7,13 +7,12 @@ For the most new sources, use apps such as [iSH](https://apps.apple.com/us/app/i
 `git clone https://github.com/SwuduSusuwu/SubStack.git && cd Substack`
 `less` [cxx/ClassPortableExecutable.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ClassPortableExecutable.hxx)
 ```
-typedef std::string FilePath; /* TODO: `std::char_traits<unsigned char>`, `std::basic_string<unsigned char>("string literal")` */
-typedef FilePath FileBytecode; /* Uses `std::string` for bytecode (versus `std::vector`) because:
+typedef std::string FilePath;
+typedef std::string FileBytecode; /* Used `std::string` for bytecode (versus `vector<char>`) because:
  * "If you are going to use the data in a string like fashon then you should opt for std::string as using a std::vector may confuse subsequent maintainers. If on the other hand most of the data manipulation looks like plain maths or vector like then a std::vector is more appropriate." -- https://stackoverflow.com/a/1556294/24473928
 */
-typedef FilePath FileHash; /* TODO: `std::unordered_set<std::basic_string<unsigned char>>` */
+/* Todo: Unimplemented (work-in-progress) just to allow `cxx/VirusAnalysis.cxx` to compile. You should replace with official PortableExecutable/ELF headers */
 typedef class PortableExecutable {
-/* TODO: Unimplemented (work-in-progress) just to allow `cxx/VirusAnalysis.cxx` to compile. You should replace with official implementation of this. */
 public:
 	FilePath path; /* Suchas "C:\Program.exe" or "/usr/bin/library.so" */
 	FileBytecode bytecode; /* compiled programs; bytecode */
@@ -22,9 +21,13 @@ public:
 ```
 `less` [cxx/ClassResultList.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ClassResultList.hxx)
 ```
-typedef FileHash ResultListHash;
-typedef FileBytecode ResultListBytecode; /* Should have structure of FileBytecode, but is not just for files, can use for UTF8/webpages, so have a new type for this */
-typedef FilePath ResultListSignature; /* TODO: `typedef ResultListBytecode ResultListSignature; ResultListSignature("string literal");` */
+typedef decltype(Sha2(FileBytecode())) ResultListHash;
+typedef std::string ResultListSignature;
+/* Used `std::string` (versus `vector<char>`) because:
+ * "If you are going to use the data in a string like fashon then you should opt for std::string as using a std::vector may confuse subsequent maintainers. If on the other hand most of the data manipulation looks like plain maths or vector like then a std::vector is more appropriate." -- https://stackoverflow.com/a/1556294/24473928
+ * plus this class is used not just for executables, but also webpages (XML/XHTML)
+*/
+typedef FileBytecode ResultListBytecode;
 typedef struct ResultList { /* Lists of files (or pages) */
 	std::unordered_set<ResultListHash> hashes; /* Unique checksums of files (or pages), to avoid duplicates, plus to do fast checks for existance */
 	std::vector<ResultListSignature> signatures; /* Smallest substrings (or regexes, or Universal Resource Locator) unique to this, has uses close to `hashes` but can match if files have small differences */
@@ -44,7 +47,7 @@ const size_t maxOfSizes(const List &list) {
 #endif /* PREFERENCE_IS_CSTR else */
 }
 
-/* @pre @code std::is_sorted(list.begin(), list.end()) && std::is_sorted(list2.begin(), list2.end()) @endcode */
+/* @pre @code std::is_sorted(list.begin(), list.end()) && std::is_sorted(list.begin(), list.end()) @endcode */
 template<class List>
 const List listIntersections(const List &list, const List &list2) {
 	List intersections;
@@ -60,7 +63,6 @@ template<class List>
 const decltype(List::begin()) listFind(const List &list, const decltype(*list.begin()) &x) {
 	return std::find(list.begin(), list.end(), x);
 }
-
 template<class List>
 const bool listHas(const List &list, const decltype(*list.begin()) &x) {
 	return list.end() != std::find(list.begin(), list.end(), x);
@@ -74,7 +76,6 @@ const bool listHas(const List &list, std::string::const_iterator s, std::string:
 	}
 	return false;
 }
-
 template<class S>
 const std::vector<S> explodeToList(const S &s, const S &token) {
 	std::vector<S> list;
@@ -88,6 +89,7 @@ const std::vector<S> explodeToList(const S &s, const S &token) {
 	}
 	return list;
 }
+
 
 template<class List>
 const std::tuple<std::string::const_iterator, std::string::const_iterator> smallestUniqueSubstr(const std::string &chars, const List &list) {
@@ -352,15 +354,11 @@ const VirusAnalysisResult signatureAnalysis(const PortableExecutable &sample, co
 /* Static analysis */
 /* @throw bad_alloc */
 const std::vector<std::string> importedFunctionsList(const PortableExecutable &);
-std::vector<std::string> syscallPotentialDangers = {
-	"memopen", "fwrite", "socket", "GetProcAddress", "IsVmPresent"
-};
 const VirusAnalysisResult staticAnalysis(const PortableExecutable &, const ResultListHash &); /* if(intersection(importedFunctionsList(sample), dangerFunctionsList)) {return RequiresReview;} return Continue;` */
 
 /* Analysis sandbox */
 const VirusAnalysisResult sandboxAnalysis(const PortableExecutable &, const ResultListHash &); /* `chroot(strace(sample)) >> outputs; return straceOutputsAnalysis(outputs);` */
-std::vector<std::string> stracePotentialDangers = {"write(*)"};
-const VirusAnalysisResult straceOutputsAnalysis(const FilePath &straceDumpPath); /* TODO: regex */
+const VirusAnalysisResult straceOutputsAnalysis(const FilePath &straceDumpPath); /* TODO: `if(intersection(outputs, straceDangers)) {return RequiresReview;} return Continue; */
 
 /* Analysis CNS */
 /* To train (setup synapses) the CNS, is slow plus requires access to huge sample databases,
@@ -455,6 +453,7 @@ const VirusAnalysisResult virusAnalysis(const PortableExecutable &file) {
 	return virusAnalysisPass;
 }
 
+/* Hash analysis */
 const VirusAnalysisResult hashAnalysis(const PortableExecutable &file, const ResultListHash &fileHash) {
 	try {
 		const auto result = hashAnalysisCaches.at(fileHash);
@@ -470,6 +469,7 @@ const VirusAnalysisResult hashAnalysis(const PortableExecutable &file, const Res
 	}
 }
 
+/* Signatures analysis */
 const VirusAnalysisResult signatureAnalysis(const PortableExecutable &file, const ResultListHash &fileHash) {
 	try {
 		const auto result = signatureAnalysisCaches.at(fileHash);
@@ -488,16 +488,26 @@ const VirusAnalysisResult signatureAnalysis(const PortableExecutable &file, cons
 	}
 }
 
+/* To produce virus signatures:
+ * use passlists of all files that was reviewed that pass,
+ * plus abortlists of all files that failed manual review, such lists as Virustotal has.
+ * `produceAbortListsignatures()` is to produce the `abortList.signatures` list, with the smallest substrings unique to infected files;
+ * is slow, requires huge database of executables, and is not for clients.
+ */
 void produceAbortListSignatures(const ResultList &passList, ResultList &abortList) {
 	for(decltype(abortList.bytecodes[0]) file : abortList.bytecodes) {
 		auto tuple = smallestUniqueSubstr(file, passList.bytecodes);
 		abortList.signatures.push_back(ResultListSignature(std::get<0>(tuple), std::get<1>(tuple)));
 	} /* The most simple signature is a substring, but some analyses use regexes. */
 }
+/* Comodo has a list of virus signatures to check against at https://www.comodo.com/home/internet-security/updates/vdp/database.php */
 
+/* Static analysis */
 const std::vector<std::string> importedFunctionsList(const PortableExecutable &file) {
-/* TODO
- * Resources; “Portable Executable” for Windows ( https://learn.microsoft.com/en-us/windows/win32/debug/pe-format https://wikipedia.org/wiki/Portable_Executable ,
+	/* TODO; parse PortableExecutable (or ELF) .bytecode, return function imports */
+}
+/*
+ * importedFunctionsList resources; “Portable Executable” for Windows ( https://learn.microsoft.com/en-us/windows/win32/debug/pe-format https://wikipedia.org/wiki/Portable_Executable ,
  * “Extended Linker Format” for most others such as UNIX/Linuxes ( https://wikipedia.org/wiki/Executable_and_Linkable_Format ),
  * shows how to analyse lists of libraries(.DLL's/.SO's) the SW uses,
  * plus what functions (new syscalls) the SW can goto through `jmp`/`call` instructions.
@@ -510,14 +520,15 @@ const std::vector<std::string> importedFunctionsList(const PortableExecutable &f
  *
  * https://www.codeproject.com/Questions/338807/How-to-get-list-of-all-imported-functions-invoked shows how to analyse dynamic loads of functions (if do this, `syscallPotentialDangers[]` does not include `GetProcAddress()`.)
  */
-}
-
 const VirusAnalysisResult staticAnalysis(const PortableExecutable &file, const ResultListHash &fileHash) {
 	try {
 		const auto result = staticAnalysisCaches.at(fileHash);
 		return result;
 	} catch (...) {
 		auto syscallsUsed = importedFunctionsList(file);
+		typeof(syscallsUsed) syscallPotentialDangers = {
+			"memopen", "fwrite", "socket", "GetProcAddress", "IsVmPresent"
+		};
 		std::sort(syscallPotentialDangers.begin(), syscallPotentialDangers.end());
 		std::sort(syscallsUsed.begin(), syscallsUsed.end());
 		if(listsIntersect(syscallPotentialDangers, syscallsUsed)) {
@@ -527,6 +538,7 @@ const VirusAnalysisResult staticAnalysis(const PortableExecutable &file, const R
 	}
 }
 
+/* Analysis sandbox */
 const VirusAnalysisResult sandboxAnalysis(const PortableExecutable &file, const ResultListHash &fileHash) {
 	try {
 		const auto result = sandboxAnalysisCaches.at(fileHash);
@@ -541,19 +553,14 @@ const VirusAnalysisResult sandboxAnalysis(const PortableExecutable &file, const 
 	}
 }
 const VirusAnalysisResult straceOutputsAnalysis(const FilePath &straceDumpPath) {
-		auto straceDump = std::ifstream(straceDumpPath);
-		std::vector<std::string> straceOutputs /*= explodeToList(straceDump, "\n")*/;
-		for(std::string straceOutput; std::getline(straceDump, straceOutput); ) {
-			straceOutputs.push_back(straceOutput);
-		}
-		std::sort(stracePotentialDangers.begin(), stracePotentialDangers.end());
-		std::sort(straceOutputs.begin(), straceOutputs.end());
-		if(listsIntersect(stracePotentialDangers, straceOutputs)) { /* Todo: regex */
-			return virusAnalysisRequiresReview;
-		}
 	return virusAnalysisContinue;
 }
 
+/* Analysis CNS */
+/* Replace `Cns` with the typedef of your CNS, such as `HSOM` or `apxr` */
+
+/* To train (setup synapses) the CNS, is slow plus requires access to huge sample databases,
+but the synapses use small resources (allow clients to do fast analysis.) */
 void produceAnalysisCns(const ResultList &pass, const ResultList &abort,
 const ResultList &unreviewed /* = ResultList(), WARNING! Possible danger to use unreviewed samples */,
 Cns &cns /* = analysisCns */
@@ -597,7 +604,19 @@ const VirusAnalysisResult cnsAnalysis(const PortableExecutable &file, const Resu
 	return cnsAnalysis_(file, fileHash);
 }
 
-void produceDisinfectionCns(const ResultList &passOrNull, const ResultList &abortOrNull, Cns &cns /* = disinfectionCns */) {
+/* Disinfection CNS */
+
+/* `abortOrNull` should map to `passOrNull` (`ResultList` is composed of `std::tuple`s, because just `produceDisinfectionCns()` requires file),
+ * with `abortOrNull.bytecodes[x] = NULL` (or "\0") for new SW synthesis,
+ * and `passOrNull.bytecodes[x] = NULL` (or "\0") if infected and CNS can not cleanse file.
+ */
+
+/* Uses more resources than `produceAnalysisCns()`, can restore infected SW to as-new SW */
+void produceDisinfectionCns(
+	const ResultList &passOrNull, /* Expects `resultList.bytecodes[x] = NULL` if does not pass */
+	const ResultList &abortOrNull, /* Expects `resultList.bytecodes[x] = NULL` if does pass */
+	Cns &cns /* = disinfectionCns */
+) {
 	std::vector<const std::tuple<const FileBytecode, const FileBytecode>> inputsToOutputs;
 	cns.setInputMode(cnsModeString);
 	cns.setOutputMode(cnsModeString);
@@ -612,6 +631,7 @@ void produceDisinfectionCns(const ResultList &passOrNull, const ResultList &abor
 	cns.setupSynapses(inputsToOutputs);
 }
 
+/* Uses more resources than `cnsAnalysis()` */
 const FileBytecode cnsDisinfection(const PortableExecutable &file, const Cns &cns /* = disinfectionCns */) {
 	return cns.processToString(file.bytecode);
 }
@@ -629,7 +649,7 @@ Cns conversationCns;
  * @pre @code conversationCns.hasImplementation() @endcode */
 const bool conversationCnsTestsThrows();
 const bool conversationCnsTests() { try{ return conversationCnsTestsThrows(); } catch(...) { return false; }}
-std::vector<FilePath> conversationDefaultHosts = {
+std::vector<std::string> conversationDefaultHosts = {
 /* Universal Resources Locators of hosts which `questionsResponsesFromHosts()` uses
  * Wikipedia is a special case; has compressed downloads of databases ( https://wikipedia.org/wiki/Wikipedia:Database_download )
  * Github is a special case; has compressed downloads of repositories ( https://docs.github.com/en/get-started/start-your-journey/downloading-files-from-github )
@@ -644,11 +664,11 @@ std::vector<FilePath> conversationDefaultHosts = {
  * If no responses, `0 == responsesOrNull.bytecodes[x].size()` (ignore).
  * `questionsOrNull.signatures[x] = Universal Resource Locator`
  * @code Sha2(ResultList.bytecodes[x]) == ResultList.hashes[x] @endcode */
-void questionsResponsesFromHosts(ResultList &questionsOrNull, ResultList &responsesOrNull, const std::vector<FilePath> &hosts = conversationDefaultHosts);
-void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &responsesOrNull, const FilePath &filepath = "index.xhtml");
-const std::vector<FilePath> conversationParseUrls(const FilePath &filepath = "index.xhtml"); /* TODO: for XML/XHTML could just use [ https://www.boost.io/libraries/regex/ https://github.com/boostorg/regex ] or [ https://www.boost.org/doc/libs/1_85_0/doc/html/property_tree/parsers.html#property_tree.parsers.xml_parser https://github.com/boostorg/property_tree/blob/develop/doc/xml_parser.qbk ] */
-const FileBytecode conversationParseQuestion(const FilePath &filepath = "index.xhtml"); /* TODO: regex or XML parser */
-const std::vector<FileBytecode> conversationParseResponses(const FilePath &filepath = "index.xhtml"); /* TODO: regex or XML parser */
+void questionsResponsesFromHosts(ResultList &questionsOrNull, ResultList &responsesOrNull, const std::vector<std::string> &hosts = conversationDefaultHosts);
+void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &responsesOrNull, const std::string &filepath = "index.xhtml");
+const std::vector<std::string> conversationParseUrls(const std::string &filepath = "index.xhtml"); /* TODO: for XML/XHTML could just use [ https://www.boost.io/libraries/regex/ https://github.com/boostorg/regex ] or [ https://www.boost.org/doc/libs/1_85_0/doc/html/property_tree/parsers.html#property_tree.parsers.xml_parser https://github.com/boostorg/property_tree/blob/develop/doc/xml_parser.qbk ] */
+const std::string conversationParseQuestion(const std::string &filepath = "index.xhtml"); /* TODO: regex or XML parser */
+const std::vector<std::string> conversationParseResponses(const std::string &filepath = "index.xhtml"); /* TODO: regex or XML parser */
 
 /* @pre `questionsOrNull` maps to `responsesOrNull`,
  * `0 == questionsOrNull.bytecodes[x].size()` for new conversation synthesis (empty question has responses),
@@ -666,6 +686,12 @@ void conversationCnsLoopProcess(const Cns &cns);
 ```
 `less` [cxx/ConversationCns.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ConversationCns.cxx)
 ```
+/*
+ * `questionsOrNull` should map to `responsesOrNull`,
+ * with `questionsOrNull.bytecodes[x] = NULL` (or "\0") for new conversation synthesis,
+ * and `responsesOrNull.bytecodes[x] = NULL` (or "\0") if should not respond.
+ * Clients do not use this; This is just used for initial setup of synapses of CNS, after which the clients would download the synapses to use the CNS, or submit questions to a hosted CNS
+*/
 const bool conversationCnsTestsThrows() {
 	ResultList questionsOrNull {
 		.bytecodes { /* UTF-8 */
@@ -702,7 +728,7 @@ void produceConversationCns(const ResultList &questionsOrNull, const ResultList 
 	cns.setupSynapses(inputsToOutputs);
 }
 
-void questionsResponsesFromHosts(ResultList &questionsOrNull, ResultList &responsesOrNull, const std::vector<FilePath> &hosts) {
+void questionsResponsesFromHosts(ResultList &questionsOrNull, ResultList &responsesOrNull, const std::vector<std::string> &hosts) {
 	for(decltype(hosts[0]) host : hosts) {
 		posixExec("/bin/wget", "'" + host + "/robots.txt' > robots.txt", NULL);
 		posixExec("/bin/wget", "'" + host + "' > index.xhtml", NULL);
@@ -710,7 +736,7 @@ void questionsResponsesFromHosts(ResultList &questionsOrNull, ResultList &respon
 		questionsResponsesFromXhtml(questionsOrNull, responsesOrNull, "index.xhtml");
 	}
 }
-void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &responsesOrNull, const FilePath &xhtmlFile) {
+void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &responsesOrNull, const std::string &xhtmlFile) {
 	auto noRobots = conversationParseUrls("robots.txt");
 	auto question = conversationParseQuestion(xhtmlFile);
 	if(question.size()) {
@@ -743,8 +769,8 @@ void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &respon
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #endif /* BOOST_VERSION */
-const std::vector<FilePath> conversationParseUrls(const FilePath &xhtmlFile) {
-	const std::vector<FilePath> urls;
+const std::vector<std::string> conversationParseUrls(const std::string &xhtmlFile) {
+	const std::vector<std::string> urls;
 #ifdef BOOST_VERSION
 	boost::property_tree::ptree pt;
 	read_xml(xhtmlFile, pt);
@@ -756,10 +782,10 @@ const std::vector<FilePath> conversationParseUrls(const FilePath &xhtmlFile) {
 #endif /* else !BOOST_VERSION */
 	return urls;
 }
-const FileBytecode conversationParseQuestion(const FilePath &xhtmlFile) {} /* TODO */
-const std::vector<FileBytecode> conversationParseResponses(const FilePath &xhtmlFile) {} /* TODO */
+const std::string conversationParseQuestion(const std::string &xhtmlFile) {} /* TODO */
+const std::vector<std::string> conversationParseResponses(const std::string &xhtmlFile) {} /* TODO */
 
-const std::string cnsConversationProcess(const Cns &cns, const FileBytecode &bytecode) {
+const std::string cnsConversationProcess(const Cns &cns, const std::string &bytecode) {
 	return cns.processToString(bytecode);
 }
 
