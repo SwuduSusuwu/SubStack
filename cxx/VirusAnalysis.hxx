@@ -8,7 +8,7 @@
 #include "ClassCns.hxx" /* Cns, CnsMode */
 #include "ClassResultList.hxx" /* ResultList, smallestUniqueSubstr */
 #include "ClassPortableExecutable.hxx" /* PortableExecutable FilePath FileBytecode */
-/* (Work-in-progress) virus analysis (can use hashes, signatures, functional analysis, sandboxes, and artificial CNS (central nervous systems */
+/* (Work-in-progress) virus analysis (can use hashes, signatures, static analysis, sandboxes, and artificial CNS (central nervous systems */
 namespace Susuwu {
 typedef enum VirusAnalysisResult {
 	virusAnalysisAbort = (short)false, /* do not launch */
@@ -42,11 +42,15 @@ const VirusAnalysisResult signatureAnalysis(const PortableExecutable &sample, co
 /* Static analysis */
 /* @throw bad_alloc */
 const std::vector<std::string> importedFunctionsList(const PortableExecutable &);
+std::vector<std::string> syscallPotentialDangers = {
+	"memopen", "fwrite", "socket", "GetProcAddress", "IsVmPresent"
+};
 const VirusAnalysisResult staticAnalysis(const PortableExecutable &, const ResultListHash &); /* if(intersection(importedFunctionsList(sample), dangerFunctionsList)) {return RequiresReview;} return Continue;` */
 
 /* Analysis sandbox */
 const VirusAnalysisResult sandboxAnalysis(const PortableExecutable &, const ResultListHash &); /* `chroot(strace(sample)) >> outputs; return straceOutputsAnalysis(outputs);` */
-const VirusAnalysisResult straceOutputsAnalysis(const FilePath &straceDumpPath); /* TODO: `if(intersection(outputs, straceDangers)) {return RequiresReview;} return Continue; */
+std::vector<std::string> stracePotentialDangers = {"write(*)"};
+const VirusAnalysisResult straceOutputsAnalysis(const FilePath &straceDumpPath); /* TODO: regex */
 
 /* Analysis CNS */
 /* To train (setup synapses) the CNS, is slow plus requires access to huge sample databases,

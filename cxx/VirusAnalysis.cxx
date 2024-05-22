@@ -1,6 +1,7 @@
 /* Licenses: allows all uses ("Creative Commons"/"Apache 2") */
 #ifndef INCLUDES_cxx_VirusAnalysis_cxx
 #define INCLUDES_cxx_VirusAnalysis_cxx
+#include <fstream> /* std::ifstream */
 #include <vector> /* std::vector */
 #include <string> /* std::string */
 #include <tuple> /* std::tuple */
@@ -136,9 +137,6 @@ const VirusAnalysisResult staticAnalysis(const PortableExecutable &file, const R
 		return result;
 	} catch (...) {
 		auto syscallsUsed = importedFunctionsList(file);
-		typeof(syscallsUsed) syscallPotentialDangers = {
-			"memopen", "fwrite", "socket", "GetProcAddress", "IsVmPresent"
-		};
 		std::sort(syscallPotentialDangers.begin(), syscallPotentialDangers.end());
 		std::sort(syscallsUsed.begin(), syscallsUsed.end());
 		if(listsIntersect(syscallPotentialDangers, syscallsUsed)) {
@@ -163,6 +161,16 @@ const VirusAnalysisResult sandboxAnalysis(const PortableExecutable &file, const 
 	}
 }
 const VirusAnalysisResult straceOutputsAnalysis(const FilePath &straceDumpPath) {
+		auto straceDump = std::ifstream(straceDumpPath);
+		std::vector<std::string> straceOutputs /*= explodeToList(straceDump, "\n")*/;
+		for(std::string straceOutput; std::getline(straceDump, straceOutput); ) {
+			straceOutputs.push_back(straceOutput);
+		}
+		std::sort(stracePotentialDangers.begin(), stracePotentialDangers.end());
+		std::sort(straceOutputs.begin(), straceOutputs.end());
+		if(listsIntersect(stracePotentialDangers, straceOutputs)) { /* Todo: regex */
+			return virusAnalysisRequiresReview;
+		}
 	return virusAnalysisContinue;
 }
 

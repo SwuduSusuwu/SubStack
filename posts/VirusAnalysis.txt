@@ -354,11 +354,15 @@ const VirusAnalysisResult signatureAnalysis(const PortableExecutable &sample, co
 /* Static analysis */
 /* @throw bad_alloc */
 const std::vector<std::string> importedFunctionsList(const PortableExecutable &);
+std::vector<std::string> syscallPotentialDangers = {
+	"memopen", "fwrite", "socket", "GetProcAddress", "IsVmPresent"
+};
 const VirusAnalysisResult staticAnalysis(const PortableExecutable &, const ResultListHash &); /* if(intersection(importedFunctionsList(sample), dangerFunctionsList)) {return RequiresReview;} return Continue;` */
 
 /* Analysis sandbox */
 const VirusAnalysisResult sandboxAnalysis(const PortableExecutable &, const ResultListHash &); /* `chroot(strace(sample)) >> outputs; return straceOutputsAnalysis(outputs);` */
-const VirusAnalysisResult straceOutputsAnalysis(const FilePath &straceDumpPath); /* TODO: `if(intersection(outputs, straceDangers)) {return RequiresReview;} return Continue; */
+std::vector<std::string> stracePotentialDangers = {"write(*)"};
+const VirusAnalysisResult straceOutputsAnalysis(const FilePath &straceDumpPath); /* TODO: regex */
 
 /* Analysis CNS */
 /* To train (setup synapses) the CNS, is slow plus requires access to huge sample databases,
@@ -526,9 +530,6 @@ const VirusAnalysisResult staticAnalysis(const PortableExecutable &file, const R
 		return result;
 	} catch (...) {
 		auto syscallsUsed = importedFunctionsList(file);
-		typeof(syscallsUsed) syscallPotentialDangers = {
-			"memopen", "fwrite", "socket", "GetProcAddress", "IsVmPresent"
-		};
 		std::sort(syscallPotentialDangers.begin(), syscallPotentialDangers.end());
 		std::sort(syscallsUsed.begin(), syscallsUsed.end());
 		if(listsIntersect(syscallPotentialDangers, syscallsUsed)) {
@@ -553,6 +554,16 @@ const VirusAnalysisResult sandboxAnalysis(const PortableExecutable &file, const 
 	}
 }
 const VirusAnalysisResult straceOutputsAnalysis(const FilePath &straceDumpPath) {
+		auto straceDump = std::ifstream(straceDumpPath);
+		std::vector<std::string> straceOutputs /*= explodeToList(straceDump, "\n")*/;
+		for(std::string straceOutput; std::getline(straceDump, straceOutput); ) {
+			straceOutputs.push_back(straceOutput);
+		}
+		std::sort(stracePotentialDangers.begin(), stracePotentialDangers.end());
+		std::sort(straceOutputs.begin(), straceOutputs.end());
+		if(listsIntersect(stracePotentialDangers, straceOutputs)) { /* Todo: regex */
+			return virusAnalysisRequiresReview;
+		}
 	return virusAnalysisContinue;
 }
 
