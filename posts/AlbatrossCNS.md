@@ -1,4 +1,3 @@
-_Uses Github's Markdown format_
 With (or without) attributions, all posts allow all (re)uses.
 
 Simple artifical neural networks:

@@ -1,4 +1,4 @@
-_Uses Github's markdown format_
+**Virus analysis tools should use local heuristical analysis/sandboxes plus artificial CNS (central nervous systems) to secure us**
 _[This post](https://swudususuwu.substack.com/p/howto-produce-better-virus-scanners) allows all uses._
 
 Static analysis + sandbox + CNS = 1 second (approx) analysis of **new executables** (protects all app launches,) but _caches_ reduce this to **less than 1ms** (just cost to lookup `ResultList::hashes`, which is `std::unordered_set<decltype(Sha2(const FileBytecode &))>`; a hashmap of hashes).
