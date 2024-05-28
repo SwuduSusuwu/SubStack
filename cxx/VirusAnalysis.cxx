@@ -64,7 +64,6 @@ const VirusAnalysisResult virusAnalysis(const PortableExecutable &file) {
 	return virusAnalysisPass;
 }
 
-/* Hash analysis */
 const VirusAnalysisResult hashAnalysis(const PortableExecutable &file, const ResultListHash &fileHash) {
 	try {
 		const auto result = hashAnalysisCaches.at(fileHash);
@@ -80,7 +79,6 @@ const VirusAnalysisResult hashAnalysis(const PortableExecutable &file, const Res
 	}
 }
 
-/* Signatures analysis */
 const VirusAnalysisResult signatureAnalysis(const PortableExecutable &file, const ResultListHash &fileHash) {
 	try {
 		const auto result = signatureAnalysisCaches.at(fileHash);
@@ -99,26 +97,16 @@ const VirusAnalysisResult signatureAnalysis(const PortableExecutable &file, cons
 	}
 }
 
-/* To produce virus signatures:
- * use passlists of all files that was reviewed that pass,
- * plus abortlists of all files that failed manual review, such lists as Virustotal has.
- * `produceAbortListsignatures()` is to produce the `abortList.signatures` list, with the smallest substrings unique to infected files;
- * is slow, requires huge database of executables, and is not for clients.
- */
 void produceAbortListSignatures(const ResultList &passList, ResultList &abortList) {
 	for(decltype(abortList.bytecodes[0]) file : abortList.bytecodes) {
 		auto tuple = smallestUniqueSubstr(file, passList.bytecodes);
 		abortList.signatures.push_back(ResultListSignature(std::get<0>(tuple), std::get<1>(tuple)));
 	} /* The most simple signature is a substring, but some analyses use regexes. */
 }
-/* Comodo has a list of virus signatures to check against at https://www.comodo.com/home/internet-security/updates/vdp/database.php */
 
-/* Static analysis */
 const std::vector<std::string> importedFunctionsList(const PortableExecutable &file) {
-	/* TODO; parse PortableExecutable (or ELF) .bytecode, return function imports */
-}
-/*
- * importedFunctionsList resources; “Portable Executable” for Windows ( https://learn.microsoft.com/en-us/windows/win32/debug/pe-format https://wikipedia.org/wiki/Portable_Executable ,
+/* TODO
+ * Resources; “Portable Executable” for Windows ( https://learn.microsoft.com/en-us/windows/win32/debug/pe-format https://wikipedia.org/wiki/Portable_Executable ,
  * “Extended Linker Format” for most others such as UNIX/Linuxes ( https://wikipedia.org/wiki/Executable_and_Linkable_Format ),
  * shows how to analyse lists of libraries(.DLL's/.SO's) the SW uses,
  * plus what functions (new syscalls) the SW can goto through `jmp`/`call` instructions.
@@ -131,6 +119,8 @@ const std::vector<std::string> importedFunctionsList(const PortableExecutable &f
  *
  * https://www.codeproject.com/Questions/338807/How-to-get-list-of-all-imported-functions-invoked shows how to analyse dynamic loads of functions (if do this, `syscallPotentialDangers[]` does not include `GetProcAddress()`.)
  */
+}
+
 const VirusAnalysisResult staticAnalysis(const PortableExecutable &file, const ResultListHash &fileHash) {
 	try {
 		const auto result = staticAnalysisCaches.at(fileHash);
@@ -146,7 +136,6 @@ const VirusAnalysisResult staticAnalysis(const PortableExecutable &file, const R
 	}
 }
 
-/* Analysis sandbox */
 const VirusAnalysisResult sandboxAnalysis(const PortableExecutable &file, const ResultListHash &fileHash) {
 	try {
 		const auto result = sandboxAnalysisCaches.at(fileHash);
@@ -174,11 +163,6 @@ const VirusAnalysisResult straceOutputsAnalysis(const FilePath &straceDumpPath) 
 	return virusAnalysisContinue;
 }
 
-/* Analysis CNS */
-/* Replace `Cns` with the typedef of your CNS, such as `HSOM` or `apxr` */
-
-/* To train (setup synapses) the CNS, is slow plus requires access to huge sample databases,
-but the synapses use small resources (allow clients to do fast analysis.) */
 void produceAnalysisCns(const ResultList &pass, const ResultList &abort,
 const ResultList &unreviewed /* = ResultList(), WARNING! Possible danger to use unreviewed samples */,
 Cns &cns /* = analysisCns */
@@ -222,19 +206,7 @@ const VirusAnalysisResult cnsAnalysis(const PortableExecutable &file, const Resu
 	return cnsAnalysis_(file, fileHash);
 }
 
-/* Disinfection CNS */
-
-/* `abortOrNull` should map to `passOrNull` (`ResultList` is composed of `std::tuple`s, because just `produceDisinfectionCns()` requires file),
- * with `abortOrNull.bytecodes[x] = NULL` (or "\0") for new SW synthesis,
- * and `passOrNull.bytecodes[x] = NULL` (or "\0") if infected and CNS can not cleanse file.
- */
-
-/* Uses more resources than `produceAnalysisCns()`, can restore infected SW to as-new SW */
-void produceDisinfectionCns(
-	const ResultList &passOrNull, /* Expects `resultList.bytecodes[x] = NULL` if does not pass */
-	const ResultList &abortOrNull, /* Expects `resultList.bytecodes[x] = NULL` if does pass */
-	Cns &cns /* = disinfectionCns */
-) {
+void produceDisinfectionCns(const ResultList &passOrNull, const ResultList &abortOrNull, Cns &cns /* = disinfectionCns */) {
 	std::vector<const std::tuple<const FileBytecode, const FileBytecode>> inputsToOutputs;
 	cns.setInputMode(cnsModeString);
 	cns.setOutputMode(cnsModeString);
@@ -249,30 +221,12 @@ void produceDisinfectionCns(
 	cns.setupSynapses(inputsToOutputs);
 }
 
-/* Uses more resources than `cnsAnalysis()` */
 const FileBytecode cnsDisinfection(const PortableExecutable &file, const Cns &cns /* = disinfectionCns */) {
 	return cns.processToString(file.bytecode);
 }
 
-/* Related to this:
- * `cnsDisinfection` is close to conversation bots (such as "ChatGPT 4.0" or "Claude-3 Opus",) "HSOM" (the simple Python artificial CNS) is enough to do this;
- * #include "ConversationCns.cxx"
- *
- * To process fast (lag less,) use flags which auto-vectorizes/auto-parallelizes; To do `produce*Cns` fast, use TensorFlow's `MapReduce`;
+/* To process fast (lag less,) use flags which auto-vectorizes/auto-parallelizes; To do `produce*Cns` fast, use TensorFlow's `MapReduce`;
  * https://swudususuwu.substack.com/p/howto-run-devices-phones-laptops
- *
- * Alternative CNS's;
- * https://swudususuwu.substack.com/p/albatross-performs-lots-of-neural
- *
- * Autonomous robots (includes responses to replies from lots of forums);
- * https://swudususuwu.substack.com/p/program-general-purpose-robots-autonomous
- *
- * Simple examples of CNS as virus analysis;
- * https://swudususuwu.substack.com/p/howto-produce-better-virus-scanners
- *
- * Due to understanding of human's consciousness, could undo problems of overpopulation and food shortages, if lots of us become uploads of consciousness (as opposed to below article of how to move whole CNS to robots);
- * https://swudususuwu.substack.com/p/want-this-physical-form-gone-so-wont
- * https://swudususuwu.substack.com/p/destructive-unreversible-upload-of
  */
 }; /* namespace Susuwu */
 #endif /* ndef INCLUDES_cxx_VirusAnalysis_cxx */

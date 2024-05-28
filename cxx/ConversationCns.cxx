@@ -9,16 +9,8 @@
 #include "ClassCns.hxx" /* Cns, CnsMode, posixExec */
 #include "ClassResultList.hxx" /* ResultList listHas explodeToList ResultListBytecode */
 #include "ConversationCns.hxx" /* conversationParseUrls conversationParseQuestion conversationParseResponses */
+/* (Work-in-progress) conversation bots with artificial CNS. */
 namespace Susuwu {
-/* (Work-in-progress) conversation bots with artificial CNS.
- * `HSOM` (the simple Python artificial CNS) can do this with results almost as complex as "ChatGPT 4.0" (or as "Claude-3 Opus"); */
-
-/*
- * `questionsOrNull` should map to `responsesOrNull`,
- * with `questionsOrNull.bytecodes[x] = NULL` (or "\0") for new conversation synthesis,
- * and `responsesOrNull.bytecodes[x] = NULL` (or "\0") if should not respond.
- * Clients do not use this; This is just used for initial setup of synapses of CNS, after which the clients would download the synapses to use the CNS, or submit questions to a hosted CNS
-*/
 const bool conversationCnsTestsThrows() {
 	ResultList questionsOrNull {
 		.bytecodes { /* UTF-8 */
@@ -144,22 +136,8 @@ void cnsConversationLoopProcess(const Cns &cns) {
 	}
 }
 
-/* Related to this:
- * To process fast (lag less,) use flags which auto-vectorizes/auto-parallelizes; To do `produceConversationCns` fast, use TensorFlow's `MapReduce`;
+/* To process fast (lag less,) use flags which auto-vectorizes/auto-parallelizes; To do `produceConversationCns` fast, use TensorFlow's `MapReduce`;
  * https://swudususuwu.substack.com/p/howto-run-devices-phones-laptops
- *
- * Alternative CNS's;
- * https://swudususuwu.substack.com/p/albatross-performs-lots-of-neural
- *
- * Autonomous robots (includes responses to replies from lots of forums);
- * https://swudususuwu.substack.com/p/program-general-purpose-robots-autonomous
- *
- * Simple examples of CNS as virus analysis;
- * https://swudususuwu.substack.com/p/howto-produce-better-virus-scanners
- *
- * Due to understanding of human's consciousness, could undo problems of overpopulation and food shortages, if lots of us become uploads of consciousness (as opposed to below article of how to move whole CNS to robots);
- * https://swudususuwu.substack.com/p/want-this-physical-form-gone-so-wont
- * https://swudususuwu.substack.com/p/destructive-unreversible-upload-of
  */
 }; /* namespace Susuwu */
 #endif /* ndef INCLUDES_cxx_ConversationCns_cxx */

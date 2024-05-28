@@ -1,8 +1,9 @@
-**Virus analysis tools should use local heuristical analysis/sandboxes plus artificial CNS (central nervous systems) to secure us**
+**Virus analysis tools should use local static analysis + sandboxes + artificial CNS (central nervous systems) to secure us**
 _[This post](https://swudususuwu.substack.com/p/howto-produce-better-virus-scanners) allows all uses._
 
 Static analysis + sandbox + CNS = 1 second (approx) analysis of **new executables** (protects all app launches,) but _caches_ reduce this to **less than 1ms** (just cost to lookup `ResultList::hashes`, which is `std::unordered_set<decltype(Sha2(const FileBytecode &))>`; a hashmap of hashes).
 
+`Licenses: allows all uses ("Creative Commons"/"Apache 2")`
 For the most new sources, use apps such as [iSH](https://apps.apple.com/us/app/ish-shell/id1436902243) (for **iOS**) or [Termux](https://play.google.com/store/apps/details?id=com.termux) (for **Android OS**) to run this:
 `git clone https://github.com/SwuduSusuwu/SubStack.git && cd Substack`
 `less` [cxx/ClassPortableExecutable.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ClassPortableExecutable.hxx)
@@ -347,7 +348,7 @@ const VirusAnalysisResult hashAnalysis(const PortableExecutable &, const ResultL
  * @pre @code passList.bytecodes.size() && abortList.bytecodes.size() && !listsIntersect(passList.bytecodes, abortList.bytecodes) @endcode
  * @post @code abortList.signatures.size() @endcode */
 void produceAbortListSignatures(const ResultList &passList, ResultList &abortList);
- /* `if(intersection(sample.bytecode, abortList.signatures)) {return VirusAnalysisRequiresReview;} return VirusAnalysisContinue;`
+ /* `if(intersection(sample.bytecode, abortList.signatures)) {return VirusAnalysisRequiresReview;} return VirusAnalysisContinue;` 
 	* @pre @code abortList.signatures.size() @endcode */
 const VirusAnalysisResult signatureAnalysis(const PortableExecutable &sample, const ResultListHash &abortList);
 
@@ -401,7 +402,7 @@ void produceDisinfectionCns(
 	Cns &cns = disinfectionCns
 );
 
-/* Uses more resources than `cnsAnalysis()`, can undo infection from bytecodes (restore to fresh SW)
+/* Uses more resources than `cnsAnalysis()`, can undo infection from bytecodes (restore to fresh SW) 
  * @pre @code cns.isInitialized() @endcode */
 const std::string cnsDisinfection(const PortableExecutable &, const Cns &cns = disinfectionCns);
 ```
@@ -457,7 +458,6 @@ const VirusAnalysisResult virusAnalysis(const PortableExecutable &file) {
 	return virusAnalysisPass;
 }
 
-/* Hash analysis */
 const VirusAnalysisResult hashAnalysis(const PortableExecutable &file, const ResultListHash &fileHash) {
 	try {
 		const auto result = hashAnalysisCaches.at(fileHash);
@@ -473,7 +473,6 @@ const VirusAnalysisResult hashAnalysis(const PortableExecutable &file, const Res
 	}
 }
 
-/* Signatures analysis */
 const VirusAnalysisResult signatureAnalysis(const PortableExecutable &file, const ResultListHash &fileHash) {
 	try {
 		const auto result = signatureAnalysisCaches.at(fileHash);
@@ -492,26 +491,16 @@ const VirusAnalysisResult signatureAnalysis(const PortableExecutable &file, cons
 	}
 }
 
-/* To produce virus signatures:
- * use passlists of all files that was reviewed that pass,
- * plus abortlists of all files that failed manual review, such lists as Virustotal has.
- * `produceAbortListsignatures()` is to produce the `abortList.signatures` list, with the smallest substrings unique to infected files;
- * is slow, requires huge database of executables, and is not for clients.
- */
 void produceAbortListSignatures(const ResultList &passList, ResultList &abortList) {
 	for(decltype(abortList.bytecodes[0]) file : abortList.bytecodes) {
 		auto tuple = smallestUniqueSubstr(file, passList.bytecodes);
 		abortList.signatures.push_back(ResultListSignature(std::get<0>(tuple), std::get<1>(tuple)));
 	} /* The most simple signature is a substring, but some analyses use regexes. */
 }
-/* Comodo has a list of virus signatures to check against at https://www.comodo.com/home/internet-security/updates/vdp/database.php */
 
-/* Static analysis */
 const std::vector<std::string> importedFunctionsList(const PortableExecutable &file) {
-	/* TODO; parse PortableExecutable (or ELF) .bytecode, return function imports */
-}
-/*
- * importedFunctionsList resources; “Portable Executable” for Windows ( https://learn.microsoft.com/en-us/windows/win32/debug/pe-format https://wikipedia.org/wiki/Portable_Executable ,
+/* TODO
+ * Resources; “Portable Executable” for Windows ( https://learn.microsoft.com/en-us/windows/win32/debug/pe-format https://wikipedia.org/wiki/Portable_Executable ,
  * “Extended Linker Format” for most others such as UNIX/Linuxes ( https://wikipedia.org/wiki/Executable_and_Linkable_Format ),
  * shows how to analyse lists of libraries(.DLL's/.SO's) the SW uses,
  * plus what functions (new syscalls) the SW can goto through `jmp`/`call` instructions.
@@ -524,6 +513,8 @@ const std::vector<std::string> importedFunctionsList(const PortableExecutable &f
  *
  * https://www.codeproject.com/Questions/338807/How-to-get-list-of-all-imported-functions-invoked shows how to analyse dynamic loads of functions (if do this, `syscallPotentialDangers[]` does not include `GetProcAddress()`.)
  */
+}
+
 const VirusAnalysisResult staticAnalysis(const PortableExecutable &file, const ResultListHash &fileHash) {
 	try {
 		const auto result = staticAnalysisCaches.at(fileHash);
@@ -539,7 +530,6 @@ const VirusAnalysisResult staticAnalysis(const PortableExecutable &file, const R
 	}
 }
 
-/* Analysis sandbox */
 const VirusAnalysisResult sandboxAnalysis(const PortableExecutable &file, const ResultListHash &fileHash) {
 	try {
 		const auto result = sandboxAnalysisCaches.at(fileHash);
@@ -567,11 +557,6 @@ const VirusAnalysisResult straceOutputsAnalysis(const FilePath &straceDumpPath) 
 	return virusAnalysisContinue;
 }
 
-/* Analysis CNS */
-/* Replace `Cns` with the typedef of your CNS, such as `HSOM` or `apxr` */
-
-/* To train (setup synapses) the CNS, is slow plus requires access to huge sample databases,
-but the synapses use small resources (allow clients to do fast analysis.) */
 void produceAnalysisCns(const ResultList &pass, const ResultList &abort,
 const ResultList &unreviewed /* = ResultList(), WARNING! Possible danger to use unreviewed samples */,
 Cns &cns /* = analysisCns */
@@ -615,19 +600,7 @@ const VirusAnalysisResult cnsAnalysis(const PortableExecutable &file, const Resu
 	return cnsAnalysis_(file, fileHash);
 }
 
-/* Disinfection CNS */
-
-/* `abortOrNull` should map to `passOrNull` (`ResultList` is composed of `std::tuple`s, because just `produceDisinfectionCns()` requires file),
- * with `abortOrNull.bytecodes[x] = NULL` (or "\0") for new SW synthesis,
- * and `passOrNull.bytecodes[x] = NULL` (or "\0") if infected and CNS can not cleanse file.
- */
-
-/* Uses more resources than `produceAnalysisCns()`, can restore infected SW to as-new SW */
-void produceDisinfectionCns(
-	const ResultList &passOrNull, /* Expects `resultList.bytecodes[x] = NULL` if does not pass */
-	const ResultList &abortOrNull, /* Expects `resultList.bytecodes[x] = NULL` if does pass */
-	Cns &cns /* = disinfectionCns */
-) {
+void produceDisinfectionCns(const ResultList &passOrNull, const ResultList &abortOrNull, Cns &cns /* = disinfectionCns */) {
 	std::vector<const std::tuple<const FileBytecode, const FileBytecode>> inputsToOutputs;
 	cns.setInputMode(cnsModeString);
 	cns.setOutputMode(cnsModeString);
@@ -642,7 +615,6 @@ void produceDisinfectionCns(
 	cns.setupSynapses(inputsToOutputs);
 }
 
-/* Uses more resources than `cnsAnalysis()` */
 const FileBytecode cnsDisinfection(const PortableExecutable &file, const Cns &cns /* = disinfectionCns */) {
 	return cns.processToString(file.bytecode);
 }
@@ -697,12 +669,6 @@ void conversationCnsLoopProcess(const Cns &cns);
 ```
 `less` [cxx/ConversationCns.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ConversationCns.cxx)
 ```
-/*
- * `questionsOrNull` should map to `responsesOrNull`,
- * with `questionsOrNull.bytecodes[x] = NULL` (or "\0") for new conversation synthesis,
- * and `responsesOrNull.bytecodes[x] = NULL` (or "\0") if should not respond.
- * Clients do not use this; This is just used for initial setup of synapses of CNS, after which the clients would download the synapses to use the CNS, or submit questions to a hosted CNS
-*/
 const bool conversationCnsTestsThrows() {
 	ResultList questionsOrNull {
 		.bytecodes { /* UTF-8 */
@@ -762,7 +728,7 @@ void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &respon
 					questionsOrNull.hashes.insert(questionSha2);
 					responsesOrNull.hashes.insert(responseSha2);
 					questionsOrNull.bytecodes.push_back(question);
-					responsesOrNull.bytecodes.push_back(response);
+					responsesOrNull.bytecodes.push_back(response); 
 				}
 			}
 		}
@@ -838,13 +804,13 @@ https://wikipedia.org/wiki/Sha-2
 Is just a substring (or regex) of infections, which the virus analysis tool checks all executables for; if the signature is found in the executable, do not allow to launch, otherwise launch this.
 https://wikipedia.org/wiki/Regex
 
-**Heuristical analysis resources:**
+**Static analysis resources:**
 https://github.com/topics/analysis has lots of open source (FLOSS) analysis tools (such as
 https://github.com/kylefarris/clamscan,
  which wraps https://github.com/Cisco-Talos/clamav/ ,)
 which show how to use hex dumps (or disassembled sources) of the apps/SW (executables) to deduce what the apps/SW do to your OS.
-Static analysis (such as Clang/LLVM has) just checks programs for accidental security threats (such as buffer overruns/underruns, or null-pointer-dereferences,) but could act as a basis for heuristical analysis,
-if you add a few extra checks for deliberate vulnerabilities/signs of infection and have it submit those to review through manual analysis.
+Static analysis (such as Clang/LLVM has) just checks programs for accidental security threats (such as buffer overruns/underruns, or null-pointer-dereferences,) but could act as a basis,
+if you add a few extra checks for deliberate vulnerabilities/signs of infection (these are heuristics, so the user should have a choice to quarantine and submit for review, or continue launch of this).
 https://github.com/llvm/llvm-project/blob/main/clang/lib/StaticAnalyzer
 is part of Clang/LLVM (license is FLOSS,) does static analysis (produces full graphs of each function the SW uses,
 plus arguments passed to thus,
@@ -852,11 +818,8 @@ so that if the executable violates security, the analysis shows this to you and 
 LLVM is lots of files, Phasar is just it’s static analysis:
 https://github.com/secure-software-engineering/phasar
 
-Example outputs (tests “Fdroid.apk”) of heuristical analysis + 2 sandboxes (from Virustotal):
-https://www.virustotal.com/gui/file/dc3bb88f6419ee7dde7d1547a41569aa03282fe00e0dc43ce035efd7c9d27d75
-https://www.virustotal.com/ui/file_behaviours/dc3bb88f6419ee7dde7d1547a41569aa03282fe00e0dc43ce035efd7c9d27d75_VirusTotal%20R2DBox/html
-https://www.virustotal.com/ui/file_behaviours/dc3bb88f6419ee7dde7d1547a41569aa03282fe00e0dc43ce035efd7c9d27d75_Zenbox/html
-The false positive outputs (from Virustotal's Zenbox) show the purpose of manual analysis.
+Example outputs (tests “_Fdroid.apk_”) from _VirusTotal_, of [static analysis](https://www.virustotal.com/gui/file/dc3bb88f6419ee7dde7d1547a41569aa03282fe00e0dc43ce035efd7c9d27d75/details) + [2 sandboxes](https://www.virustotal.com/gui/file/dc3bb88f6419ee7dde7d1547a41569aa03282fe00e0dc43ce035efd7c9d27d75/behavior);
+the false positive outputs (from _VirusTotal_'s **Zenbox**) show the purpose of manual review.
 
 **Sandbox resources:**
 As opposed to static analysis of the executables hex (or disassembled sources,)

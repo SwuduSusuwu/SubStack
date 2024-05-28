@@ -39,7 +39,7 @@ const size_t maxOfSizes(const List &list) {
 #endif /* PREFERENCE_IS_CSTR else */
 }
 
-/* @pre @code std::is_sorted(list.begin(), list.end()) && std::is_sorted(list.begin(), list.end()) @endcode */
+/* @pre @code std::is_sorted(list.begin(), list.end()) && std::is_sorted(list2.begin(), list2.end()) @endcode */
 template<class List>
 const List listIntersections(const List &list, const List &list2) {
 	List intersections;
@@ -55,6 +55,7 @@ template<class List>
 const decltype(List::begin()) listFind(const List &list, const decltype(*list.begin()) &x) {
 	return std::find(list.begin(), list.end(), x);
 }
+
 template<class List>
 const bool listHas(const List &list, const decltype(*list.begin()) &x) {
 	return list.end() != std::find(list.begin(), list.end(), x);
@@ -68,6 +69,7 @@ const bool listHas(const List &list, std::string::const_iterator s, std::string:
 	}
 	return false;
 }
+
 template<class S>
 const std::vector<S> explodeToList(const S &s, const S &token) {
 	std::vector<S> list;
@@ -81,7 +83,6 @@ const std::vector<S> explodeToList(const S &s, const S &token) {
 	}
 	return list;
 }
-
 
 template<class List>
 const std::tuple<std::string::const_iterator, std::string::const_iterator> smallestUniqueSubstr(const std::string &chars, const List &list) {
