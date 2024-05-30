@@ -15,9 +15,13 @@ else
 	exit 1
 fi
 rm *.o
+$GXX -x c -c ${sSRC}/../c/rfc6234/sha1.c
+$GXX -x c -c ${sSRC}/../c/rfc6234/sha224-256.c
+$GXX -x c -c ${sSRC}/../c/rfc6234/sha384-512.c
+$GXX -c ${sSRC}/ClassSha2.cxx
 $GXX -c ${sSRC}/ClassResultList.cxx
 $GXX -c ${sSRC}/ClassCns.cxx
 $GXX -c ${sSRC}/VirusAnalysis.cxx
 $GXX -c ${sSRC}/ConversationCns.cxx
-$GXX  ClassResultList.o ClassCns.o VirusAnalysis.o ConversationCns.o
+$GXX sha1.o sha224-256.o sha384-512.o ClassSha2.o ClassResultList.o ClassCns.o VirusAnalysis.o ConversationCns.o
 

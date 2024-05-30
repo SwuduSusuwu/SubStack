@@ -20,6 +20,19 @@ public:
 	std::string hex; /* `hexdump(path)`, hexadecimal, for C string functions */
 } PortableExecutable;
 ```
+`less` [cxx/ClassSha2.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ClassSha2.cxx)
+```
+/* Uses https://www.rfc-editor.org/rfc/rfc6234#section-8.2.2 */
+/* const */ std::string /* 256 bits, not null-terminated */ Sha2(const FileBytecode &bytecode) {
+	std::string result;
+	SHA256Context context;
+	result.reserve(SHA256HashSize);
+	SHA256Reset(&context);
+	SHA256Input(&context, reinterpret_cast<const unsigned char *>(bytecode.c_str()), bytecode.size());
+	SHA256Result(&context, const_cast<unsigned char *>(reinterpret_cast<const unsigned char *>(result.c_str())));
+	return result;
+}
+```
 `less` [cxx/ClassResultList.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ClassResultList.hxx)
 ```
 typedef decltype(Sha2(FileBytecode())) ResultListHash;
@@ -875,3 +888,4 @@ For systems with less resources, could just submit samples of unknown apps/SW to
 Could have small local sandboxes (that just run for a few seconds) and small CNS (just billions of neurons with hundreds of layers,
 versus the trillions of neurons with thousands of layers of cortices that antivirus hosts would use for this);
 Allows reuses of workflows the analysis tool has (could just add (small) local sandboxes, or just add artificial CNS to antivirus hosts for extra analysis.)
+
