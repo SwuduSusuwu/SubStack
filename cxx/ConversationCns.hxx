@@ -5,6 +5,7 @@
 #include <string> /* std::string */
 #include <vector> /* std::vector */
 #include "ClassCns.hxx" /* Cns, CnsMode */
+#include "ClassPortableExecutable.hxx" /* FilePath FileBytecode */
 #include "ClassResultList.hxx" /* ResultList */
 /* (Work-in-progress) conversation bots with artificial CNS ("HSOM" (the simple Python artificial CNS) is enough to do this), which should have results almost as complex as "ChatGPT 4.0" (or as "Claude-3 Opus"); */
 namespace Susuwu {
@@ -16,7 +17,7 @@ static Cns conversationCns;
  * @pre @code conversationCns.hasImplementation() @endcode */
 const bool conversationCnsTestsThrows();
 static const bool conversationCnsTests() { try{ return conversationCnsTestsThrows(); } catch(...) { return false; }}
-static std::vector<std::string> conversationDefaultHosts = {
+static std::vector<FilePath> conversationDefaultHosts = {
 /* Universal Resources Locators of hosts which `questionsResponsesFromHosts()` uses
  * Wikipedia is a special case; has compressed downloads of databases ( https://wikipedia.org/wiki/Wikipedia:Database_download )
  * Github is a special case; has compressed downloads of repositories ( https://docs.github.com/en/get-started/start-your-journey/downloading-files-from-github )
@@ -31,11 +32,11 @@ static std::vector<std::string> conversationDefaultHosts = {
  * If no responses, `0 == responsesOrNull.bytecodes[x].size()` (ignore).
  * `questionsOrNull.signatures[x] = Universal Resource Locator`
  * @code Sha2(ResultList.bytecodes[x]) == ResultList.hashes[x] @endcode */
-void questionsResponsesFromHosts(ResultList &questionsOrNull, ResultList &responsesOrNull, const std::vector<std::string> &hosts = conversationDefaultHosts);
-void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &responsesOrNull, const std::string &filepath = "index.xhtml");
-const std::vector<std::string> conversationParseUrls(const std::string &filepath = "index.xhtml"); /* TODO: for XML/XHTML could just use [ https://www.boost.io/libraries/regex/ https://github.com/boostorg/regex ] or [ https://www.boost.org/doc/libs/1_85_0/doc/html/property_tree/parsers.html#property_tree.parsers.xml_parser https://github.com/boostorg/property_tree/blob/develop/doc/xml_parser.qbk ] */
-const std::string conversationParseQuestion(const std::string &filepath = "index.xhtml"); /* TODO: regex or XML parser */
-const std::vector<std::string> conversationParseResponses(const std::string &filepath = "index.xhtml"); /* TODO: regex or XML parser */
+void questionsResponsesFromHosts(ResultList &questionsOrNull, ResultList &responsesOrNull, const std::vector<FilePath> &hosts = conversationDefaultHosts);
+void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &responsesOrNull, const FilePath &filepath = "index.xhtml");
+const std::vector<FilePath> conversationParseUrls(const FilePath &filepath = "index.xhtml"); /* TODO: for XML/XHTML could just use [ https://www.boost.io/libraries/regex/ https://github.com/boostorg/regex ] or [ https://www.boost.org/doc/libs/1_85_0/doc/html/property_tree/parsers.html#property_tree.parsers.xml_parser https://github.com/boostorg/property_tree/blob/develop/doc/xml_parser.qbk ] */
+const FileBytecode conversationParseQuestion(const FilePath &filepath = "index.xhtml"); /* TODO: regex or XML parser */
+const std::vector<FileBytecode> conversationParseResponses(const FilePath &filepath = "index.xhtml"); /* TODO: regex or XML parser */
 
 /* @pre `questionsOrNull` maps to `responsesOrNull`,
  * `0 == questionsOrNull.bytecodes[x].size()` for new conversation synthesis (empty question has responses),

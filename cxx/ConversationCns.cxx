@@ -6,6 +6,7 @@
 #include <vector> /* std::vector */
 #include <tuple> /* std::tuple */
 #include "ClassSha2.hxx" /* Sha2 */
+#include "ClassPortableExecutable.hxx" /* FilePath FileBytecode */
 #include "ClassCns.hxx" /* Cns, CnsMode, posixExec */
 #include "ClassResultList.hxx" /* ResultList listHas explodeToList ResultListBytecode */
 #include "ConversationCns.hxx" /* conversationParseUrls conversationParseQuestion conversationParseResponses */
@@ -47,7 +48,7 @@ void produceConversationCns(const ResultList &questionsOrNull, const ResultList 
 	cns.setupSynapses(inputsToOutputs);
 }
 
-void questionsResponsesFromHosts(ResultList &questionsOrNull, ResultList &responsesOrNull, const std::vector<std::string> &hosts) {
+void questionsResponsesFromHosts(ResultList &questionsOrNull, ResultList &responsesOrNull, const std::vector<FilePath> &hosts) {
 	for(decltype(hosts[0]) host : hosts) {
 		posixExec("/bin/wget", "'" + host + "/robots.txt' > robots.txt", NULL);
 		posixExec("/bin/wget", "'" + host + "' > index.xhtml", NULL);
@@ -55,7 +56,7 @@ void questionsResponsesFromHosts(ResultList &questionsOrNull, ResultList &respon
 		questionsResponsesFromXhtml(questionsOrNull, responsesOrNull, "index.xhtml");
 	}
 }
-void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &responsesOrNull, const std::string &xhtmlFile) {
+void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &responsesOrNull, const FilePath &xhtmlFile) {
 	auto noRobots = conversationParseUrls("robots.txt");
 	auto question = conversationParseQuestion(xhtmlFile);
 	if(question.size()) {
@@ -88,8 +89,8 @@ void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &respon
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #endif /* BOOST_VERSION */
-const std::vector<std::string> conversationParseUrls(const std::string &xhtmlFile) {
-	const std::vector<std::string> urls;
+const std::vector<FilePath> conversationParseUrls(const FilePath &xhtmlFile) {
+	const std::vector<FilePath> urls;
 #ifdef BOOST_VERSION
 	boost::property_tree::ptree pt;
 	read_xml(xhtmlFile, pt);
@@ -101,10 +102,10 @@ const std::vector<std::string> conversationParseUrls(const std::string &xhtmlFil
 #endif /* else !BOOST_VERSION */
 	return urls;
 }
-const std::string conversationParseQuestion(const std::string &xhtmlFile) {} /* TODO */
-const std::vector<std::string> conversationParseResponses(const std::string &xhtmlFile) {} /* TODO */
+const FileBytecode conversationParseQuestion(const FilePath &xhtmlFile) {} /* TODO */
+const std::vector<FileBytecode> conversationParseResponses(const FilePath &xhtmlFile) {} /* TODO */
 
-const std::string cnsConversationProcess(const Cns &cns, const std::string &bytecode) {
+const std::string cnsConversationProcess(const Cns &cns, const FileBytecode &bytecode) {
 	return cns.processToString(bytecode);
 }
 

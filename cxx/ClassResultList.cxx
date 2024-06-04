@@ -1,17 +1,15 @@
 /* Licenses: allows all uses ("Creative Commons"/"Apache 2") */
 #ifndef INCLUDED_cxx_ClassResultList_cxx
 #define INCLUDED_cxx_ClassResultList_cxx
-#include <string> /* std::string */
-#include <ctype.h> /* size_t */
-#include "ClassResultList.hxx" /* ResultList */
+#include "ClassResultList.hxx" /* ResultList ResultListBytecode*/
 #include "ClassSha2.hxx" /* Sha2 */
 namespace Susuwu {
-const bool resultListHashesHas(const ResultList &list, ResultList &caches, const std::string &chars) {
-	auto charsSha2 = Sha2(chars);
-	if(listHas(caches.hashes, charsSha2)) {
+const bool resultListHashesHas(const ResultList &list, ResultList &caches, const ResultListBytecode &bytecode) {
+	auto bytecodeSha2 = Sha2(bytecode);
+	if(listHas(caches.hashes, bytecodeSha2)) {
 		return true;
-	} else if(listHas(list.hashes, charsSha2)) { /* Slow, if billions of hashes */
-		caches.hashes.insert(charsSha2); /* Caches results */
+	} else if(listHas(list.hashes, bytecodeSha2)) { /* Slow, if billions of hashes */
+		caches.hashes.insert(bytecodeSha2); /* Caches results */
 		return true;
 	}
 	return false;
