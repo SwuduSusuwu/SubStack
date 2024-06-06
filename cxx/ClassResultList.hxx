@@ -47,17 +47,16 @@ const bool listsIntersect(const List &list, const List &list2) {
 }
 
 template<class List>
-const decltype(List::begin()) listFind(const List &list, const decltype(*list.begin()) &x) {
+auto listFind(const List &list, const typename List::value_type &x) {
 	return std::find(list.begin(), list.end(), x);
 }
-
 template<class List>
-const bool listHas(const List &list, const decltype(*list.begin()) &x) {
-	return list.end() != std::find(list.begin(), list.end(), x);
+const bool listHas(const List &list, const typename List::value_type &x) {
+	return list.end() != listFind(list, x);
 }
 template<class List>
-const bool listHas(const List &list, std::string::const_iterator s, std::string::const_iterator x) {
-	for(decltype(list[0]) chars : list) {
+const bool listHas(const List &list, typename List::value_type::const_iterator s, typename List::value_type::const_iterator x) {
+	for(auto chars : list) {
 		if(chars.end() != std::search(chars.begin(), chars.end(), s, x, [](char ch1, char ch2) { return ch1 == ch2; })) {
 			return true;
 		}

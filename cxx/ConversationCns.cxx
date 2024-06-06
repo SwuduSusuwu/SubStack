@@ -42,6 +42,7 @@ void produceConversationCns(const ResultList &questionsOrNull, const ResultList 
 	cns.setLayersOfNeurons(6666);
 	cns.setNeuronsPerLayer(26666);
 	assert(questionsOrNull.bytecodes.size() == questionsOrNull.bytecodes.size());
+	inputsToOutputs.reserve(questionsOrNull.bytecodes.size());
 	for(int x = 0; questionsOrNull.bytecodes.size() > x; ++x) {
 		inputsToOutputs.push_back({questionsOrNull.bytecodes[x], responsesOrNull.bytecodes[x]});
 	}
@@ -49,7 +50,7 @@ void produceConversationCns(const ResultList &questionsOrNull, const ResultList 
 }
 
 void questionsResponsesFromHosts(ResultList &questionsOrNull, ResultList &responsesOrNull, const std::vector<FilePath> &hosts) {
-	for(decltype(hosts[0]) host : hosts) {
+	for(auto host : hosts) {
 		posixExec("/bin/wget", "'" + host + "/robots.txt' > robots.txt", NULL);
 		posixExec("/bin/wget", "'" + host + "' > index.xhtml", NULL);
 		questionsOrNull.signatures.push_back(host);
@@ -64,7 +65,7 @@ void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &respon
 		if(!listHas(questionsOrNull.hashes, questionSha2)) {
 			questionsOrNull.hashes.insert(questionSha2);
 			auto responses = conversationParseResponses(xhtmlFile);
-			for(decltype(responses[0]) response : responses) {
+			for(auto response : responses) {
 				auto questionSha2 = Sha2(question);
 				auto responseSha2 = Sha2(response);
 				if(!listHas(responsesOrNull.hashes, responseSha2)) {
@@ -77,7 +78,7 @@ void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &respon
 		}
 	}
 	auto urls = conversationParseUrls(xhtmlFile);
-	for(decltype(urls[0]) url : urls) {
+	for(auto url : urls) {
 		if(!listHas(questionsOrNull.signatures, url) && !listHas(noRobots, url)) {
 			posixExec("/bin/wget", "'" + url + "' > " + xhtmlFile, NULL);
 			questionsOrNull.signatures.push_back(url);

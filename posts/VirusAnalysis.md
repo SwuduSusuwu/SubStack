@@ -71,16 +71,16 @@ const bool listsIntersect(const List &list, const List &list2) {
 }
 
 template<class List>
-const decltype(List::begin()) listFind(const List &list, const decltype(*list.begin()) &x) {
+auto listFind(const List &list, const typename List::value_type &x) {
 	return std::find(list.begin(), list.end(), x);
 }
 template<class List>
-const bool listHas(const List &list, const decltype(*list.begin()) &x) {
-	return list.end() != std::find(list.begin(), list.end(), x);
+const bool listHas(const List &list, const typename List::value_type &x) {
+	return list.end() != listFind(list, x);
 }
 template<class List>
-const bool listHas(const List &list, std::string::const_iterator s, std::string::const_iterator x) {
-	for(decltype(list[0]) chars : list) {
+const bool listHas(const List &list, typename List::value_type::const_iterator s, typename List::value_type::const_iterator x) {
+	for(auto chars : list) {
 		if(chars.end() != std::search(chars.begin(), chars.end(), s, x, [](char ch1, char ch2) { return ch1 == ch2; })) {
 			return true;
 		}
@@ -435,7 +435,7 @@ const bool virusAnalysisTestsThrows() {
 }
 const VirusAnalysisResult virusAnalysis(const PortableExecutable &file) {
 	const auto fileHash = Sha2(file.bytecode);
-	for(decltype(virusAnalyses[0]) analysis : virusAnalyses) {
+	for(auto analysis : virusAnalyses) {
 		switch(analysis(file, fileHash)) {
 			case virusAnalysisPass:
 				return virusAnalysisPass;
@@ -470,7 +470,7 @@ const VirusAnalysisResult signatureAnalysis(const PortableExecutable &file, cons
 		const auto result = signatureAnalysisCaches.at(fileHash);
 		return result;
 	} catch (...) {
-		for(decltype(abortList.signatures[0]) sig : abortList.signatures) {
+		for(auto sig : abortList.signatures) {
 #if PREFERENCE_IS_CSTR
 		 	if(strstr(file.hex, sig)) { /* strstr uses text/hex; hex uses more space than binary, so you should use `memmem` or `std::search` with file.bytecode */
 #else /* else !PREFERENCE_IS_CSTR */
@@ -484,7 +484,8 @@ const VirusAnalysisResult signatureAnalysis(const PortableExecutable &file, cons
 }
 
 void produceAbortListSignatures(const ResultList &passList, ResultList &abortList) {
-	for(decltype(abortList.bytecodes[0]) file : abortList.bytecodes) {
+	abortList.signatures.reserve(abortList.bytecodes.size());
+	for(auto file : abortList.bytecodes) {
 		auto tuple = smallestUniqueSubstr(file, passList.bytecodes);
 		abortList.signatures.push_back(ResultListSignature(std::get<0>(tuple), std::get<1>(tuple)));
 	} /* The most simple signature is a substring, but some analyses use regexes. */
@@ -553,7 +554,7 @@ void produceAnalysisCns(const ResultList &pass, const ResultList &abort,
 const ResultList &unreviewed /* = ResultList(), WARNING! Possible danger to use unreviewed samples */,
 Cns &cns /* = analysisCns */
 ) {
-	std::vector<const std::tuple<const FileBytecode, float>> inputsToPass, inputsToUnreviewed, inputsToAbort;
+	std::vector<const std::tuple<const FileBytecode, float>> inputsToOutputs;
 	const size_t maxPassSize = maxOfSizes(pass.bytecodes);
 	const size_t maxAbortSize = maxOfSizes(abort.bytecodes);
 	cns.setInputMode(cnsModeString);
@@ -562,20 +563,26 @@ Cns &cns /* = analysisCns */
 	cns.setOutputNeurons(1);
 	cns.setLayersOfNeurons(6666);
 	cns.setNeuronsPerLayer(26666);
-	for(decltype(pass.bytecodes[0]) bytecodes : pass.bytecodes) {
-		inputsToPass.push_back({bytecodes, 1.0});
+	inputsToOutputs.reserve(pass.bytecodes.size());
+	for(auto bytecodes : pass.bytecodes) {
+		inputsToOutputs.push_back({bytecodes, 1.0});
 	}
-	cns.setupSynapses(inputsToPass);
+	cns.setupSynapses(inputsToOutputs);
+	inputsToOutputs.clear();
 	if(unreviewed.bytecodes.size()) { /* WARNING! Possible danger to use unreviewed samples */
-		for(decltype(pass.bytecodes[0]) bytecodes : unreviewed.bytecodes) {
-			inputsToUnreviewed.push_back({bytecodes, 1 / 2});
+		inputsToOutputs.reserve(unreviewed.bytecodes.size());
+		for(auto bytecodes : unreviewed.bytecodes) {
+			inputsToOutputs.push_back({bytecodes, 1 / 2});
 		}
-		cns.setupSynapses(inputsToUnreviewed);
+		cns.setupSynapses(inputsToOutputs);
+		inputsToOutputs.clear();
 	}
-	for(decltype(abort.bytecodes[0]) bytecodes : abort.bytecodes) {
-		inputsToAbort.push_back({bytecodes, 0.0});
+	inputsToOutputs.reserve(abort.bytecodes.size());
+	for(auto bytecodes : abort.bytecodes) {
+		inputsToOutputs.push_back({bytecodes, 0.0});
 	}
-	cns.setupSynapses(inputsToAbort);
+	cns.setupSynapses(inputsToOutputs);
+	inputsToOutputs.clear();
 }
 const float cnsAnalysisScore(const PortableExecutable &file, const Cns &cns /* = analysisCns */) {
 	return cns.processToFloat(file.bytecode);
@@ -601,6 +608,7 @@ void produceDisinfectionCns(const ResultList &passOrNull, const ResultList &abor
 	cns.setLayersOfNeurons(6666);
 	cns.setNeuronsPerLayer(26666);
 	assert(passOrNull.bytecodes.size() == abortOrNull.bytecodes.size());
+	inputsToOutputs.reserve(passOrNull.bytecodes.size());
 	for(int x = 0; passOrNull.bytecodes.size() > x; ++x) {
 		inputsToOutputs.push_back({abortOrNull.bytecodes[x], passOrNull.bytecodes[x]});
 	}
@@ -715,6 +723,7 @@ void produceConversationCns(const ResultList &questionsOrNull, const ResultList 
 	cns.setLayersOfNeurons(6666);
 	cns.setNeuronsPerLayer(26666);
 	assert(questionsOrNull.bytecodes.size() == questionsOrNull.bytecodes.size());
+	inputsToOutputs.reserve(questionsOrNull.bytecodes.size());
 	for(int x = 0; questionsOrNull.bytecodes.size() > x; ++x) {
 		inputsToOutputs.push_back({questionsOrNull.bytecodes[x], responsesOrNull.bytecodes[x]});
 	}
@@ -722,7 +731,7 @@ void produceConversationCns(const ResultList &questionsOrNull, const ResultList 
 }
 
 void questionsResponsesFromHosts(ResultList &questionsOrNull, ResultList &responsesOrNull, const std::vector<FilePath> &hosts) {
-	for(decltype(hosts[0]) host : hosts) {
+	for(auto host : hosts) {
 		posixExec("/bin/wget", "'" + host + "/robots.txt' > robots.txt", NULL);
 		posixExec("/bin/wget", "'" + host + "' > index.xhtml", NULL);
 		questionsOrNull.signatures.push_back(host);
@@ -737,7 +746,7 @@ void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &respon
 		if(!listHas(questionsOrNull.hashes, questionSha2)) {
 			questionsOrNull.hashes.insert(questionSha2);
 			auto responses = conversationParseResponses(xhtmlFile);
-			for(decltype(responses[0]) response : responses) {
+			for(auto response : responses) {
 				auto questionSha2 = Sha2(question);
 				auto responseSha2 = Sha2(response);
 				if(!listHas(responsesOrNull.hashes, responseSha2)) {
@@ -750,7 +759,7 @@ void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &respon
 		}
 	}
 	auto urls = conversationParseUrls(xhtmlFile);
-	for(decltype(urls[0]) url : urls) {
+	for(auto url : urls) {
 		if(!listHas(questionsOrNull.signatures, url) && !listHas(noRobots, url)) {
 			posixExec("/bin/wget", "'" + url + "' > " + xhtmlFile, NULL);
 			questionsOrNull.signatures.push_back(url);

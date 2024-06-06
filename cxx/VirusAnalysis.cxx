@@ -49,7 +49,7 @@ const bool virusAnalysisTestsThrows() {
 }
 const VirusAnalysisResult virusAnalysis(const PortableExecutable &file) {
 	const auto fileHash = Sha2(file.bytecode);
-	for(decltype(virusAnalyses[0]) analysis : virusAnalyses) {
+	for(auto analysis : virusAnalyses) {
 		switch(analysis(file, fileHash)) {
 			case virusAnalysisPass:
 				return virusAnalysisPass;
@@ -84,7 +84,7 @@ const VirusAnalysisResult signatureAnalysis(const PortableExecutable &file, cons
 		const auto result = signatureAnalysisCaches.at(fileHash);
 		return result;
 	} catch (...) {
-		for(decltype(abortList.signatures[0]) sig : abortList.signatures) {
+		for(auto sig : abortList.signatures) {
 #if PREFERENCE_IS_CSTR
 		 	if(strstr(file.hex, sig)) { /* strstr uses text/hex; hex uses more space than binary, so you should use `memmem` or `std::search` with file.bytecode */
 #else /* else !PREFERENCE_IS_CSTR */
@@ -98,7 +98,8 @@ const VirusAnalysisResult signatureAnalysis(const PortableExecutable &file, cons
 }
 
 void produceAbortListSignatures(const ResultList &passList, ResultList &abortList) {
-	for(decltype(abortList.bytecodes[0]) file : abortList.bytecodes) {
+	abortList.signatures.reserve(abortList.bytecodes.size());
+	for(auto file : abortList.bytecodes) {
 		auto tuple = smallestUniqueSubstr(file, passList.bytecodes);
 		abortList.signatures.push_back(ResultListSignature(std::get<0>(tuple), std::get<1>(tuple)));
 	} /* The most simple signature is a substring, but some analyses use regexes. */
@@ -167,7 +168,7 @@ void produceAnalysisCns(const ResultList &pass, const ResultList &abort,
 const ResultList &unreviewed /* = ResultList(), WARNING! Possible danger to use unreviewed samples */,
 Cns &cns /* = analysisCns */
 ) {
-	std::vector<const std::tuple<const FileBytecode, float>> inputsToPass, inputsToUnreviewed, inputsToAbort;
+	std::vector<const std::tuple<const FileBytecode, float>> inputsToOutputs;
 	const size_t maxPassSize = maxOfSizes(pass.bytecodes);
 	const size_t maxAbortSize = maxOfSizes(abort.bytecodes);
 	cns.setInputMode(cnsModeString);
@@ -176,20 +177,26 @@ Cns &cns /* = analysisCns */
 	cns.setOutputNeurons(1);
 	cns.setLayersOfNeurons(6666);
 	cns.setNeuronsPerLayer(26666);
-	for(decltype(pass.bytecodes[0]) bytecodes : pass.bytecodes) {
-		inputsToPass.push_back({bytecodes, 1.0});
+	inputsToOutputs.reserve(pass.bytecodes.size());
+	for(auto bytecodes : pass.bytecodes) {
+		inputsToOutputs.push_back({bytecodes, 1.0});
 	}
-	cns.setupSynapses(inputsToPass);
+	cns.setupSynapses(inputsToOutputs);
+	inputsToOutputs.clear();
 	if(unreviewed.bytecodes.size()) { /* WARNING! Possible danger to use unreviewed samples */
-		for(decltype(pass.bytecodes[0]) bytecodes : unreviewed.bytecodes) {
-			inputsToUnreviewed.push_back({bytecodes, 1 / 2});
+		inputsToOutputs.reserve(unreviewed.bytecodes.size());
+		for(auto bytecodes : unreviewed.bytecodes) {
+			inputsToOutputs.push_back({bytecodes, 1 / 2});
 		}
-		cns.setupSynapses(inputsToUnreviewed);
+		cns.setupSynapses(inputsToOutputs);
+		inputsToOutputs.clear();
 	}
-	for(decltype(abort.bytecodes[0]) bytecodes : abort.bytecodes) {
-		inputsToAbort.push_back({bytecodes, 0.0});
+	inputsToOutputs.reserve(abort.bytecodes.size());
+	for(auto bytecodes : abort.bytecodes) {
+		inputsToOutputs.push_back({bytecodes, 0.0});
 	}
-	cns.setupSynapses(inputsToAbort);
+	cns.setupSynapses(inputsToOutputs);
+	inputsToOutputs.clear();
 }
 const float cnsAnalysisScore(const PortableExecutable &file, const Cns &cns /* = analysisCns */) {
 	return cns.processToFloat(file.bytecode);
@@ -215,6 +222,7 @@ void produceDisinfectionCns(const ResultList &passOrNull, const ResultList &abor
 	cns.setLayersOfNeurons(6666);
 	cns.setNeuronsPerLayer(26666);
 	assert(passOrNull.bytecodes.size() == abortOrNull.bytecodes.size());
+	inputsToOutputs.reserve(passOrNull.bytecodes.size());
 	for(int x = 0; passOrNull.bytecodes.size() > x; ++x) {
 		inputsToOutputs.push_back({abortOrNull.bytecodes[x], passOrNull.bytecodes[x]});
 	}
