@@ -49,6 +49,7 @@ Conventions = Mozilla Org (ergo Firefox) style:
         #endif /* ndef INCLUDES_Path_To_File */
 
 Conventions +=
+    [Indent multi-level macros as `#if X # if S ,,, # endif #endif`](https://stackoverflow.com/questions/1854550/c-macro-define-indentation)
     [\_DEBUG is specific to MSVC, thus use NDEBUG](https://stackoverflow.com/questions/2290509/debug-vs-ndebug), [Pass `-D NDEBUG` to disable asssets + enable optimizations](https://stackoverflow.com/questions/2249282/c-c-portable-way-to-detect-debug-release)
     All userland errors should go to `throw()`, or a global `int errno;` variable, or `return errno;`, with comments above declarations of such functions.
     [Doxygen-ish "@pre"/"@post" prepares for C++26 Contracts](https://github.com/doxygen/doxygen/issues/6702): 

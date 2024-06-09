@@ -623,10 +623,14 @@ const FileBytecode cnsDisinfection(const PortableExecutable &file, const Cns &cn
 ```
 #include "VirusAnalysis.hxx" /* virusAnalysisTestsThrows */
 #include "ConversationCns.hxx" /* conversationCnshrows */
-#include "Macros.hxx" /* ASSUME EXPECTS ENSURES */
+#include "Macros.hxx" /* ASSUME EXPECTS ENSURES NOEXCEPT NORETURN */
 #include <stdio.h> /* printf */
 #include <stdlib.h> /* exit */
 namespace Susuwu {
+void noExcept() NOEXCEPT;
+NORETURN void noReturn();
+void noExcept() NOEXCEPT {printf("true");}
+void noReturn()  {exit(0);}
 int testHarnesses() EXPECTS(1) ENSURES(1) {
 	ASSUME(1);
 	printf("cxx/Macros.hxx: pass");
@@ -636,7 +640,7 @@ int testHarnesses() EXPECTS(1) ENSURES(1) {
 	if(conversationCnsTestsThrows()) {
 		printf("cxx/ConversationCns.hxx: pass");
 	}
-	exit(0);
+	noReturn();
 }
 }; /* namespace Susuwu */
 int main(int argc, const char **args) {
@@ -787,11 +791,11 @@ const std::vector<FilePath> conversationParseUrls(const FilePath &xhtmlFile) {
 const FileBytecode conversationParseQuestion(const FilePath &xhtmlFile) {} /* TODO */
 const std::vector<FileBytecode> conversationParseResponses(const FilePath &xhtmlFile) {} /* TODO */
 
-const std::string cnsConversationProcess(const Cns &cns, const FileBytecode &bytecode) {
+const std::string conversationCnsProcess(const Cns &cns, const FileBytecode &bytecode) {
 	return cns.processToString(bytecode);
 }
 
-void cnsConversationLoopProcess(const Cns &cns) {
+void conversationCnsLoopProcess(const Cns &cns) {
 	std::string bytecode, previous;
 	int nthResponse = 0;
 	while(std::cin >> bytecode) {

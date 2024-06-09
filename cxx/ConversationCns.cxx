@@ -106,11 +106,11 @@ const std::vector<FilePath> conversationParseUrls(const FilePath &xhtmlFile) {
 const FileBytecode conversationParseQuestion(const FilePath &xhtmlFile) {} /* TODO */
 const std::vector<FileBytecode> conversationParseResponses(const FilePath &xhtmlFile) {} /* TODO */
 
-const std::string cnsConversationProcess(const Cns &cns, const FileBytecode &bytecode) {
+const std::string conversationCnsProcess(const Cns &cns, const FileBytecode &bytecode) {
 	return cns.processToString(bytecode);
 }
 
-void cnsConversationLoopProcess(const Cns &cns) {
+void conversationCnsLoopProcess(const Cns &cns) {
 	std::string bytecode, previous;
 	int nthResponse = 0;
 	while(std::cin >> bytecode) {
