@@ -20,7 +20,6 @@ typedef struct ResultList { /* Lists of files (or pages) */
 	std::vector<ResultListSignature> signatures; /* Smallest substrings (or regexes, or Universal Resource Locator) unique to this, has uses close to `hashes` but can match if files have small differences */
 	std::vector<ResultListBytecode> bytecodes; /* Whole files (or webpages); uses lots of space, just populate this for signature synthesis (or training CNS). */
 } ResultList;
-const bool resultListHashesHas(const ResultList &list, ResultList &caches, const std::string &bytecode);
 
 template<class List>
 const size_t maxOfSizes(const List &list) {
@@ -63,6 +62,23 @@ const bool listHas(const List &list, typename List::value_type::const_iterator s
 	}
 	return false;
 }
+template<class List>
+const std::tuple<std::string::const_iterator, std::string::const_iterator> smallestUniqueSubstr(const std::string &chars, const List &list) {
+	size_t smallest = chars.size();
+	auto retBegin = chars.begin(), retEnd = chars.end();
+	for(auto s = retBegin; chars.end() != s; ++s) {
+		for(auto x = chars.end(); s != x; --x) {
+			if((x - s) < smallest) {
+				if(listHas(list, s, x)) {
+					break;
+				}
+				smallest = x - s;
+				retBegin = s, retEnd = x;
+			}
+		}
+	} /* Incremental `for()` loops, is a slow method to produce unique substrings; should use binary searches, or look for the standard function which optimizes this. */
+	return {retBegin, retEnd};
+}
 
 template<class S>
 const std::vector<S> explodeToList(const S &s, const S &token) {
@@ -76,22 +92,6 @@ const std::vector<S> explodeToList(const S &s, const S &token) {
 		x = it;
 	}
 	return list;
-}
-
-template<class List>
-const std::tuple<std::string::const_iterator, std::string::const_iterator> smallestUniqueSubstr(const std::string &chars, const List &list) {
-	size_t smallest = chars.size();
-	auto retBegin = chars.begin(), retEnd = chars.end();
-	for(auto s = retBegin; chars.end() != s; ++s) {
-		for(auto x = chars.end() - 1; s != x; --x) {
-			if(smallest <= x - s || listHas(list, s, x)) {
-				break;
-			}
-			smallest = x - s;
-			retBegin = s, retEnd = x;
-		}
-	} /* Incremental `for()` loops, is a slow method to produce unique substrings; should use binary searches, or quadratic searches, or look for the standard function which optimizes this. */
-	return {retBegin, retEnd};
 }
 }; /* namespace Susuwu */
 #endif /* ndef INCLUDED_cxx_ClassResultList_hxx */
