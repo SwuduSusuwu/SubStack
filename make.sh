@@ -23,5 +23,6 @@ $GXX -c ${sSRC}/ClassResultList.cxx
 $GXX -c ${sSRC}/ClassCns.cxx
 $GXX -c ${sSRC}/VirusAnalysis.cxx
 $GXX -c ${sSRC}/ConversationCns.cxx
-$GXX sha1.o sha224-256.o sha384-512.o ClassSha2.o ClassResultList.o ClassCns.o VirusAnalysis.o ConversationCns.o
+$GXX -c ${sSRC}/main.cxx
+$GXX sha1.o sha224-256.o sha384-512.o ClassSha2.o ClassResultList.o ClassCns.o VirusAnalysis.o ConversationCns.o main.o
 

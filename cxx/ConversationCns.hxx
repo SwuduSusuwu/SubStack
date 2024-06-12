@@ -8,15 +8,15 @@
 #include "ClassResultList.hxx" /* ResultList */
 /* (Work-in-progress) conversation bots with artificial CNS ("HSOM" (the simple Python artificial CNS) is enough to do this), which should have results almost as complex as "ChatGPT 4.0" (or as "Claude-3 Opus"); */
 namespace Susuwu {
-Cns conversationCns;
+static Cns conversationCns;
 
 /* if (with example inputs) these functions (`questionsResponsesFromHosts()` `produceConversationCns()`) pass, `return true;`
  * @throw std::bad_alloc
  * @throw std::logic_error
  * @pre @code conversationCns.hasImplementation() @endcode */
 const bool conversationCnsTestsThrows();
-const bool conversationCnsTests() { try{ return conversationCnsTestsThrows(); } catch(...) { return false; }}
-std::vector<std::string> conversationDefaultHosts = {
+static const bool conversationCnsTests() { try{ return conversationCnsTestsThrows(); } catch(...) { return false; }}
+static std::vector<std::string> conversationDefaultHosts = {
 /* Universal Resources Locators of hosts which `questionsResponsesFromHosts()` uses
  * Wikipedia is a special case; has compressed downloads of databases ( https://wikipedia.org/wiki/Wikipedia:Database_download )
  * Github is a special case; has compressed downloads of repositories ( https://docs.github.com/en/get-started/start-your-journey/downloading-files-from-github )

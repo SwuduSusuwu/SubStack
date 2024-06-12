@@ -6,7 +6,7 @@ Purposes: `/cxx/` C++ implementations ( based off of ideas/pseudocodes from http
 
 Targets: Windows/Linux/Android/OSX/iOS; all C++ compilers, requires some extensions (such as `for(auto x : s) {}`)
 
-Todo: `. make.sh` is success, but just produces static libraries (for distribution to others.) Should produce executables (demos) + do unit tests (integration of test harnesses).
+Usage: `./make.sh` produces `*.o` static libraries (for distribution to others,) plus `a.out` to do unit tests (test harnesses).
 
 Conventions = Mozilla Org (ergo Firefox) style:
 

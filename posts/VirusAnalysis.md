@@ -342,13 +342,13 @@ typedef enum VirusAnalysisResult {
 	virusAnalysisRequiresReview, /* submit to hosts to do analysis */
 	virusAnalysisContinue /* continue to next tests (is normal; most analyses can not prove that samples pass) */
 } VirusAnalysisResult;
-ResultList passList, abortList; /* Stored on disk, all clients use clones of this */
-Cns analysisCns, disinfectionCns; /* maps of synapses + functions to compute with this */
+static ResultList passList, abortList; /* Stored on disk, all clients use clones of this */
+static Cns analysisCns, disinfectionCns; /* maps of synapses + functions to compute with this */
 
 /* if (with example inputs) these functions (`produceAbortListSignatures()`, `produceAnalysisCns()`, `produceDisinfectionCns()`) pass, `return true;`
  * @pre @code analysisCns.hasImplementation() && disinfectionCns.hasImplementation() @endcode */
 const bool virusAnalysisTestsThrows();
-const bool virusAnalysisTests() {try {return virusAnalysisTestsThrows();} catch(...) {return false;}}
+static const bool virusAnalysisTests() {try {return virusAnalysisTestsThrows();} catch(...) {return false;}}
 
 const VirusAnalysisResult hashAnalysis(const PortableExecutable &, const ResultListHash &); /* `if(abortList[sample]) {return Abort;} if(passList[sample] {return Pass;} return Continue;` */
 
@@ -368,14 +368,14 @@ const VirusAnalysisResult signatureAnalysis(const PortableExecutable &sample, co
 /* Static analysis */
 /* @throw bad_alloc */
 const std::vector<std::string> importedFunctionsList(const PortableExecutable &);
-std::vector<std::string> syscallPotentialDangers = {
+static std::vector<std::string> syscallPotentialDangers = {
 	"memopen", "fwrite", "socket", "GetProcAddress", "IsVmPresent"
 };
 const VirusAnalysisResult staticAnalysis(const PortableExecutable &, const ResultListHash &); /* if(intersection(importedFunctionsList(sample), dangerFunctionsList)) {return RequiresReview;} return Continue;` */
 
 /* Analysis sandbox */
 const VirusAnalysisResult sandboxAnalysis(const PortableExecutable &, const ResultListHash &); /* `chroot(strace(sample)) >> outputs; return straceOutputsAnalysis(outputs);` */
-std::vector<std::string> stracePotentialDangers = {"write(*)"};
+static std::vector<std::string> stracePotentialDangers = {"write(*)"};
 const VirusAnalysisResult straceOutputsAnalysis(const FilePath &straceDumpPath); /* TODO: regex */
 
 /* Analysis CNS */
@@ -395,12 +395,12 @@ const float cnsAnalysisScore(const PortableExecutable &, const ResultListHash &,
 const VirusAnalysisResult cnsAnalysis_(const PortableExecutable &file, const ResultListHash &fileHash, const Cns &cns = analysisCns);
 const VirusAnalysisResult cnsAnalysis(const PortableExecutable &file, const ResultListHash &fileHash);
 
-std::map<ResultListHash, VirusAnalysisResult> hashAnalysisCaches, signatureAnalysisCaches, staticAnalysisCaches, cnsAnalysisCaches, sandboxAnalysisCaches; /* RAM-based caches; memoizes results */
+static std::map<ResultListHash, VirusAnalysisResult> hashAnalysisCaches, signatureAnalysisCaches, staticAnalysisCaches, cnsAnalysisCaches, sandboxAnalysisCaches; /* RAM-based caches; memoizes results */
 
 typedef const VirusAnalysisResult (*VirusAnalysisFun)(const PortableExecutable &, const ResultListHash &);
-std::vector<typeof(VirusAnalysisFun)> virusAnalyses = {hashAnalysis, signatureAnalysis, staticAnalysis, cnsAnalysis, sandboxAnalysis /* sandbox is slow, so put last*/};
+static std::vector<typeof(VirusAnalysisFun)> virusAnalyses = {hashAnalysis, signatureAnalysis, staticAnalysis, cnsAnalysis, sandboxAnalysis /* sandbox is slow, so put last*/};
 const VirusAnalysisResult virusAnalysis(const PortableExecutable &file); /* auto hash = Sha2(file.bytecode); for(VirusAnalysisFun analysis : virusAnalyses) {analysis(file, hash);} */
-const VirusAnalysisResult submitSampleToHosts(const PortableExecutable &) {return virusAnalysisRequiresReview;} /* TODO: requires compatible hosts to upload to */
+static const VirusAnalysisResult submitSampleToHosts(const PortableExecutable &) {return virusAnalysisRequiresReview;} /* TODO: requires compatible hosts to upload to */
 
 /* Setup disinfection CNS, uses more resources than `produceAnalysisCns()` */
 /* `abortOrNull` should map to `passOrNull` (`ResultList` is composed of `std::tuple`s, because just `produceDisinfectionCns()` requires this),
@@ -632,20 +632,44 @@ const FileBytecode cnsDisinfection(const PortableExecutable &file, const Cns &cn
 	return cns.processToString(file.bytecode);
 }
 ```
+`less` [cxx/main.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/main.cxx)
+```
+#include "VirusAnalysis.hxx" /* virusAnalysisTestsThrows */
+#include "ConversationCns.hxx" /* conversationCnshrows */
+#include "Macros.hxx" /* ASSUME EXPECTS ENSURES */
+#include <stdio.h> /* printf */
+#include <stdlib.h> /* exit */
+namespace Susuwu {
+int testHarnesses() EXPECTS(1) ENSURES(1) {
+	ASSUME(1);
+	printf("cxx/Macros.hxx: pass");
+	if(virusAnalysisTestsThrows()) {
+		printf("cxx/VirusAnalysis.hxx: pass");
+	}
+	if(conversationCnsTestsThrows()) {
+		printf("cxx/ConversationCns.hxx: pass");
+	}
+	exit(0);
+}
+}; /* namespace Susuwu */
+int main(int argc, const char **args) {
+	return Susuwu::testHarnesses();
+}
+```
 To run most of this fast (lag less,) use `CXXFLAGS` which auto-vectorizes/auto-parallelizes, and to setup CNS synapses (`Cns::setupSynapses()`) fast, use _TensorFlow_'s `MapReduce`. Resources: [How to have computers process fast](https://swudususuwu.substack.com/p/howto-run-devices-phones-laptops).
 
 For comparison; `produceDisinfectionCns` is close to conversation bots (such as "ChatGPT 4.0" or "Claude-3 Opus",) have such demo as `produceConversationCns`;
 `less` [cxx/ConversationCns.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ConversationCns.hxx)
 ```
-Cns conversationCns;
+static Cns conversationCns;
 
 /* if (with example inputs) these functions (`questionsResponsesFromHosts()` `produceConversationCns()`) pass, `return true;`
  * @throw std::bad_alloc
  * @throw std::logic_error
  * @pre @code conversationCns.hasImplementation() @endcode */
 const bool conversationCnsTestsThrows();
-const bool conversationCnsTests() { try{ return conversationCnsTestsThrows(); } catch(...) { return false; }}
-std::vector<std::string> conversationDefaultHosts = {
+static const bool conversationCnsTests() { try{ return conversationCnsTestsThrows(); } catch(...) { return false; }}
+static std::vector<std::string> conversationDefaultHosts = {
 /* Universal Resources Locators of hosts which `questionsResponsesFromHosts()` uses
  * Wikipedia is a special case; has compressed downloads of databases ( https://wikipedia.org/wiki/Wikipedia:Database_download )
  * Github is a special case; has compressed downloads of repositories ( https://docs.github.com/en/get-started/start-your-journey/downloading-files-from-github )
