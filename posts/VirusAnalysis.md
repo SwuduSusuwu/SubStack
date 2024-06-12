@@ -46,7 +46,7 @@ typedef struct ResultList { /* Lists of files (or pages) */
 } ResultList;
 
 template<class List>
-const size_t maxOfSizes(const List &list) {
+const size_t listMaxSize(const List &list) {
 #if PREFERENCE_IS_CSTR
 	size_t max = 0;
 	for(auto it = &list[0]; list.cend() != it; ++it) { const size_t temp = strlen(*it); if(temp > max) {max = temp;}}
@@ -566,8 +566,8 @@ const ResultList &unreviewed /* = ResultList(), WARNING! Possible danger to use 
 Cns &cns /* = analysisCns */
 ) {
 	std::vector<const std::tuple<const FileBytecode, float>> inputsToOutputs;
-	const size_t maxPassSize = maxOfSizes(pass.bytecodes);
-	const size_t maxAbortSize = maxOfSizes(abort.bytecodes);
+	const size_t maxPassSize = listMaxSize(pass.bytecodes);
+	const size_t maxAbortSize = listMaxSize(abort.bytecodes);
 	cns.setInputMode(cnsModeString);
 	cns.setOutputMode(cnsModeFloat);
 	cns.setInputNeurons(maxPassSize > maxAbortSize ? maxPassSize : maxAbortSize);
@@ -614,8 +614,8 @@ void produceDisinfectionCns(const ResultList &passOrNull, const ResultList &abor
 	std::vector<const std::tuple<const FileBytecode, const FileBytecode>> inputsToOutputs;
 	cns.setInputMode(cnsModeString);
 	cns.setOutputMode(cnsModeString);
-	cns.setInputNeurons(maxOfSizes(passOrNull.bytecodes));
-	cns.setOutputNeurons(maxOfSizes(abortOrNull.bytecodes));
+	cns.setInputNeurons(listMaxSize(passOrNull.bytecodes));
+	cns.setOutputNeurons(listMaxSize(abortOrNull.bytecodes));
 	cns.setLayersOfNeurons(6666);
 	cns.setNeuronsPerLayer(26666);
 	assert(passOrNull.bytecodes.size() == abortOrNull.bytecodes.size());
@@ -733,8 +733,8 @@ void produceConversationCns(const ResultList &questionsOrNull, const ResultList 
 	std::vector<const std::tuple<const ResultListBytecode, const ResultListBytecode>> inputsToOutputs;
 	cns.setInputMode(cnsModeString);
 	cns.setOutputMode(cnsModeString);
-	cns.setInputNeurons(maxOfSizes(questionsOrNull.bytecodes));
-	cns.setOutputNeurons(maxOfSizes(responsesOrNull.bytecodes));
+	cns.setInputNeurons(listMaxSize(questionsOrNull.bytecodes));
+	cns.setOutputNeurons(listMaxSize(responsesOrNull.bytecodes));
 	cns.setLayersOfNeurons(6666);
 	cns.setNeuronsPerLayer(26666);
 	assert(questionsOrNull.bytecodes.size() == questionsOrNull.bytecodes.size());

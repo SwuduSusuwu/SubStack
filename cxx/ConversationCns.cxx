@@ -8,7 +8,7 @@
 #include "ClassSha2.hxx" /* Sha2 */
 #include "ClassPortableExecutable.hxx" /* FilePath FileBytecode */
 #include "ClassCns.hxx" /* Cns, CnsMode, posixExec */
-#include "ClassResultList.hxx" /* ResultList listHasValue explodeToList ResultListBytecode */
+#include "ClassResultList.hxx" /* ResultList listMaxSize listHasValue explodeToList ResultListBytecode */
 #include "ConversationCns.hxx" /* conversationParseUrls conversationParseQuestion conversationParseResponses */
 /* (Work-in-progress) conversation bots with artificial CNS. */
 namespace Susuwu {
@@ -37,8 +37,8 @@ void produceConversationCns(const ResultList &questionsOrNull, const ResultList 
 	std::vector<const std::tuple<const ResultListBytecode, const ResultListBytecode>> inputsToOutputs;
 	cns.setInputMode(cnsModeString);
 	cns.setOutputMode(cnsModeString);
-	cns.setInputNeurons(maxOfSizes(questionsOrNull.bytecodes));
-	cns.setOutputNeurons(maxOfSizes(responsesOrNull.bytecodes));
+	cns.setInputNeurons(listMaxSize(questionsOrNull.bytecodes));
+	cns.setOutputNeurons(listMaxSize(responsesOrNull.bytecodes));
 	cns.setLayersOfNeurons(6666);
 	cns.setNeuronsPerLayer(26666);
 	assert(questionsOrNull.bytecodes.size() == questionsOrNull.bytecodes.size());

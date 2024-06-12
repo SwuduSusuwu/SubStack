@@ -22,7 +22,7 @@ typedef struct ResultList { /* Lists of files (or pages) */
 } ResultList;
 
 template<class List>
-const size_t maxOfSizes(const List &list) {
+const size_t listMaxSize(const List &list) {
 #if PREFERENCE_IS_CSTR
 	size_t max = 0;
 	for(auto it = &list[0]; list.cend() != it; ++it) { const size_t temp = strlen(*it); if(temp > max) {max = temp;}}

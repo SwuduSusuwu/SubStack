@@ -9,7 +9,7 @@
 #include <utility> /* std::get */
 #include "ClassSha2.hxx" /* Sha2 */
 #include "ClassCns.hxx" /* Cns, CnsMode, posixExec */
-#include "ClassResultList.hxx" /* listHasValue, ResultList, listProduceUniqueSubstr, listOfSubstrHasMatch */
+#include "ClassResultList.hxx" /* ResultList, listMaxSize, listHasValue, ResultList, listProduceUniqueSubstr, listOfSubstrHasMatch */
 #include "ClassPortableExecutable.hxx" /* PortableExecutable */
 #include "VirusAnalysis.hxx" /* passList, abortList, *AnalyisCaches */
 /* (Work-in-progress) virus analysis: uses hashes, signatures, static analysis, sandboxes, plus artificial CNS (central nervous systems) */
@@ -163,8 +163,8 @@ const ResultList &unreviewed /* = ResultList(), WARNING! Possible danger to use 
 Cns &cns /* = analysisCns */
 ) {
 	std::vector<const std::tuple<const FileBytecode, float>> inputsToOutputs;
-	const size_t maxPassSize = maxOfSizes(pass.bytecodes);
-	const size_t maxAbortSize = maxOfSizes(abort.bytecodes);
+	const size_t maxPassSize = listMaxSize(pass.bytecodes);
+	const size_t maxAbortSize = listMaxSize(abort.bytecodes);
 	cns.setInputMode(cnsModeString);
 	cns.setOutputMode(cnsModeFloat);
 	cns.setInputNeurons(maxPassSize > maxAbortSize ? maxPassSize : maxAbortSize);
@@ -211,8 +211,8 @@ void produceDisinfectionCns(const ResultList &passOrNull, const ResultList &abor
 	std::vector<const std::tuple<const FileBytecode, const FileBytecode>> inputsToOutputs;
 	cns.setInputMode(cnsModeString);
 	cns.setOutputMode(cnsModeString);
-	cns.setInputNeurons(maxOfSizes(passOrNull.bytecodes));
-	cns.setOutputNeurons(maxOfSizes(abortOrNull.bytecodes));
+	cns.setInputNeurons(listMaxSize(passOrNull.bytecodes));
+	cns.setOutputNeurons(listMaxSize(abortOrNull.bytecodes));
 	cns.setLayersOfNeurons(6666);
 	cns.setNeuronsPerLayer(26666);
 	assert(passOrNull.bytecodes.size() == abortOrNull.bytecodes.size());
