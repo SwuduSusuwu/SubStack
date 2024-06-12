@@ -9,7 +9,7 @@
 #include <utility> /* std::get */
 #include "ClassSha2.hxx" /* Sha2 */
 #include "ClassCns.hxx" /* Cns, CnsMode, posixExec */
-#include "ClassResultList.hxx" /* listHasValue, ResultList, listProduceUniqueSubstr */
+#include "ClassResultList.hxx" /* listHasValue, ResultList, listProduceUniqueSubstr, listOfSubstrHasMatch */
 #include "ClassPortableExecutable.hxx" /* PortableExecutable */
 #include "VirusAnalysis.hxx" /* passList, abortList, *AnalyisCaches */
 /* (Work-in-progress) virus analysis: uses hashes, signatures, static analysis, sandboxes, plus artificial CNS (central nervous systems) */
@@ -84,14 +84,8 @@ const VirusAnalysisResult signatureAnalysis(const PortableExecutable &file, cons
 		const auto result = signatureAnalysisCaches.at(fileHash);
 		return result;
 	} catch (...) {
-		for(auto sig : abortList.signatures) {
-#if PREFERENCE_IS_CSTR
-		 	if(strstr(file.hex, sig)) { /* strstr uses text/hex; hex uses more space than binary, so you should use `memmem` or `std::search` with file.bytecode */
-#else /* else !PREFERENCE_IS_CSTR */
-			if(file.bytecode.end() != std::search(file.bytecode.begin(), file.bytecode.end(), sig.begin(), sig.end())) {
-#endif /* PREFERENCE_IS_CSTR else */
-				return signatureAnalysisCaches[fileHash] = virusAnalysisAbort;
-		 	}
+		if(listOfSubstrHasMatch(abortList.signatures, file.bytecode)) {
+			return signatureAnalysisCaches[fileHash] = virusAnalysisAbort;
 		}
 		return signatureAnalysisCaches[fileHash] = virusAnalysisContinue;
 	}

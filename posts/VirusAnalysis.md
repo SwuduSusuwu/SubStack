@@ -52,7 +52,7 @@ const size_t maxOfSizes(const List &list) {
 	for(auto it = &list[0]; list.cend() != it; ++it) { const size_t temp = strlen(*it); if(temp > max) {max = temp;}}
 	return max; /* WARNING! `strlen()` just does UTF8-strings/hex-strings; if binary, must use `it->size()` */
 #else /* else !PREFERENCE_IS_CSTR */
-	auto it = std::max_element(list.begin(), list.end(), [](const auto &s, const auto &x) { return s.size() < x.size(); });
+	auto it = std::max_element(list.cbegin(), list.cend(), [](const auto &s, const auto &x) { return s.size() < x.size(); });
 	return it->size();
 #endif /* PREFERENCE_IS_CSTR else */
 }
@@ -94,6 +94,7 @@ const bool listHasSubstr(const List &list, typename List::value_type::const_iter
 	return list.back().cend() != listFindSubstr(list, s, x);
 }
 template<class List>
+/* Usage: resultList.signatures.push_back({listProduceUniqueSubstr(resultList.bytecodes, bytecode)); */
 const std::tuple<typename List::value_type::const_iterator, typename List::value_type::const_iterator> listProduceUniqueSubstr(const List &list, const typename List::value_type &value) {
 	size_t smallest = value.size();
 	auto retBegin = value.cbegin(), retEnd = value.cend();
@@ -109,6 +110,27 @@ const std::tuple<typename List::value_type::const_iterator, typename List::value
 		}
 	} /* Incremental `for()` loops, is a slow method to produce unique substrings; should use binary searches, or look for the standard function which optimizes this. */
 	return {retBegin, retEnd};
+}
+template<class List>
+/* Usage: auto it = listOfSubstrFindMatch(resultList.signatures, bytecode)); if(it) {std::cout << "value matches ResultList.signatures[" << it << "]";} */
+auto listOfSubstrFindMatch(const List &list, const typename List::value_type &x) {
+	for(auto value : list) {
+#if PREFERENCE_IS_CSTR
+		auto result = memmem(&x[0], strlen(&x[0]), &value[0], strlen(&value[0]));
+		if(NULL != result) {
+#else /* !PREFERENCE_IS_CSTR */
+		auto result = std::search(x.cbegin(), x.cend(), value.cbegin(), value.cend(), [](char ch1, char ch2) { return ch1 == ch2; });
+		if(value.cend() != result) {
+#endif /* !PREFERENCE_IS_CSTR */
+			return result;
+		}
+	}
+	return list.back().cend();
+}
+template<class List>
+/* Usage: if(listOfSubstrHasMatch(resultList.signatures, bytecode)) {std::cout << "value matches ResultList.signatures";} */
+const bool listOfSubstrHasMatch(const List &list, const typename List::value_type &x) {
+	return list.back().cend() != listOfSubstrFindMatch(list, x);
 }
 
 template<class S>
@@ -465,14 +487,8 @@ const VirusAnalysisResult signatureAnalysis(const PortableExecutable &file, cons
 		const auto result = signatureAnalysisCaches.at(fileHash);
 		return result;
 	} catch (...) {
-		for(auto sig : abortList.signatures) {
-#if PREFERENCE_IS_CSTR
-		 	if(strstr(file.hex, sig)) { /* strstr uses text/hex; hex uses more space than binary, so you should use `memmem` or `std::search` with file.bytecode */
-#else /* else !PREFERENCE_IS_CSTR */
-			if(file.bytecode.end() != std::search(file.bytecode.begin(), file.bytecode.end(), sig.begin(), sig.end())) {
-#endif /* PREFERENCE_IS_CSTR else */
-				return signatureAnalysisCaches[fileHash] = virusAnalysisAbort;
-		 	}
+		if(listOfSubstrHasMatch(abortList.signatures, file.bytecode)) {
+			return signatureAnalysisCaches[fileHash] = virusAnalysisAbort;
 		}
 		return signatureAnalysisCaches[fileHash] = virusAnalysisContinue;
 	}
@@ -817,7 +833,6 @@ void conversationCnsLoopProcess(const Cns &cns) {
  		bytecode += '\n'; /* delimiter separates (and uses) multiple inputs */
 	}
 }
-
 ```
 ========
 
