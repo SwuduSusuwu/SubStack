@@ -9,7 +9,7 @@
 #include <utility> /* std::get */
 #include "ClassSha2.hxx" /* Sha2 */
 #include "ClassCns.hxx" /* Cns, CnsMode, posixExec */
-#include "ClassResultList.hxx" /* listHas, ResultList, smallestUniqueSubstr */
+#include "ClassResultList.hxx" /* listHasValue, ResultList, listProduceUniqueSubstr */
 #include "ClassPortableExecutable.hxx" /* PortableExecutable */
 #include "VirusAnalysis.hxx" /* passList, abortList, *AnalyisCaches */
 /* (Work-in-progress) virus analysis: uses hashes, signatures, static analysis, sandboxes, plus artificial CNS (central nervous systems) */
@@ -69,9 +69,9 @@ const VirusAnalysisResult hashAnalysis(const PortableExecutable &file, const Res
 		const auto result = hashAnalysisCaches.at(fileHash);
 		return result;
 	} catch (...) {
-		if(listHas(passList.hashes, fileHash)) {
+		if(listHasValue(passList.hashes, fileHash)) {
 			return hashAnalysisCaches[fileHash] = virusAnalysisPass;
-		} else if(listHas(abortList.hashes, fileHash)) {
+		} else if(listHasValue(abortList.hashes, fileHash)) {
 			return hashAnalysisCaches[fileHash] = virusAnalysisAbort;
 		} else {
 			return hashAnalysisCaches[fileHash] =  virusAnalysisContinue; /* continue to next tests */
@@ -100,7 +100,7 @@ const VirusAnalysisResult signatureAnalysis(const PortableExecutable &file, cons
 void produceAbortListSignatures(const ResultList &passList, ResultList &abortList) {
 	abortList.signatures.reserve(abortList.bytecodes.size());
 	for(auto file : abortList.bytecodes) {
-		auto tuple = smallestUniqueSubstr(file, passList.bytecodes);
+		auto tuple = listProduceUniqueSubstr(passList.bytecodes, file);
 		abortList.signatures.push_back(ResultListSignature(std::get<0>(tuple), std::get<1>(tuple)));
 	} /* The most simple signature is a substring, but some analyses use regexes. */
 }

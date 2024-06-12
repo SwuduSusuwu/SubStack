@@ -8,7 +8,7 @@
 #include "ClassSha2.hxx" /* Sha2 */
 #include "ClassPortableExecutable.hxx" /* FilePath FileBytecode */
 #include "ClassCns.hxx" /* Cns, CnsMode, posixExec */
-#include "ClassResultList.hxx" /* ResultList listHas explodeToList ResultListBytecode */
+#include "ClassResultList.hxx" /* ResultList listHasValue explodeToList ResultListBytecode */
 #include "ConversationCns.hxx" /* conversationParseUrls conversationParseQuestion conversationParseResponses */
 /* (Work-in-progress) conversation bots with artificial CNS. */
 namespace Susuwu {
@@ -62,13 +62,13 @@ void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &respon
 	auto question = conversationParseQuestion(xhtmlFile);
 	if(question.size()) {
 		auto questionSha2 = Sha2(question);
-		if(!listHas(questionsOrNull.hashes, questionSha2)) {
+		if(!listHasValue(questionsOrNull.hashes, questionSha2)) {
 			questionsOrNull.hashes.insert(questionSha2);
 			auto responses = conversationParseResponses(xhtmlFile);
 			for(auto response : responses) {
 				auto questionSha2 = Sha2(question);
 				auto responseSha2 = Sha2(response);
-				if(!listHas(responsesOrNull.hashes, responseSha2)) {
+				if(!listHasValue(responsesOrNull.hashes, responseSha2)) {
 					questionsOrNull.hashes.insert(questionSha2);
 					responsesOrNull.hashes.insert(responseSha2);
 					questionsOrNull.bytecodes.push_back(question);
@@ -79,7 +79,7 @@ void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &respon
 	}
 	auto urls = conversationParseUrls(xhtmlFile);
 	for(auto url : urls) {
-		if(!listHas(questionsOrNull.signatures, url) && !listHas(noRobots, url)) {
+		if(!listHasValue(questionsOrNull.signatures, url) && !listHasValue(noRobots, url)) {
 			posixExec("/bin/wget", "'" + url + "' > " + xhtmlFile, NULL);
 			questionsOrNull.signatures.push_back(url);
 			questionsResponsesFromXhtml(questionsOrNull, responsesOrNull, xhtmlFile);
