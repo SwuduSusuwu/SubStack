@@ -1,4 +1,4 @@
-Licenses: dual `Creative Commons`/`Apache 2,0` (allows all uses)
+Dual licenses: choose `Creative Commons` or `Apache 2` (allows all uses).
 
 Purposes: `/posts/` stages posts (school classes) for https://SwuduSusuwu.substack.com/
 

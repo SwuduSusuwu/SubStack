@@ -1,4 +1,4 @@
-/* Licenses: allows all uses ("Creative Commons"/"Apache 2") */
+/* Dual licenses: choose "Creative Commons" or "Apache 2" (allows all uses) */
 #ifndef INCLUDES_cxx_ClassSha2_cxx
 #define INCLUDES_cxx_ClassSha2_cxx
 #include "ClassPortableExecutable.hxx" /* FileBytecode FileHash */

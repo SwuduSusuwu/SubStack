@@ -1,6 +1,6 @@
 /* Licenses: allows all uses ("Creative Commons"/"Apache 2") */
-#ifndef INCLUDE_GUARD_cxx_Macros_hxx
-#define INCLUDE_GUARD_cxx_Macros_hxx
+#ifndef INCLUDES_cxx_Macros_hxx
+#define INCLUDES_cxx_Macros_hxx
 /* Miscellaneous macros */
 #include <assert.h> /* assert static_assert */
 #include <stdbool.h> /* false */
@@ -60,5 +60,5 @@ namespace Susuwu { /* namespaces do not affect macros. Is just standard practice
 #	define NORETURN [[noreturn]] /* Usage: `NORETURN void exit();` is close to `void exit() [[ensures:: false]];` or `exit(); UNREACHABLE;*/
 #endif /* supports [[noreturn]] */
 }; /* namespace Susuwu */
-#endif /* ndef INCLUDE_GUARD_cxx_Macros_hxx */
+#endif /* ndef INCLUDES_cxx_Macros_hxx */
 

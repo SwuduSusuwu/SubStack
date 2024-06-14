@@ -1,4 +1,5 @@
 #!/bin/sh
+echo '/* Dual licenses: choose "Creative Commons" or "Apache 2" (allows all uses) */'
 #cd build
 sSRC="./cxx/"
 #INCLUDES="${sSRC}"

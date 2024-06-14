@@ -1,4 +1,4 @@
-/* Licenses: allows all uses ("Creative Commons"/"Apache 2") */
+/* Dual licenses: choose "Creative Commons" or "Apache 2" (allows all uses) */
 #pragma once
 #ifndef INCLUDES_cxx_ClassResultList_hxx
 #define INCLUDES_cxx_ClassResultList_hxx
@@ -123,5 +123,5 @@ const std::vector<S> explodeToList(const S &s, const S &token) {
 	return list;
 }
 }; /* namespace Susuwu */
-#endif /* ndef INCLUDED_cxx_ClassResultList_hxx */
+#endif /* ndef INCLUDES_cxx_ClassResultList_hxx */
 

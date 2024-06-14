@@ -1,4 +1,4 @@
-/* Licenses: allows all uses ("Creative Commons"/"Apache 2") */
+/* Dual licenses: choose "Creative Commons" or "Apache 2" (allows all uses) */
 #pragma once
 #ifndef INCLUDES_cxx_VirusAnalysis_hxx
 #define INCLUDES_cxx_VirusAnalysis_hxx
