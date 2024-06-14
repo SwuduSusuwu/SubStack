@@ -60,4 +60,5 @@ Makefile
 *.pch
 .*.swp
 a.out
+*.o
 
