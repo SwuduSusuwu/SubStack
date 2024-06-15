@@ -10,12 +10,12 @@ CXX_FLAGS_DEBUG="${CXX_FLAGS_DEBUG} -fno-omit-frame-pointer" #/* thus optimizati
 CXX_FLAGS_DEBUG="${CXX_FLAGS_DEBUG} -g" #/* gives line numbers, + arguments, to stacktraces */
 #CXX_FLAGS_DEBUG="${CXX_FLAGS_DEBUG} -fno-optimize-sibling-calls" #/* Don't inline functions. Does extra stacktraces. */
 #CXX_FLAGS_DEBUG="${CXX_FLAGS_DEBUG} -fsanitize=undefined" #/* causes 'cannot locate symbol "__ubsan_handle_function_type_mismatch_abort"' */
-if command -v ctags; then
+if command -v ctags > /dev/null; then
 	ctags -R
 fi
-if command -v clang++; then
+if command -v clang++ > /dev/null; then
 	CXX="clang++"
-elif command -v g++; then
+elif command -v g++ > /dev/mull; then
 	CXX="g++"
 else
 	echo "Error: no clang++, no g++. `apt install clang` or `apt install gcc`"
@@ -24,6 +24,7 @@ fi
 rm *.o
 CXX_FLAGS="${CXX_FLAGS} ${CXX_FLAGS_DEBUG}" #/* comment this to disable sanitizers/stacktraces (if you want to run fast) */
 CXX="${CXX} ${CXX_FLAGS}"
+set -x
 $CXX -x c -c ${sSRC}/../c/rfc6234/sha1.c
 $CXX -x c -c ${sSRC}/../c/rfc6234/sha224-256.c
 $CXX -x c -c ${sSRC}/../c/rfc6234/sha384-512.c
@@ -34,4 +35,5 @@ $CXX -c ${sSRC}/VirusAnalysis.cxx
 $CXX -c ${sSRC}/ConversationCns.cxx
 $CXX -c ${sSRC}/main.cxx
 $CXX sha1.o sha224-256.o sha384-512.o ClassSha2.o ClassResultList.o ClassCns.o VirusAnalysis.o ConversationCns.o main.o
+set +x
 
