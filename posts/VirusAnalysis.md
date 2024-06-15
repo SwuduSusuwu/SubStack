@@ -860,9 +860,7 @@ which show how to use hex dumps (or disassembled sources) of the apps/SW (execut
 Static analysis (such as Clang/LLVM has) just checks programs for accidental security threats (such as buffer overruns/underruns, or null-pointer-dereferences,) but could act as a basis,
 if you add a few extra checks for deliberate vulnerabilities/signs of infection (these are heuristics, so the user should have a choice to quarantine and submit for review, or continue launch of this).
 https://github.com/llvm/llvm-project/blob/main/clang/lib/StaticAnalyzer
-is part of Clang/LLVM (license is FLOSS,) does static analysis (produces full graphs of each function the SW uses,
-plus arguments passed to thus,
-so that if the executable violates security, the analysis shows this to you and asks you what to do.)
+is part of Clang/LLVM (license is FLOSS,) does static analysis (emulation produces inputs to functions, formulas analyze stacktraces (+ heap/stack uses) to produce lists of possible unwanted side effects to warn you of); versus [`-fsanitize`](https://github.com/SwuduSusuwu/SubStack/issues/5#issuecomment-2169117084), do not have to recompile to do static analysis. `-fsanitize` requires you to produce inputs, static analysis does this for you.
 LLVM is lots of files, Phasar is just it’s static analysis:
 https://github.com/secure-software-engineering/phasar
 
