@@ -633,23 +633,31 @@ const FileBytecode cnsDisinfection(const PortableExecutable &file, const Cns &cn
 `less` [cxx/main.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/main.cxx)
 ```
 #include "VirusAnalysis.hxx" /* virusAnalysisTestsThrows */
-#include "ConversationCns.hxx" /* conversationCnshrows */
+#include "ConversationCns.hxx" /* conversationCnsTestsThrows */
 #include "Macros.hxx" /* ASSUME EXPECTS ENSURES NOEXCEPT NORETURN */
-#include <stdio.h> /* printf */
+#include <iostream> /* cout flush endl */
 #include <stdlib.h> /* exit */
 namespace Susuwu {
 void noExcept() NOEXCEPT;
 NORETURN void noReturn();
-void noExcept() NOEXCEPT {printf("true");}
+void noExcept() NOEXCEPT {std::cout << std::flush;}
 void noReturn()  {exit(0);}
-int testHarnesses() EXPECTS(1) ENSURES(1) {
-	ASSUME(1);
-	printf("cxx/Macros.hxx: pass");
+int testHarnesses() EXPECTS(true) ENSURES(true) {
+	std::cout << "cxx/Macros.hxx: " << std::flush;
+	ASSUME(true);
+	noExcept();
+	std::cout << "pass" << std::endl;
+	std::cout << "virusAnalysisTestsThrows(): " << std::flush;
 	if(virusAnalysisTestsThrows()) {
-		printf("cxx/VirusAnalysis.hxx: pass");
+		std::cout << "pass" << std::endl;
+	} else {
+		std::cout << "error" << std::endl;
 	}
+	std::cout << "conversationCnsTestsThrows(): " << std::flush;
 	if(conversationCnsTestsThrows()) {
-		printf("cxx/ConversationCns.hxx: pass");
+		std::cout << "pass" << std::endl;
+	} else {
+		std::cout << "error" << std::endl;
 	}
 	noReturn();
 }
