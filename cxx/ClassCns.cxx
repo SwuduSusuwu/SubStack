@@ -5,22 +5,34 @@
 #include <vector> /* std::vector */
 #include <ctype.h> /* size_t */
 #ifdef _POSIX_VERSION
-#include <unistd.h> /* execve */
+#include <unistd.h> /* execve fork EXIT_FAILURE */
+#include <sys/wait.h> /* waitpid */
 #endif /* def _POSIX_VERSION */
 #include "ClassCns.hxx" /* CnsMode */
 namespace Susuwu {
-const int posixExec(const std::string &executable, const std::string &argsS, const std::string &envVarsS) {
+const int execves(const std::string &executable, const std::vector<const std::string> &argvS, const std::vector<const std::string> &envpS) {
 #ifdef _POSIX_VERSION
-	char *args[] = {
-		const_cast<char *>(executable.c_str()),
-		const_cast<char *>(argsS.c_str()),
-		NULL
-	};
-	char *envVars[] = {
-		const_cast<char *>(envVarsS.c_str()),
-		NULL
-	};
-	return execve(args[0], args, envVars);
+	pid_t pid = fork();
+	if(0 != pid) {
+		int status;
+		assert(-1 != pid);
+		waitpid(pid, &status, 0);
+		return status;
+	} /* if 0, is fork */
+	const std::vector<std::string> argvSmutable = {argvS.cbegin(), argvS.cend()};
+	std::vector<char *> argv;
+	for(auto x : argvSmutable) {
+		argv.push_back(const_cast<char *>(x.c_str()));
+	}
+	argv.push_back(NULL);
+	const std::vector<std::string> envpSmutable = {envpS.cbegin(), envpS.cend()};
+	std::vector<char *> envp;
+	for(auto x : envpSmutable) {
+		envp.push_back(const_cast<char *>(x.c_str()));
+	}
+	envp.push_back(NULL);
+	execve(executable.c_str(), &argv[0], &envp[0]); /* NORETURN */
+	exit(EXIT_FAILURE);
 #endif /* def _POSIX_VERSION */
 }
 

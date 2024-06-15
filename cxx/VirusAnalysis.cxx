@@ -8,7 +8,7 @@
 #include <algorithm> /* std::sort */
 #include <utility> /* std::get */
 #include "ClassSha2.hxx" /* Sha2 */
-#include "ClassCns.hxx" /* Cns, CnsMode, posixExec */
+#include "ClassCns.hxx" /* Cns, CnsMode, execvex */
 #include "ClassResultList.hxx" /* ResultList, listMaxSize, listHasValue, ResultList, listProduceUniqueSubstr, listOfSubstrHasMatch */
 #include "ClassPortableExecutable.hxx" /* PortableExecutable */
 #include "VirusAnalysis.hxx" /* passList, abortList, *AnalyisCaches */
@@ -136,11 +136,11 @@ const VirusAnalysisResult sandboxAnalysis(const PortableExecutable &file, const 
 		const auto result = sandboxAnalysisCaches.at(fileHash);
 		return result;
 	} catch (...) {
-		posixExec("/bin/cp", "-r '/usr/home/sandbox/' '/usr/home/sandbox.bak'"); /* or produce FS snapshot */
-		posixExec("/bin/cp", "'" + file.path + "' '/usr/home/sandbox/'");
-		posixExec("/bin/chroot", "'/usr/home/sandbox/' \"strace basename '" + file.path + "'\" >> strace.outputs");
-		posixExec("/bin/mv/", "'/usr/home/sandbox/strace.outputs' '/tmp/strace.outputs'");
-		posixExec("/bin/sh", "-c 'rm -r /usr/home/sandbox/ && mv /usr/home/sandbox.bak /usr/home/sandbox/'"); /* or restore FS snapshot */
+		execvex("cp -r '/usr/home/sandbox/' '/usr/home/sandbox.bak'"); /* or produce FS snapshot */
+		execvex("cp '" + file.path + "' '/usr/home/sandbox/'");
+		execvex("chroot '/usr/home/sandbox/' \"strace basename '" + file.path + "'\" >> strace.outputs");
+		execvex("mv/ '/usr/home/sandbox/strace.outputs' '/tmp/strace.outputs'");
+		execvex("rm -r '/usr/home/sandbox/' && mv '/usr/home/sandbox.bak' '/usr/home/sandbox/'"); /* or restore FS snapshot */
 		return sandboxAnalysisCaches[fileHash] = straceOutputsAnalysis("/tmp/strace.outputs");
 	}
 }

@@ -7,7 +7,7 @@
 #include <tuple> /* std::tuple */
 #include "ClassSha2.hxx" /* Sha2 */
 #include "ClassPortableExecutable.hxx" /* FilePath FileBytecode */
-#include "ClassCns.hxx" /* Cns, CnsMode, posixExec */
+#include "ClassCns.hxx" /* Cns, CnsMode, execvex */
 #include "ClassResultList.hxx" /* ResultList listMaxSize listHasValue explodeToList ResultListBytecode */
 #include "ConversationCns.hxx" /* conversationParseUrls conversationParseQuestion conversationParseResponses */
 /* (Work-in-progress) conversation bots with artificial CNS. */
@@ -51,8 +51,8 @@ void produceConversationCns(const ResultList &questionsOrNull, const ResultList 
 
 void questionsResponsesFromHosts(ResultList &questionsOrNull, ResultList &responsesOrNull, const std::vector<FilePath> &hosts) {
 	for(auto host : hosts) {
-		posixExec("/bin/wget", "'" + host + "/robots.txt' > robots.txt", NULL);
-		posixExec("/bin/wget", "'" + host + "' > index.xhtml", NULL);
+		execvex("wget '" + host + "/robots.txt' -Orobots.txt");
+		execvex("wget '" + host + "' -Oindex.xhtml");
 		questionsOrNull.signatures.push_back(host);
 		questionsResponsesFromXhtml(questionsOrNull, responsesOrNull, "index.xhtml");
 	}
@@ -80,7 +80,7 @@ void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &respon
 	auto urls = conversationParseUrls(xhtmlFile);
 	for(auto url : urls) {
 		if(!listHasValue(questionsOrNull.signatures, url) && !listHasValue(noRobots, url)) {
-			posixExec("/bin/wget", "'" + url + "' > " + xhtmlFile, NULL);
+			execvex("wget '" + url + "' -O" + xhtmlFile);
 			questionsOrNull.signatures.push_back(url);
 			questionsResponsesFromXhtml(questionsOrNull, responsesOrNull, xhtmlFile);
 		}

@@ -21,7 +21,8 @@ typedef enum CnsMode {
 } CnsMode;
 
 /* @pre @code std::ifstream(executable); @endcode */
-const int posixExec(const std::string &executable, const std::string &argsS = "", const std::string &envVarsS = "");
+const int execves(const std::string &executable, const std::vector<const std::string> &argvS = {}, const std::vector<const std::string> &envpS = {});
+static const int execvex(const std::string &toSh) {return execves("/bin/sh", {"/bin/sh", "-c", toSh});}
 typedef class Cns {
 public:
 	virtual const bool hasImplementation() const {return typeid(Cns) != typeid(this);}
