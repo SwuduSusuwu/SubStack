@@ -10,7 +10,7 @@
 #endif /* def _POSIX_VERSION */
 #include "ClassCns.hxx" /* CnsMode */
 namespace Susuwu {
-const int execves(const std::string &executable, const std::vector<const std::string> &argvS, const std::vector<const std::string> &envpS) {
+const int execves(const std::vector<const std::string> &argvS, const std::vector<const std::string> &envpS) {
 #ifdef _POSIX_VERSION
 	pid_t pid = fork();
 	if(0 != pid) {
@@ -21,17 +21,18 @@ const int execves(const std::string &executable, const std::vector<const std::st
 	} /* if 0, is fork */
 	const std::vector<std::string> argvSmutable = {argvS.cbegin(), argvS.cend()};
 	std::vector<char *> argv;
-	for(auto x : argvSmutable) {
-		argv.push_back(const_cast<char *>(x.c_str()));
+	//for(auto x : argvSmutable) { /* with `fsanitize=address` this triggers "stack-use-after-scope" */
+	for(auto x = argvSmutable.begin(); argvSmutable.end() != x; ++x) {
+		argv.push_back(const_cast<char *>(x->c_str()));
 	}
 	argv.push_back(NULL);
 	const std::vector<std::string> envpSmutable = {envpS.cbegin(), envpS.cend()};
 	std::vector<char *> envp;
-	for(auto x : envpSmutable) {
-		envp.push_back(const_cast<char *>(x.c_str()));
+	for(auto x = envpSmutable.begin(); envpSmutable.end() != x; ++x) {
+		envp.push_back(const_cast<char *>(x->c_str()));
 	}
 	envp.push_back(NULL);
-	execve(executable.c_str(), &argv[0], &envp[0]); /* NORETURN */
+	execve(argv[0], &argv[0], &envp[0]); /* NORETURN */
 	exit(EXIT_FAILURE);
 #endif /* def _POSIX_VERSION */
 }

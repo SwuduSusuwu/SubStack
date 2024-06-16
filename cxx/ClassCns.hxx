@@ -20,9 +20,10 @@ typedef enum CnsMode {
 #endif /* def CXX_17 else */
 } CnsMode;
 
-/* @pre @code std::ifstream(executable); @endcode */
-const int execves(const std::string &executable, const std::vector<const std::string> &argvS = {}, const std::vector<const std::string> &envpS = {});
-static const int execvex(const std::string &toSh) {return execves("/bin/sh", {"/bin/sh", "-c", toSh});}
+/* `int status; pid_t pid = fork() || execve(argv[0], &argv[0], &envp[0]); waitpid(pid, &status, 0); return status;`
+ * @pre @code (-1 != access(argv[0], X_OK) @endcode */
+const int execves(/* const std::string &pathname, -- `execve` requires `&pathname == &argv[0]` */ const std::vector<const std::string> &argvS = {}, const std::vector<const std::string> &envpS = {});
+static const int execvex(const std::string &toSh) {return execves({"/bin/sh", "-c", toSh});}
 typedef class Cns {
 public:
 	virtual const bool hasImplementation() const {return typeid(Cns) != typeid(this);}
