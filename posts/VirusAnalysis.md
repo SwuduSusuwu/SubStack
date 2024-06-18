@@ -14,7 +14,7 @@ typedef FilePath FileBytecode; /* Uses `std::string` for bytecode (versus `std::
 */
 typedef FilePath FileHash; /* TODO: `std::unordered_set<std::basic_string<unsigned char>>` */
 typedef class PortableExecutable {
-/* TODO: Unimplemented (work-in-progress) just to allow `cxx/VirusAnalysis.cxx` to compile. You should replace with official implementation of this. */
+/* TODO: union of actual Portable Executable (Microsoft) + ELF (Linux) specifications */
 public:
 	FilePath path; /* Suchas "C:\Program.exe" or "/usr/bin/library.so" */
 	FileBytecode bytecode; /* compiled programs; bytecode */
@@ -80,7 +80,8 @@ const bool listHasValue(const List &list, const typename List::value_type &x) {
 template<class List>
 /* @pre @code s < x @endcode */
 auto listFindSubstr(const List &list, typename List::value_type::const_iterator s, typename List::value_type::const_iterator x) {
-	for(auto value : list) {
+#pragma unroll
+	for(const auto &value : list) {
 		auto result = std::search(value.cbegin(), value.cend(), s, x, [](char ch1, char ch2) { return ch1 == ch2; });
 		if(value.cend() != result) {
 			return result;
@@ -114,7 +115,7 @@ const std::tuple<typename List::value_type::const_iterator, typename List::value
 template<class List>
 /* Usage: auto it = listOfSubstrFindMatch(resultList.signatures, bytecode)); if(it) {std::cout << "value matches ResultList.signatures[" << it << "]";} */
 auto listOfSubstrFindMatch(const List &list, const typename List::value_type &x) {
-	for(auto value : list) {
+	for(const auto &value : list) {
 #if PREFERENCE_IS_CSTR
 		auto result = memmem(&x[0], strlen(&x[0]), &value[0], strlen(&value[0]));
 		if(NULL != result) {
@@ -149,7 +150,7 @@ const std::vector<S> explodeToList(const S &s, const S &token) {
 ```
 `less` [cxx/ClassCns.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ClassCns.hxx)
 ```
-typedef enum CnsMode {
+typedef enum CnsMode : char {
 	cnsModeBool, cnsModeChar, cnsModeInt, cnsModeUint, cnsModeFloat, cnsModeDouble,
 	cnsModeVectorBool, cnsModeVectorChar, cnsModeVectorInt, cnsModeVectorUint, cnsModeVectorFloat, cnsModeVectorDouble,
 #ifdef CXX_17
@@ -166,6 +167,7 @@ const int execves(/* const std::string &pathname, -- `execve` requires `&pathnam
 static const int execvex(const std::string &toSh) {return execves({"/bin/sh", "-c", toSh});}
 typedef class Cns {
 public:
+	virtual ~Cns() = default;
 	virtual const bool hasImplementation() const {return typeid(Cns) != typeid(this);}
 	virtual const bool isInitialized() const {return initialized;}
 	virtual void setInitialized(const bool is) {initialized = is;}
@@ -181,33 +183,33 @@ public:
 	// template<Intput, Output> virtual void setupSynapses(std::vector<std::tuple<Input, Output>> inputsToOutputs); /* C++ does not support templates of virtual functions ( https://stackoverflow.com/a/78440416/24473928 ) */
 	/* @pre @code isInitialized() @endcode */
 	// template<Input, Output> virtual const Output process(Input input);
-#define templateWorkaround(CNS_MODE, TYPEDEF) \
-	virtual void setupSynapses(const std::vector<const std::tuple<TYPEDEF, const bool>> &inputsToOutputs) {inputMode = CNS_MODE; outputMode = cnsModeBool;}\
-	virtual void setupSynapses(const std::vector<const std::tuple<TYPEDEF, const char>> &inputsToOutputs) {inputMode = CNS_MODE; outputMode = cnsModeChar;}\
-	virtual void setupSynapses(const std::vector<const std::tuple<TYPEDEF, const int>> &inputsToOutputs) {inputMode = CNS_MODE; outputMode = cnsModeInt;}\
-	virtual void setupSynapses(const std::vector<const std::tuple<TYPEDEF, const unsigned int>> &inputsToOutputs) {inputMode = CNS_MODE; outputMode = cnsModeUint;}\
-	virtual void setupSynapses(const std::vector<const std::tuple<TYPEDEF, float>> &inputsToOutputs) {inputMode = CNS_MODE; outputMode = cnsModeFloat;}\
-	virtual void setupSynapses(const std::vector<const std::tuple<TYPEDEF, const double>> &inputsToOutputs) {inputMode = CNS_MODE; outputMode = cnsModeDouble;}\
-	virtual void setupSynapses(const std::vector<const std::tuple<TYPEDEF, const std::vector<bool>>> &inputsToOutputs) {inputMode = CNS_MODE; outputMode = cnsModeVectorBool;}\
-	virtual void setupSynapses(const std::vector<const std::tuple<TYPEDEF, const std::vector<char>>> &inputsToOutputs) {inputMode = CNS_MODE; outputMode = cnsModeVectorChar;}\
-	virtual void setupSynapses(const std::vector<const std::tuple<TYPEDEF, const std::vector<int>>> &inputsToOutputs) {inputMode = CNS_MODE; outputMode = cnsModeVectorInt;}\
-	virtual void setupSynapses(const std::vector<const std::tuple<TYPEDEF, const std::vector<unsigned int>>> &inputsToOutputs) {inputMode = CNS_MODE; outputMode = cnsModeVectorUint;}\
-	virtual void setupSynapses(const std::vector<const std::tuple<TYPEDEF, const std::vector<float>>> &inputsToOutputs) {inputMode = CNS_MODE; outputMode = cnsModeVectorFloat;}\
-	virtual void setupSynapses(const std::vector<const std::tuple<TYPEDEF, const std::vector<double>>> &inputsToOutputs) {inputMode = CNS_MODE; outputMode = cnsModeVectorDouble;}\
-	virtual void setupSynapses(const std::vector<const std::tuple<TYPEDEF, const std::string>> &inputsToOutputs) {inputMode = CNS_MODE; outputMode = cnsModeString;}\
-	virtual const bool processToBool(TYPEDEF input) const {assert(CNS_MODE == inputMode && cnsModeBool == outputMode); return 0;}\
-	virtual const char processToChar(TYPEDEF input) const {assert(CNS_MODE == inputMode && cnsModeChar == outputMode); return 0;}\
-	virtual const int processToInt(TYPEDEF input) const {assert(CNS_MODE == inputMode && cnsModeInt == outputMode); return 0;}\
-	virtual const unsigned int processToUint(TYPEDEF input) const {assert(CNS_MODE == inputMode && cnsModeUint == outputMode); return 0;}\
-	virtual const float processToFloat(TYPEDEF input) const {assert(CNS_MODE == inputMode && cnsModeFloat == outputMode); return 0;}\
-	virtual const double processToDouble(TYPEDEF input) const {assert(CNS_MODE == inputMode && cnsModeDouble == outputMode); return 9;}\
-	virtual const std::vector<bool> processToVectorBool(TYPEDEF input) const {assert(CNS_MODE == inputMode && cnsModeVectorBool == outputMode); return {};}\
-	virtual const std::vector<char> processToVectorChar(TYPEDEF input) const {assert(CNS_MODE == inputMode && cnsModeVectorChar == outputMode); return {};}\
-	virtual const std::vector<int> processToVectorInt(TYPEDEF input) const {assert(CNS_MODE == inputMode && cnsModeVectorInt == outputMode); return {};}\
-	virtual const std::vector<unsigned int> processToVectorUint(TYPEDEF input) const {assert(CNS_MODE == inputMode && cnsModeVectorUint == outputMode); return {};}\
-	virtual std::vector<float> processToVectorFloat(TYPEDEF input) const {assert(CNS_MODE == inputMode && cnsModeVectorFloat == outputMode); return {};}\
-	virtual const std::vector<double> processToVectorDouble(TYPEDEF input) const {assert(CNS_MODE == inputMode && cnsModeVectorDouble == outputMode); return {};}\
-	virtual const std::string processToString(TYPEDEF input) const {auto val = processToVectorChar(input); return std::string(&val[0], val.size());}
+#define templateWorkaround(INPUT_MODE, INPUT_TYPEDEF) \
+	virtual void setupSynapses(const std::vector<const std::tuple<INPUT_TYPEDEF, const bool>> &inputsToOutputs) {inputMode = (INPUT_MODE); outputMode = cnsModeBool;}\
+	virtual void setupSynapses(const std::vector<const std::tuple<INPUT_TYPEDEF, const char>> &inputsToOutputs) {inputMode = (INPUT_MODE); outputMode = cnsModeChar;}\
+	virtual void setupSynapses(const std::vector<const std::tuple<INPUT_TYPEDEF, const int>> &inputsToOutputs) {inputMode = (INPUT_MODE); outputMode = cnsModeInt;}\
+	virtual void setupSynapses(const std::vector<const std::tuple<INPUT_TYPEDEF, const unsigned int>> &inputsToOutputs) {inputMode = (INPUT_MODE); outputMode = cnsModeUint;}\
+	virtual void setupSynapses(const std::vector<const std::tuple<INPUT_TYPEDEF, float>> &inputsToOutputs) {inputMode = (INPUT_MODE); outputMode = cnsModeFloat;}\
+	virtual void setupSynapses(const std::vector<const std::tuple<INPUT_TYPEDEF, const double>> &inputsToOutputs) {inputMode = (INPUT_MODE); outputMode = cnsModeDouble;}\
+	virtual void setupSynapses(const std::vector<const std::tuple<INPUT_TYPEDEF, const std::vector<bool>>> &inputsToOutputs) {inputMode = (INPUT_MODE); outputMode = cnsModeVectorBool;}\
+	virtual void setupSynapses(const std::vector<const std::tuple<INPUT_TYPEDEF, const std::vector<char>>> &inputsToOutputs) {inputMode = (INPUT_MODE); outputMode = cnsModeVectorChar;}\
+	virtual void setupSynapses(const std::vector<const std::tuple<INPUT_TYPEDEF, const std::vector<int>>> &inputsToOutputs) {inputMode = (INPUT_MODE); outputMode = cnsModeVectorInt;}\
+	virtual void setupSynapses(const std::vector<const std::tuple<INPUT_TYPEDEF, const std::vector<unsigned int>>> &inputsToOutputs) {inputMode = (INPUT_MODE); outputMode = cnsModeVectorUint;}\
+	virtual void setupSynapses(const std::vector<const std::tuple<INPUT_TYPEDEF, const std::vector<float>>> &inputsToOutputs) {inputMode = (INPUT_MODE); outputMode = cnsModeVectorFloat;}\
+	virtual void setupSynapses(const std::vector<const std::tuple<INPUT_TYPEDEF, const std::vector<double>>> &inputsToOutputs) {inputMode = (INPUT_MODE); outputMode = cnsModeVectorDouble;}\
+	virtual void setupSynapses(const std::vector<const std::tuple<INPUT_TYPEDEF, const std::string>> &inputsToOutputs) {inputMode = (INPUT_MODE); outputMode = cnsModeString;}\
+	virtual const bool processToBool(INPUT_TYPEDEF &input) const {assert((INPUT_MODE) == inputMode && cnsModeBool == outputMode); return 0;}\
+	virtual const char processToChar(INPUT_TYPEDEF &input) const {assert((INPUT_MODE) == inputMode && cnsModeChar == outputMode); return 0;}\
+	virtual const int processToInt(INPUT_TYPEDEF &input) const {assert((INPUT_MODE) == inputMode && cnsModeInt == outputMode); return 0;}\
+	virtual const unsigned int processToUint(INPUT_TYPEDEF &input) const {assert((INPUT_MODE) == inputMode && cnsModeUint == outputMode); return 0;}\
+	virtual const float processToFloat(INPUT_TYPEDEF &input) const {assert((INPUT_MODE) == inputMode && cnsModeFloat == outputMode); return 0;}\
+	virtual const double processToDouble(INPUT_TYPEDEF &input) const {assert((INPUT_MODE) == inputMode && cnsModeDouble == outputMode); return 9;}\
+	virtual const std::vector<bool> processToVectorBool(INPUT_TYPEDEF &input) const {assert((INPUT_MODE) == inputMode && cnsModeVectorBool == outputMode); return {};}\
+	virtual const std::vector<char> processToVectorChar(INPUT_TYPEDEF &input) const {assert((INPUT_MODE) == inputMode && cnsModeVectorChar == outputMode); return {};}\
+	virtual const std::vector<int> processToVectorInt(INPUT_TYPEDEF &input) const {assert((INPUT_MODE) == inputMode && cnsModeVectorInt == outputMode); return {};}\
+	virtual const std::vector<unsigned int> processToVectorUint(INPUT_TYPEDEF &input) const {assert((INPUT_MODE) == inputMode && cnsModeVectorUint == outputMode); return {};}\
+	virtual std::vector<float> processToVectorFloat(INPUT_TYPEDEF &input) const {assert((INPUT_MODE) == inputMode && cnsModeVectorFloat == outputMode); return {};}\
+	virtual const std::vector<double> processToVectorDouble(INPUT_TYPEDEF &input) const {assert((INPUT_MODE) == inputMode && cnsModeVectorDouble == outputMode); return {};}\
+	virtual const std::string processToString(INPUT_TYPEDEF &input) const {auto val = processToVectorChar(input); return std::string(&val[0], val.size());}
 	templateWorkaround(cnsModeBool, const bool)
 	templateWorkaround(cnsModeChar, const char)
 	templateWorkaround(cnsModeInt, const int)
@@ -363,21 +365,22 @@ typedef class ApxrCns : Cns {
 ```
 `less` [cxx/VirusAnalysis.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/VirusAnalysis.hxx)
 ```
-typedef enum VirusAnalysisResult {
-	virusAnalysisAbort = (short)false, /* do not launch */
-	virusAnalysisPass = (short)true, /* launch this (sample passes) */
-	virusAnalysisRequiresReview, /* submit to hosts to do analysis */
-	virusAnalysisContinue /* continue to next tests (is normal; most analyses can not prove that samples pass) */
-} VirusAnalysisResult;
-static ResultList passList, abortList; /* Stored on disk, all clients use clones of this */
-static Cns analysisCns, disinfectionCns; /* maps of synapses + functions to compute with this */
+typedef enum VirusAnalysisResult : char {
+	virusAnalysisAbort = static_cast<char>(false), /* do not launch */
+	virusAnalysisPass = static_cast<char>(true), /* launch this (file passes) */
+	virusAnalysisRequiresReview, /* submit to hosts to do analysis (infection is difficult to prove, other than known signatures) */
+	virusAnalysisContinue /* continue to next tests (is normal; most analyses can not prove a file passes) */
+} VirusAnalysisResult; /* if(virusAnalysisAbort != VirusAnalysisResult) {static_assert(true == static_cast<bool>(VirusAnalysisResult));} */
 
-/* if (with example inputs) these functions (`produceAbortListSignatures()`, `produceAnalysisCns()`, `produceDisinfectionCns()`) pass, `return true;`
+static ResultList passList, abortList; /* hosts produce, clients initialize shared clones of this from disk */
+static Cns analysisCns, disinfectionCns; /* hosts produce, clients initialize shared clones of this from disk */
+
+/* `return (produceAbortListSignatures(EXAMPLES) && produceAnalysisCns(EXAMPLES) && produceDisinfectionCns(EXAMPLES));`
  * @pre @code analysisCns.hasImplementation() && disinfectionCns.hasImplementation() @endcode */
 const bool virusAnalysisTestsThrows();
 static const bool virusAnalysisTests() {try {return virusAnalysisTestsThrows();} catch(...) {return false;}}
 
-const VirusAnalysisResult hashAnalysis(const PortableExecutable &, const ResultListHash &); /* `if(abortList[sample]) {return Abort;} if(passList[sample] {return Pass;} return Continue;` */
+const VirusAnalysisResult hashAnalysis(const PortableExecutable &file, const ResultListHash &fileHash); /* `if(abortList[file]) {return Abort;} if(passList[file] {return Pass;} return Continue;` */
 
 /* To produce virus signatures:
  * use passlists (of files reviewed which pass),
@@ -388,51 +391,69 @@ const VirusAnalysisResult hashAnalysis(const PortableExecutable &, const ResultL
  * @pre @code passList.bytecodes.size() && abortList.bytecodes.size() && !listsIntersect(passList.bytecodes, abortList.bytecodes) @endcode
  * @post @code abortList.signatures.size() @endcode */
 void produceAbortListSignatures(const ResultList &passList, ResultList &abortList);
- /* `if(intersection(sample.bytecode, abortList.signatures)) {return VirusAnalysisRequiresReview;} return VirusAnalysisContinue;`
+ /* `if(intersection(file.bytecode, abortList.signatures)) {return VirusAnalysisRequiresReview;} return VirusAnalysisContinue;`
 	* @pre @code abortList.signatures.size() @endcode */
-const VirusAnalysisResult signatureAnalysis(const PortableExecutable &sample, const ResultListHash &abortList);
+const VirusAnalysisResult signatureAnalysis(const PortableExecutable &file, const ResultListHash &fileHash);
 
 /* Static analysis */
 /* @throw bad_alloc */
-const std::vector<std::string> importedFunctionsList(const PortableExecutable &);
+const std::vector<std::string> importedFunctionsList(const PortableExecutable &file);
 static std::vector<std::string> syscallPotentialDangers = {
 	"memopen", "fwrite", "socket", "GetProcAddress", "IsVmPresent"
 };
-const VirusAnalysisResult staticAnalysis(const PortableExecutable &, const ResultListHash &); /* if(intersection(importedFunctionsList(sample), dangerFunctionsList)) {return RequiresReview;} return Continue;` */
+const VirusAnalysisResult staticAnalysis(const PortableExecutable &file, const ResultListHash &fileHash); /* if(intersection(importedFunctionsList(file), dangerFunctionsList)) {return RequiresReview;} return Continue;` */
 
 /* Analysis sandbox */
-const VirusAnalysisResult sandboxAnalysis(const PortableExecutable &, const ResultListHash &); /* `chroot(strace(sample)) >> outputs; return straceOutputsAnalysis(outputs);` */
+const VirusAnalysisResult sandboxAnalysis(const PortableExecutable &file, const ResultListHash &fileHash); /* `chroot(strace(file)) >> outputs; return straceOutputsAnalysis(outputs);` */
 static std::vector<std::string> stracePotentialDangers = {"write(*)"};
-const VirusAnalysisResult straceOutputsAnalysis(const FilePath &straceDumpPath); /* TODO: regex */
+const VirusAnalysisResult straceOutputsAnalysis(const FilePath &straceOutput); /* TODO: regex */
 
 /* Analysis CNS */
-/* To train (setup synapses) the CNS, is slow plus requires access to huge sample databases,
+/* To train (setup synapses) the CNS, is slow plus requires access to huge file databases,
 but the synapses use small resources (allow clients to do fast analysis.)
  * @pre @code cns.hasImplementation() && pass.bytecodes.size() && abort.bytecodes.size() @endcode
  * @post @code cns.isInitialized() @endcode */
 void produceAnalysisCns(const ResultList &pass, const ResultList &abort,
-	const ResultList &unreviewed = ResultList() /* WARNING! Possible danger to use unreviewed samples */,
+	const ResultList &unreviewed = ResultList() /* WARNING! Possible danger to use unreviewed files */,
 	Cns &cns = analysisCns
 );
 /* If bytecode resembles `abortList`, `return 0;`. If undecidable (resembles `unreviewedList`), `return 1 / 2`. If resembles passList, `return 1;`
  * @pre @code cns.isInitialized() @endcode */
-const float cnsAnalysisScore(const PortableExecutable &, const ResultListHash &, const Cns &cns = analysisCns);
+const float cnsAnalysisScore(const PortableExecutable &file, const ResultListHash &fileHash, const Cns &cns = analysisCns);
 /* `return (bool)round(cnsAnalysisScore(file, fileHash))`
  * @pre @code cns.isInitialized() @endcode */
 const VirusAnalysisResult cnsAnalysis_(const PortableExecutable &file, const ResultListHash &fileHash, const Cns &cns = analysisCns);
 const VirusAnalysisResult cnsAnalysis(const PortableExecutable &file, const ResultListHash &fileHash);
 
-static std::map<ResultListHash, VirusAnalysisResult> hashAnalysisCaches, signatureAnalysisCaches, staticAnalysisCaches, cnsAnalysisCaches, sandboxAnalysisCaches; /* RAM-based caches; memoizes results */
+static std::map<ResultListHash, VirusAnalysisResult> hashAnalysisCaches, signatureAnalysisCaches, staticAnalysisCaches, cnsAnalysisCaches, sandboxAnalysisCaches; /* temporary caches; memoizes results */
 
-typedef const VirusAnalysisResult (*VirusAnalysisFun)(const PortableExecutable &, const ResultListHash &);
+typedef const VirusAnalysisResult (*VirusAnalysisFun)(const PortableExecutable &file, const ResultListHash &fileHash);
 static std::vector<typeof(VirusAnalysisFun)> virusAnalyses = {hashAnalysis, signatureAnalysis, staticAnalysis, cnsAnalysis, sandboxAnalysis /* sandbox is slow, so put last*/};
 const VirusAnalysisResult virusAnalysis(const PortableExecutable &file); /* auto hash = Sha2(file.bytecode); for(VirusAnalysisFun analysis : virusAnalyses) {analysis(file, hash);} */
-static const VirusAnalysisResult submitSampleToHosts(const PortableExecutable &) {return virusAnalysisRequiresReview;} /* TODO: requires compatible hosts to upload to */
+static const VirusAnalysisResult submitSampleToHosts(const PortableExecutable &file) {return virusAnalysisRequiresReview;} /* TODO: requires compatible hosts to upload to */
+
+/* Setup disinfection CNS, uses more resources than `produceAnalysisCns()` */
+/* `abortOrNull` should map to `passOrNull` (`ResultList` is composed of `std::tuple`s, because just `produceDisinfectionCns()` requires this),
+ * with `abortOrNull->bytecodes[x] = NULL` (or "\0") for new SW synthesis,
+ * and `passOrNull->bytecodes[x] = NULL` (or "\0") if infected and CNS can not cleanse this.
+ * @pre @code cns.hasImplementation() @endcode
+ * @post @code cns.isInitialized() @encode
+ */
+void produceDisinfectionCns(
+	const ResultList &passOrNull, /* Expects `resultList->bytecodes[x] = NULL` if does not pass */
+	const ResultList &abortOrNull, /* Expects `resultList->bytecodes[x] = NULL` if does pass */
+	Cns &cns = disinfectionCns
+);
+
+/* Uses more resources than `cnsAnalysis()`, can undo infection from bytecodes (restore to fresh SW)
+ * @pre @code cns.isInitialized() @endcode */
+const std::string cnsDisinfection(const PortableExecutable &file, const Cns &cns = disinfectionCns);
+
 ```
 `less` [cxx/VirusAnalysis.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/VirusAnalysis.cxx)
 ```
 const bool virusAnalysisTestsThrows() {
-	ResultList abortOrNull {
+	const ResultList abortOrNull {
 		.bytecodes {  /* Produce from an antivirus vendor's (such as VirusTotal.com's) infection databases */
 			"infection",
 			"infectedSW",
@@ -440,7 +461,7 @@ const bool virusAnalysisTestsThrows() {
 			""
 		}
 	};
-	ResultList passOrNull {
+	const ResultList passOrNull {
 		.bytecodes {  /* Produce from an antivirus vendor's (such as VirusTotal.com's) fresh-files databases */
 			"",
 			"SW",
@@ -466,7 +487,7 @@ const bool virusAnalysisTestsThrows() {
 }
 const VirusAnalysisResult virusAnalysis(const PortableExecutable &file) {
 	const auto fileHash = Sha2(file.bytecode);
-	for(auto analysis : virusAnalyses) {
+	for(const auto &analysis : virusAnalyses) {
 		switch(analysis(file, fileHash)) {
 			case virusAnalysisPass:
 				return virusAnalysisPass;
@@ -510,7 +531,7 @@ const VirusAnalysisResult signatureAnalysis(const PortableExecutable &file, cons
 
 void produceAbortListSignatures(const ResultList &passList, ResultList &abortList) {
 	abortList.signatures.reserve(abortList.bytecodes.size());
-	for(auto file : abortList.bytecodes) {
+	for(const auto &file : abortList.bytecodes) {
 		auto tuple = listProduceUniqueSubstr(passList.bytecodes, file);
 		abortList.signatures.push_back(ResultListSignature(std::get<0>(tuple), std::get<1>(tuple)));
 	} /* The most simple signature is a substring, but some analyses use regexes. */
@@ -561,8 +582,8 @@ const VirusAnalysisResult sandboxAnalysis(const PortableExecutable &file, const 
 		return sandboxAnalysisCaches[fileHash] = straceOutputsAnalysis("/tmp/strace.outputs");
 	}
 }
-const VirusAnalysisResult straceOutputsAnalysis(const FilePath &straceDumpPath) {
-		auto straceDump = std::ifstream(straceDumpPath);
+const VirusAnalysisResult straceOutputsAnalysis(const FilePath &straceOutput) {
+		auto straceDump = std::ifstream(straceOutput);
 		std::vector<std::string> straceOutputs /*= explodeToList(straceDump, "\n")*/;
 		for(std::string straceOutput; std::getline(straceDump, straceOutput); ) {
 			straceOutputs.push_back(straceOutput);
@@ -576,7 +597,7 @@ const VirusAnalysisResult straceOutputsAnalysis(const FilePath &straceDumpPath) 
 }
 
 void produceAnalysisCns(const ResultList &pass, const ResultList &abort,
-const ResultList &unreviewed /* = ResultList(), WARNING! Possible danger to use unreviewed samples */,
+const ResultList &unreviewed /* = ResultList(), WARNING! Possible danger to use unreviewed files */,
 Cns &cns /* = analysisCns */
 ) {
 	std::vector<const std::tuple<const FileBytecode, float>> inputsToOutputs;
@@ -589,21 +610,21 @@ Cns &cns /* = analysisCns */
 	cns.setLayersOfNeurons(6666);
 	cns.setNeuronsPerLayer(26666);
 	inputsToOutputs.reserve(pass.bytecodes.size());
-	for(auto bytecodes : pass.bytecodes) {
+	for(const auto &bytecodes : pass.bytecodes) {
 		inputsToOutputs.push_back({bytecodes, 1.0});
 	}
 	cns.setupSynapses(inputsToOutputs);
 	inputsToOutputs.clear();
-	if(unreviewed.bytecodes.size()) { /* WARNING! Possible danger to use unreviewed samples */
+	if(!unreviewed.bytecodes.empty()) { /* WARNING! Possible danger to use unreviewed files */
 		inputsToOutputs.reserve(unreviewed.bytecodes.size());
-		for(auto bytecodes : unreviewed.bytecodes) {
+		for(const auto &bytecodes : unreviewed.bytecodes) {
 			inputsToOutputs.push_back({bytecodes, 1 / 2});
 		}
 		cns.setupSynapses(inputsToOutputs);
 		inputsToOutputs.clear();
 	}
 	inputsToOutputs.reserve(abort.bytecodes.size());
-	for(auto bytecodes : abort.bytecodes) {
+	for(const auto &bytecodes : abort.bytecodes) {
 		inputsToOutputs.push_back({bytecodes, 0.0});
 	}
 	cns.setupSynapses(inputsToOutputs);
@@ -617,7 +638,7 @@ const VirusAnalysisResult cnsAnalysis_(const PortableExecutable &file, const Res
 		const auto result = cnsAnalysisCaches.at(fileHash);
 		return result;
 	} catch (...) {
-		return cnsAnalysisCaches[fileHash] = (bool)round(cnsAnalysisScore(file, cns)) ? virusAnalysisContinue : virusAnalysisRequiresReview;
+		return cnsAnalysisCaches[fileHash] = static_cast<bool>(round(cnsAnalysisScore(file, cns))) ? virusAnalysisContinue : virusAnalysisRequiresReview;
 	}
 }
 const VirusAnalysisResult cnsAnalysis(const PortableExecutable &file, const ResultListHash &fileHash) {
@@ -647,11 +668,11 @@ const FileBytecode cnsDisinfection(const PortableExecutable &file, const Cns &cn
 `less` [cxx/main.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/main.cxx)
 ```
 #include "ClassCns.hxx" /* execves execvex */
-#include "VirusAnalysis.hxx" /* virusAnalysisTestsThrows */
 #include "ConversationCns.hxx" /* conversationCnsTestsThrows */
 #include "Macros.hxx" /* ASSUME EXPECTS ENSURES NOEXCEPT NORETURN */
+#include "VirusAnalysis.hxx" /* virusAnalysisTestsThrows */
+#include <cstdlib> /* exit EXIT_SUCCESS */
 #include <iostream> /* cout flush endl */
-#include <stdlib.h> /* exit */
 namespace Susuwu {
 void noExcept() NOEXCEPT;
 NORETURN void noReturn();
@@ -663,9 +684,9 @@ int testHarnesses() EXPECTS(true) ENSURES(true) {
 	noExcept();
 	std::cout << "pass" << std::endl;
 	std::cout << "execves(): " << std::flush;
-	0 == execves({"/bin/echo", "pass"}) || std::cout << "error" << std::endl;
+	(EXIT_SUCCESS == execves({"/bin/echo", "pass"})) || std::cout << "error" << std::endl;
 	std::cout << "execvex(): " << std::flush;
-	0 == execvex("/bin/echo pass") || std::cout << "error" << std::endl;
+	(EXIT_SUCCESS == execvex("/bin/echo pass")) || std::cout << "error" << std::endl;
 	std::cout << "virusAnalysisTestsThrows(): " << std::flush;
 	if(virusAnalysisTestsThrows()) {
 		std::cout << "pass" << std::endl;

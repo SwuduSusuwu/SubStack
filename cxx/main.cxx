@@ -2,11 +2,11 @@
 #ifndef INCLUDES_cxx_main_cxx
 #define INCLUDES_cxx_main_cxx
 #include "ClassCns.hxx" /* execves execvex */
-#include "VirusAnalysis.hxx" /* virusAnalysisTestsThrows */
 #include "ConversationCns.hxx" /* conversationCnsTestsThrows */
 #include "Macros.hxx" /* ASSUME EXPECTS ENSURES NOEXCEPT NORETURN */
+#include "VirusAnalysis.hxx" /* virusAnalysisTestsThrows */
+#include <cstdlib> /* exit EXIT_SUCCESS */
 #include <iostream> /* cout flush endl */
-#include <stdlib.h> /* exit */
 namespace Susuwu {
 void noExcept() NOEXCEPT;
 NORETURN void noReturn();
@@ -18,9 +18,9 @@ int testHarnesses() EXPECTS(true) ENSURES(true) {
 	noExcept();
 	std::cout << "pass" << std::endl;
 	std::cout << "execves(): " << std::flush;
-	0 == execves({"/bin/echo", "pass"}) || std::cout << "error" << std::endl;
+	(EXIT_SUCCESS == execves({"/bin/echo", "pass"})) || std::cout << "error" << std::endl;
 	std::cout << "execvex(): " << std::flush;
-	0 == execvex("/bin/echo pass") || std::cout << "error" << std::endl;
+	(EXIT_SUCCESS == execvex("/bin/echo pass")) || std::cout << "error" << std::endl;
 	std::cout << "virusAnalysisTestsThrows(): " << std::flush;
 	if(virusAnalysisTestsThrows()) {
 		std::cout << "pass" << std::endl;

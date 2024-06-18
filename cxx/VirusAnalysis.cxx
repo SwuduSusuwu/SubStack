@@ -1,21 +1,22 @@
 /* Dual licenses: choose "Creative Commons" or "Apache 2" (allows all uses) */
 #ifndef INCLUDES_cxx_VirusAnalysis_cxx
 #define INCLUDES_cxx_VirusAnalysis_cxx
-#include <fstream> /* std::ifstream */
-#include <vector> /* std::vector */
-#include <string> /* std::string */
-#include <tuple> /* std::tuple */
-#include <algorithm> /* std::sort */
-#include <utility> /* std::get */
-#include "ClassSha2.hxx" /* Sha2 */
 #include "ClassCns.hxx" /* Cns, CnsMode, execvex */
-#include "ClassResultList.hxx" /* ResultList, listMaxSize, listHasValue, ResultList, listProduceUniqueSubstr, listOfSubstrHasMatch */
 #include "ClassPortableExecutable.hxx" /* PortableExecutable */
+#include "ClassResultList.hxx" /* ResultList size_t listMaxSize listHasValue ResultList listProduceUniqueSubstr listOfSubstrHasMatch */
+#include "ClassSha2.hxx" /* Sha2 */
 #include "VirusAnalysis.hxx" /* passList, abortList, *AnalyisCaches */
+#include <algorithm> /* std::sort */
+#include <cassert> /* assert */
+#include <cmath> /* round */
+#include <fstream> /* std::ifstream */
+#include <string> /* std::string */
+#include <tuple> /* std::tuple std::get */
+#include <vector> /* std::vector */
 /* (Work-in-progress) virus analysis: uses hashes, signatures, static analysis, sandboxes, plus artificial CNS (central nervous systems) */
 namespace Susuwu {
 const bool virusAnalysisTestsThrows() {
-	ResultList abortOrNull {
+	const ResultList abortOrNull {
 		.bytecodes {  /* Produce from an antivirus vendor's (such as VirusTotal.com's) infection databases */
 			"infection",
 			"infectedSW",
@@ -23,7 +24,7 @@ const bool virusAnalysisTestsThrows() {
 			""
 		}
 	};
-	ResultList passOrNull {
+	const ResultList passOrNull {
 		.bytecodes {  /* Produce from an antivirus vendor's (such as VirusTotal.com's) fresh-files databases */
 			"",
 			"SW",
@@ -49,7 +50,7 @@ const bool virusAnalysisTestsThrows() {
 }
 const VirusAnalysisResult virusAnalysis(const PortableExecutable &file) {
 	const auto fileHash = Sha2(file.bytecode);
-	for(auto analysis : virusAnalyses) {
+	for(const auto &analysis : virusAnalyses) {
 		switch(analysis(file, fileHash)) {
 			case virusAnalysisPass:
 				return virusAnalysisPass;
@@ -93,7 +94,7 @@ const VirusAnalysisResult signatureAnalysis(const PortableExecutable &file, cons
 
 void produceAbortListSignatures(const ResultList &passList, ResultList &abortList) {
 	abortList.signatures.reserve(abortList.bytecodes.size());
-	for(auto file : abortList.bytecodes) {
+	for(const auto &file : abortList.bytecodes) {
 		auto tuple = listProduceUniqueSubstr(passList.bytecodes, file);
 		abortList.signatures.push_back(ResultListSignature(std::get<0>(tuple), std::get<1>(tuple)));
 	} /* The most simple signature is a substring, but some analyses use regexes. */
@@ -144,8 +145,8 @@ const VirusAnalysisResult sandboxAnalysis(const PortableExecutable &file, const 
 		return sandboxAnalysisCaches[fileHash] = straceOutputsAnalysis("/tmp/strace.outputs");
 	}
 }
-const VirusAnalysisResult straceOutputsAnalysis(const FilePath &straceDumpPath) {
-		auto straceDump = std::ifstream(straceDumpPath);
+const VirusAnalysisResult straceOutputsAnalysis(const FilePath &straceOutput) {
+		auto straceDump = std::ifstream(straceOutput);
 		std::vector<std::string> straceOutputs /*= explodeToList(straceDump, "\n")*/;
 		for(std::string straceOutput; std::getline(straceDump, straceOutput); ) {
 			straceOutputs.push_back(straceOutput);
@@ -159,7 +160,7 @@ const VirusAnalysisResult straceOutputsAnalysis(const FilePath &straceDumpPath) 
 }
 
 void produceAnalysisCns(const ResultList &pass, const ResultList &abort,
-const ResultList &unreviewed /* = ResultList(), WARNING! Possible danger to use unreviewed samples */,
+const ResultList &unreviewed /* = ResultList(), WARNING! Possible danger to use unreviewed files */,
 Cns &cns /* = analysisCns */
 ) {
 	std::vector<const std::tuple<const FileBytecode, float>> inputsToOutputs;
@@ -172,21 +173,21 @@ Cns &cns /* = analysisCns */
 	cns.setLayersOfNeurons(6666);
 	cns.setNeuronsPerLayer(26666);
 	inputsToOutputs.reserve(pass.bytecodes.size());
-	for(auto bytecodes : pass.bytecodes) {
+	for(const auto &bytecodes : pass.bytecodes) {
 		inputsToOutputs.push_back({bytecodes, 1.0});
 	}
 	cns.setupSynapses(inputsToOutputs);
 	inputsToOutputs.clear();
-	if(unreviewed.bytecodes.size()) { /* WARNING! Possible danger to use unreviewed samples */
+	if(!unreviewed.bytecodes.empty()) { /* WARNING! Possible danger to use unreviewed files */
 		inputsToOutputs.reserve(unreviewed.bytecodes.size());
-		for(auto bytecodes : unreviewed.bytecodes) {
+		for(const auto &bytecodes : unreviewed.bytecodes) {
 			inputsToOutputs.push_back({bytecodes, 1 / 2});
 		}
 		cns.setupSynapses(inputsToOutputs);
 		inputsToOutputs.clear();
 	}
 	inputsToOutputs.reserve(abort.bytecodes.size());
-	for(auto bytecodes : abort.bytecodes) {
+	for(const auto &bytecodes : abort.bytecodes) {
 		inputsToOutputs.push_back({bytecodes, 0.0});
 	}
 	cns.setupSynapses(inputsToOutputs);
@@ -200,7 +201,7 @@ const VirusAnalysisResult cnsAnalysis_(const PortableExecutable &file, const Res
 		const auto result = cnsAnalysisCaches.at(fileHash);
 		return result;
 	} catch (...) {
-		return cnsAnalysisCaches[fileHash] = (bool)round(cnsAnalysisScore(file, cns)) ? virusAnalysisContinue : virusAnalysisRequiresReview;
+		return cnsAnalysisCaches[fileHash] = static_cast<bool>(round(cnsAnalysisScore(file, cns))) ? virusAnalysisContinue : virusAnalysisRequiresReview;
 	}
 }
 const VirusAnalysisResult cnsAnalysis(const PortableExecutable &file, const ResultListHash &fileHash) {

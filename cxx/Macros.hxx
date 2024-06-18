@@ -2,8 +2,8 @@
 #ifndef INCLUDES_cxx_Macros_hxx
 #define INCLUDES_cxx_Macros_hxx
 /* Miscellaneous macros */
-#include <assert.h> /* assert static_assert */
-#include <stdbool.h> /* false */
+#include <cassert> /* assert static_assert */
+#include <cstdbool> /* false */
 #include <version> /* __cpp_lib_unreachable */ /* [https://en.cppreference.com/w/cpp/feature_test] */
 namespace Susuwu { /* namespaces do not affect macros. Is just standard practice to wrap all of a project's contents with namespaces. */
 #define GLUE(S, U) S##U /* concatanates 2 constants */

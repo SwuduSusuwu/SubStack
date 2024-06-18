@@ -2,11 +2,11 @@
 #pragma once
 #ifndef INCLUDES_cxx_ConversationCns_hxx
 #define INCLUDES_cxx_ConversationCns_hxx
-#include <string> /* std::string */
-#include <vector> /* std::vector */
-#include "ClassCns.hxx" /* Cns, CnsMode */
+#include "ClassCns.hxx" /* Cns CnsMode */
 #include "ClassPortableExecutable.hxx" /* FilePath FileBytecode */
 #include "ClassResultList.hxx" /* ResultList */
+#include <string> /* std::string */
+#include <vector> /* std::vector */
 /* (Work-in-progress) conversation bots with artificial CNS ("HSOM" (the simple Python artificial CNS) is enough to do this), which should have results almost as complex as "ChatGPT 4.0" (or as "Claude-3 Opus"); */
 namespace Susuwu {
 static Cns conversationCns;
@@ -33,10 +33,10 @@ static std::vector<FilePath> conversationDefaultHosts = {
  * `questionsOrNull.signatures[x] = Universal Resource Locator`
  * @code Sha2(ResultList.bytecodes[x]) == ResultList.hashes[x] @endcode */
 void questionsResponsesFromHosts(ResultList &questionsOrNull, ResultList &responsesOrNull, const std::vector<FilePath> &hosts = conversationDefaultHosts);
-void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &responsesOrNull, const FilePath &filepath = "index.xhtml");
-const std::vector<FilePath> conversationParseUrls(const FilePath &filepath = "index.xhtml"); /* TODO: for XML/XHTML could just use [ https://www.boost.io/libraries/regex/ https://github.com/boostorg/regex ] or [ https://www.boost.org/doc/libs/1_85_0/doc/html/property_tree/parsers.html#property_tree.parsers.xml_parser https://github.com/boostorg/property_tree/blob/develop/doc/xml_parser.qbk ] */
-const FileBytecode conversationParseQuestion(const FilePath &filepath = "index.xhtml"); /* TODO: regex or XML parser */
-const std::vector<FileBytecode> conversationParseResponses(const FilePath &filepath = "index.xhtml"); /* TODO: regex or XML parser */
+void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &responsesOrNull, const FilePath &localXhtml = "index.xhtml");
+const std::vector<FilePath> conversationParseUrls(const FilePath &localXhtml = "index.xhtml"); /* TODO: for XML/XHTML could just use [ https://www.boost.io/libraries/regex/ https://github.com/boostorg/regex ] or [ https://www.boost.org/doc/libs/1_85_0/doc/html/property_tree/parsers.html#property_tree.parsers.xml_parser https://github.com/boostorg/property_tree/blob/develop/doc/xml_parser.qbk ] */
+const FileBytecode conversationParseQuestion(const FilePath &localXhtml = "index.xhtml"); /* TODO: regex or XML parser */
+const std::vector<FileBytecode> conversationParseResponses(const FilePath &localXhtml = "index.xhtml"); /* TODO: regex or XML parser */
 
 /* @pre `questionsOrNull` maps to `responsesOrNull`,
  * `0 == questionsOrNull.bytecodes[x].size()` for new conversation synthesis (empty question has responses),

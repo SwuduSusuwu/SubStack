@@ -2,15 +2,15 @@
 #pragma once
 #ifndef INCLUDES_cxx_ClassResultList_hxx
 #define INCLUDES_cxx_ClassResultList_hxx
-#include <vector> /* std::vector */
-#include <algorithm> /* std::search std::find std::set_intersection */
-#include <tuple> /* std::tuple */
-#include <unordered_set> /* std::unordered_set */
-#include <ctype.h> /* size_t */
-#if PREFERENCE_IS_CSTR
-#include <string.h> /* strlen memmem */
-#endif /* PREFERENCE_IS_CSTR */
 #include "ClassPortableExecutable.hxx" /* FilePath FileBytecode FileHash*/
+#include <algorithm> /* std::search std::find std::set_intersection */
+#include <cstddef> /* size_t */
+#if PREFERENCE_IS_CSTR
+#include <cstring> /* strlen memmem */
+#endif /* PREFERENCE_IS_CSTR */
+#include <tuple> /* std::tuple std::get */
+#include <unordered_set> /* std::unordered_set */
+#include <vector> /* std::vector */
 namespace Susuwu {
 typedef FileHash ResultListHash;
 typedef FileBytecode ResultListBytecode; /* Should have structure of FileBytecode, but is not just for files, can use for UTF8/webpages, so have a new type for this */
@@ -56,7 +56,8 @@ const bool listHasValue(const List &list, const typename List::value_type &x) {
 template<class List>
 /* @pre @code s < x @endcode */
 auto listFindSubstr(const List &list, typename List::value_type::const_iterator s, typename List::value_type::const_iterator x) {
-	for(auto value : list) {
+#pragma unroll
+	for(const auto &value : list) {
 		auto result = std::search(value.cbegin(), value.cend(), s, x, [](char ch1, char ch2) { return ch1 == ch2; });
 		if(value.cend() != result) {
 			return result;
@@ -90,7 +91,7 @@ const std::tuple<typename List::value_type::const_iterator, typename List::value
 template<class List>
 /* Usage: auto it = listOfSubstrFindMatch(resultList.signatures, bytecode)); if(it) {std::cout << "value matches ResultList.signatures[" << it << "]";} */
 auto listOfSubstrFindMatch(const List &list, const typename List::value_type &x) {
-	for(auto value : list) {
+	for(const auto &value : list) {
 #if PREFERENCE_IS_CSTR
 		auto result = memmem(&x[0], strlen(&x[0]), &value[0], strlen(&value[0]));
 		if(NULL != result) {

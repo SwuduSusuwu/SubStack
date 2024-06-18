@@ -57,7 +57,7 @@ Conventions +=
         /* @throw std::bad_alloc If function uses {malloc, realloc, new[], std::*::{push_back, push_front, insert}}
          * @throw std::logic_error Optional. Would include most functions which use std::*
          * @pre @code !output.full() @endcode
-         * @post @code output.size() @endcode
+         * @post @code !output.empty() @endcode
          */
         bool functionDeclaration(std::string input, std::deque<vector> output);
 ```

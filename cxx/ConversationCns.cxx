@@ -1,15 +1,16 @@
 /* Dual licenses: choose "Creative Commons" or "Apache 2" (allows all uses) */
 #ifndef INCLUDES_cxx_ConversationCns_cxx
 #define INCLUDES_cxx_ConversationCns_cxx
+#include "ClassCns.hxx" /* Cns, CnsMode, execvex */
+#include "ClassPortableExecutable.hxx" /* FilePath FileBytecode */
+#include "ClassResultList.hxx" /* ResultList listMaxSize listHasValue explodeToList ResultListBytecode */
+#include "ClassSha2.hxx" /* Sha2 */
+#include "ConversationCns.hxx" /* conversationParseUrls conversationParseQuestion conversationParseResponses */
+#include <cassert> /* assert */
 #include <iostream> /* std::cin std::cout */
 #include <string> /* std::string */
-#include <vector> /* std::vector */
 #include <tuple> /* std::tuple */
-#include "ClassSha2.hxx" /* Sha2 */
-#include "ClassPortableExecutable.hxx" /* FilePath FileBytecode */
-#include "ClassCns.hxx" /* Cns, CnsMode, execvex */
-#include "ClassResultList.hxx" /* ResultList listMaxSize listHasValue explodeToList ResultListBytecode */
-#include "ConversationCns.hxx" /* conversationParseUrls conversationParseQuestion conversationParseResponses */
+#include <vector> /* std::vector */
 /* (Work-in-progress) conversation bots with artificial CNS. */
 namespace Susuwu {
 const bool conversationCnsTestsThrows() {
@@ -50,22 +51,22 @@ void produceConversationCns(const ResultList &questionsOrNull, const ResultList 
 }
 
 void questionsResponsesFromHosts(ResultList &questionsOrNull, ResultList &responsesOrNull, const std::vector<FilePath> &hosts) {
-	for(auto host : hosts) {
+	for(const auto &host : hosts) {
 		execvex("wget '" + host + "/robots.txt' -Orobots.txt");
 		execvex("wget '" + host + "' -Oindex.xhtml");
 		questionsOrNull.signatures.push_back(host);
 		questionsResponsesFromXhtml(questionsOrNull, responsesOrNull, "index.xhtml");
 	}
 }
-void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &responsesOrNull, const FilePath &xhtmlFile) {
+void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &responsesOrNull, const FilePath &localXhtml) {
 	auto noRobots = conversationParseUrls("robots.txt");
-	auto question = conversationParseQuestion(xhtmlFile);
-	if(question.size()) {
+	auto question = conversationParseQuestion(localXhtml);
+	if(!question.empty()) {
 		auto questionSha2 = Sha2(question);
 		if(!listHasValue(questionsOrNull.hashes, questionSha2)) {
 			questionsOrNull.hashes.insert(questionSha2);
-			auto responses = conversationParseResponses(xhtmlFile);
-			for(auto response : responses) {
+			auto responses = conversationParseResponses(localXhtml);
+			for(const auto &response : responses) {
 				auto questionSha2 = Sha2(question);
 				auto responseSha2 = Sha2(response);
 				if(!listHasValue(responsesOrNull.hashes, responseSha2)) {
@@ -77,12 +78,12 @@ void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &respon
 			}
 		}
 	}
-	auto urls = conversationParseUrls(xhtmlFile);
-	for(auto url : urls) {
+	auto urls = conversationParseUrls(localXhtml);
+	for(const auto &url : urls) {
 		if(!listHasValue(questionsOrNull.signatures, url) && !listHasValue(noRobots, url)) {
-			execvex("wget '" + url + "' -O" + xhtmlFile);
+			execvex("wget '" + url + "' -O" + localXhtml);
 			questionsOrNull.signatures.push_back(url);
-			questionsResponsesFromXhtml(questionsOrNull, responsesOrNull, xhtmlFile);
+			questionsResponsesFromXhtml(questionsOrNull, responsesOrNull, localXhtml);
 		}
 	}
 }
@@ -90,11 +91,11 @@ void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &respon
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #endif /* BOOST_VERSION */
-const std::vector<FilePath> conversationParseUrls(const FilePath &xhtmlFile) {
+const std::vector<FilePath> conversationParseUrls(const FilePath &localXhtml) {
 	const std::vector<FilePath> urls;
 #ifdef BOOST_VERSION
 	boost::property_tree::ptree pt;
-	read_xml(xhtmlFile, pt);
+	read_xml(localXhtml, pt);
 	BOOST_FOREACH(
 			boost::property_tree::ptree::value_type &v,
 			pt.get_child("html.a href"))
@@ -103,8 +104,8 @@ const std::vector<FilePath> conversationParseUrls(const FilePath &xhtmlFile) {
 #endif /* else !BOOST_VERSION */
 	return urls;
 }
-const FileBytecode conversationParseQuestion(const FilePath &xhtmlFile) {} /* TODO */
-const std::vector<FileBytecode> conversationParseResponses(const FilePath &xhtmlFile) {} /* TODO */
+const FileBytecode conversationParseQuestion(const FilePath &localXhtml) {} /* TODO */
+const std::vector<FileBytecode> conversationParseResponses(const FilePath &localXhtml) {} /* TODO */
 
 const std::string conversationCnsProcess(const Cns &cns, const FileBytecode &bytecode) {
 	return cns.processToString(bytecode);
