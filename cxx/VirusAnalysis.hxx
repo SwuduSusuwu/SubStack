@@ -18,10 +18,10 @@ typedef enum VirusAnalysisResult : char {
 } VirusAnalysisResult; /* if(virusAnalysisAbort != VirusAnalysisResult) {static_assert(true == static_cast<bool>(VirusAnalysisResult));} */
 
 static ResultList passList, abortList; /* hosts produce, clients initialize shared clones of this from disk */
-static Cns analysisCns, disinfectionCns; /* hosts produce, clients initialize shared clones of this from disk */
+static Cns analysisCns, virusFixCns; /* hosts produce, clients initialize shared clones of this from disk */
 
-/* `return (produceAbortListSignatures(EXAMPLES) && produceAnalysisCns(EXAMPLES) && produceDisinfectionCns(EXAMPLES));`
- * @pre @code analysisCns.hasImplementation() && disinfectionCns.hasImplementation() @endcode */
+/* `return (produceAbortListSignatures(EXAMPLES) && produceAnalysisCns(EXAMPLES) && produceVirusFixCns(EXAMPLES));`
+ * @pre @code analysisCns.hasImplementation() && virusFixCns.hasImplementation() @endcode */
 const bool virusAnalysisTestsThrows();
 static const bool virusAnalysisTests() {try {return virusAnalysisTestsThrows();} catch(...) {return false;}}
 
@@ -54,8 +54,8 @@ static std::vector<std::string> stracePotentialDangers = {"write(*)"};
 const VirusAnalysisResult straceOutputsAnalysis(const FilePath &straceOutput); /* TODO: regex */
 
 /* Analysis CNS */
-/* To train (setup synapses) the CNS, is slow plus requires access to huge file databases,
-but the synapses use small resources (allow clients to do fast analysis.)
+/* Setup analysis CNS; is slow to produce (requires access to huge file databases);
+but once produced, uses few resources (allow clients to do fast analysis.)
  * @pre @code cns.hasImplementation() && pass.bytecodes.size() && abort.bytecodes.size() @endcode
  * @post @code cns.isInitialized() @endcode */
 void produceAnalysisCns(const ResultList &pass, const ResultList &abort,
@@ -77,26 +77,26 @@ static std::vector<typeof(VirusAnalysisFun)> virusAnalyses = {hashAnalysis, sign
 const VirusAnalysisResult virusAnalysis(const PortableExecutable &file); /* auto hash = Sha2(file.bytecode); for(VirusAnalysisFun analysis : virusAnalyses) {analysis(file, hash);} */
 static const VirusAnalysisResult submitSampleToHosts(const PortableExecutable &file) {return virusAnalysisRequiresReview;} /* TODO: requires compatible hosts to upload to */
 
-/* Setup disinfection CNS, uses more resources than `produceAnalysisCns()` */
-/* `abortOrNull` should map to `passOrNull` (`ResultList` is composed of `std::tuple`s, because just `produceDisinfectionCns()` requires this),
+/* Setup virus fix CMS, uses more resources than `produceAnalysisCns()` */
+/* `abortOrNull` should map to `passOrNull` (`ResultList` is composed of `std::tuple`s, because just `produceVirusFixCns()` requires this),
  * with `abortOrNull->bytecodes[x] = NULL` (or "\0") for new SW synthesis,
  * and `passOrNull->bytecodes[x] = NULL` (or "\0") if infected and CNS can not cleanse this.
  * @pre @code cns.hasImplementation() @endcode
  * @post @code cns.isInitialized() @encode
  */
-void produceDisinfectionCns(
+void produceVirusFixCns(
 	const ResultList &passOrNull, /* Expects `resultList->bytecodes[x] = NULL` if does not pass */
 	const ResultList &abortOrNull, /* Expects `resultList->bytecodes[x] = NULL` if does pass */
-	Cns &cns = disinfectionCns
+	Cns &cns = virusFixCns
 );
 
 /* Uses more resources than `cnsAnalysis()`, can undo infection from bytecodes (restore to fresh SW) 
  * @pre @code cns.isInitialized() @endcode */
-const std::string cnsDisinfection(const PortableExecutable &file, const Cns &cns = disinfectionCns);
+const std::string cnsVirusFix(const PortableExecutable &file, const Cns &cns = virusFixCns);
 
 /* Related to this:
- * `cnsDisinfection` is close to conversation bots (such as "ChatGPT 4.0" or "Claude-3 Opus",) "HSOM" (the simple Python artificial CNS) is enough to do this;
- * #include "ConversationCns.cxx"
+ * `cnsVirusFix` is close to assistants (such as "ChatGPT 4.0" or "Claude-3 Opus",) "HSOM" (the simple Python artificial CNS) is enough to do this;
+ * #include "AssistantCns.cxx"
  *
  * To process fast (lag less,) use flags which auto-vectorizes/auto-parallelizes; To do `produceConversationCns` fast, use TensorFlow's `MapReduce`;
  * https://swudususuwu.substack.com/p/howto-run-devices-phones-laptops

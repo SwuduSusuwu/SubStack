@@ -373,10 +373,10 @@ typedef enum VirusAnalysisResult : char {
 } VirusAnalysisResult; /* if(virusAnalysisAbort != VirusAnalysisResult) {static_assert(true == static_cast<bool>(VirusAnalysisResult));} */
 
 static ResultList passList, abortList; /* hosts produce, clients initialize shared clones of this from disk */
-static Cns analysisCns, disinfectionCns; /* hosts produce, clients initialize shared clones of this from disk */
+static Cns analysisCns, virusFixCns; /* hosts produce, clients initialize shared clones of this from disk */
 
-/* `return (produceAbortListSignatures(EXAMPLES) && produceAnalysisCns(EXAMPLES) && produceDisinfectionCns(EXAMPLES));`
- * @pre @code analysisCns.hasImplementation() && disinfectionCns.hasImplementation() @endcode */
+/* `return (produceAbortListSignatures(EXAMPLES) && produceAnalysisCns(EXAMPLES) && produceVirusFixCns(EXAMPLES));`
+ * @pre @code analysisCns.hasImplementation() && virusFixCns.hasImplementation() @endcode */
 const bool virusAnalysisTestsThrows();
 static const bool virusAnalysisTests() {try {return virusAnalysisTestsThrows();} catch(...) {return false;}}
 
@@ -432,22 +432,22 @@ static std::vector<typeof(VirusAnalysisFun)> virusAnalyses = {hashAnalysis, sign
 const VirusAnalysisResult virusAnalysis(const PortableExecutable &file); /* auto hash = Sha2(file.bytecode); for(VirusAnalysisFun analysis : virusAnalyses) {analysis(file, hash);} */
 static const VirusAnalysisResult submitSampleToHosts(const PortableExecutable &file) {return virusAnalysisRequiresReview;} /* TODO: requires compatible hosts to upload to */
 
-/* Setup disinfection CNS, uses more resources than `produceAnalysisCns()` */
-/* `abortOrNull` should map to `passOrNull` (`ResultList` is composed of `std::tuple`s, because just `produceDisinfectionCns()` requires this),
+/* Setup virusFix CNS, uses more resources than `produceAnalysisCns()` */
+/* `abortOrNull` should map to `passOrNull` (`ResultList` is composed of `std::tuple`s, because just `produceVirusFixCns()` requires this),
  * with `abortOrNull->bytecodes[x] = NULL` (or "\0") for new SW synthesis,
  * and `passOrNull->bytecodes[x] = NULL` (or "\0") if infected and CNS can not cleanse this.
  * @pre @code cns.hasImplementation() @endcode
  * @post @code cns.isInitialized() @encode
  */
-void produceDisinfectionCns(
+void produceVirusFixCns(
 	const ResultList &passOrNull, /* Expects `resultList->bytecodes[x] = NULL` if does not pass */
 	const ResultList &abortOrNull, /* Expects `resultList->bytecodes[x] = NULL` if does pass */
-	Cns &cns = disinfectionCns
+	Cns &cns = virusFixCns
 );
 
 /* Uses more resources than `cnsAnalysis()`, can undo infection from bytecodes (restore to fresh SW)
  * @pre @code cns.isInitialized() @endcode */
-const std::string cnsDisinfection(const PortableExecutable &file, const Cns &cns = disinfectionCns);
+const std::string cnsVirusFix(const PortableExecutable &file, const Cns &cns = virusFixCns);
 
 ```
 `less` [cxx/VirusAnalysis.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/VirusAnalysis.cxx)
@@ -471,7 +471,7 @@ const bool virusAnalysisTestsThrows() {
 	};
 	produceAbortListSignatures(passList, abortList);
 	produceAnalysisCns(passOrNull, abortOrNull, ResultList(), analysisCns);
-	produceDisinfectionCns(passOrNull, abortOrNull, disinfectionCns);
+	produceVirusFixCns(passOrNull, abortOrNull, virusFixCns);
 	/* callbackHook("exec", */ [](const PortableExecutable &file) { /* TODO: OS-specific "hook"/"callback" for `exec()`/app-launches */
 		switch(virusAnalysis(file)) {
 		case virusAnalysisPass:
@@ -645,7 +645,7 @@ const VirusAnalysisResult cnsAnalysis(const PortableExecutable &file, const Resu
 	return cnsAnalysis_(file, fileHash);
 }
 
-void produceDisinfectionCns(const ResultList &passOrNull, const ResultList &abortOrNull, Cns &cns /* = disinfectionCns */) {
+void produceVirusFixCns(const ResultList &passOrNull, const ResultList &abortOrNull, Cns &cns /* = virusFixCns */) {
 	std::vector<const std::tuple<const FileBytecode, const FileBytecode>> inputsToOutputs;
 	cns.setInputMode(cnsModeString);
 	cns.setOutputMode(cnsModeString);
@@ -661,14 +661,14 @@ void produceDisinfectionCns(const ResultList &passOrNull, const ResultList &abor
 	cns.setupSynapses(inputsToOutputs);
 }
 
-const FileBytecode cnsDisinfection(const PortableExecutable &file, const Cns &cns /* = disinfectionCns */) {
+const FileBytecode cnsVirusFix(const PortableExecutable &file, const Cns &cns /* = virusFixCns */) {
 	return cns.processToString(file.bytecode);
 }
 ```
 `less` [cxx/main.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/main.cxx)
 ```
 #include "ClassCns.hxx" /* execves execvex */
-#include "ConversationCns.hxx" /* conversationCnsTestsThrows */
+#include "AssistantCns.hxx" /* assistantCnsTestsThrows */
 #include "Macros.hxx" /* ASSUME EXPECTS ENSURES NOEXCEPT NORETURN */
 #include "VirusAnalysis.hxx" /* virusAnalysisTestsThrows */
 #include <cstdlib> /* exit EXIT_SUCCESS */
@@ -693,8 +693,8 @@ int testHarnesses() EXPECTS(true) ENSURES(true) {
 	} else {
 		std::cout << "error" << std::endl;
 	}
-	std::cout << "conversationCnsTestsThrows(): " << std::flush;
-	if(conversationCnsTestsThrows()) {
+	std::cout << "assistantCnsTestsThrows(): " << std::flush;
+	if(assistantCnsTestsThrows()) {
 		std::cout << "pass" << std::endl;
 	} else {
 		std::cout << "error" << std::endl;
@@ -708,18 +708,18 @@ int main(int argc, const char **args) {
 ```
 To run most of this fast (lag less,) use `CXXFLAGS` which auto-vectorizes/auto-parallelizes, and to setup CNS synapses (`Cns::setupSynapses()`) fast, use _TensorFlow_'s `MapReduce`. Resources: [How to have computers process fast](https://swudususuwu.substack.com/p/howto-run-devices-phones-laptops).
 
-For comparison; `produceDisinfectionCns` is close to conversation bots (such as "ChatGPT 4.0" or "Claude-3 Opus",) have such demo as `produceConversationCns`;
-`less` [cxx/ConversationCns.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ConversationCns.hxx)
+For comparison; `produceVirusFixCns` is close to assistants (such as "ChatGPT 4.0" or "Claude-3 Opus";) have such demo as `produceAssistantCns`;
+`less` [cxx/AssistantCns.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/AssistantCns.hxx)
 ```
-static Cns conversationCns;
+static Cns assistantCns;
 
-/* if (with example inputs) these functions (`questionsResponsesFromHosts()` `produceConversationCns()`) pass, `return true;`
+/* if (with example inputs) these functions (`questionsResponsesFromHosts()` `produceAssistantCns()`) pass, `return true;`
  * @throw std::bad_alloc
  * @throw std::logic_error
- * @pre @code conversationCns.hasImplementation() @endcode */
-const bool conversationCnsTestsThrows();
-static const bool conversationCnsTests() { try{ return conversationCnsTestsThrows(); } catch(...) { return false; }}
-static std::vector<FilePath> conversationDefaultHosts = {
+ * @pre @code assistantCns.hasImplementation() @endcode */
+const bool assistantCnsTestsThrows();
+static const bool assistantCnsTests() { try{ return assistantCnsTestsThrows(); } catch(...) { return false; }}
+static std::vector<FilePath> assistantDefaultHosts = {
 /* Universal Resources Locators of hosts which `questionsResponsesFromHosts()` uses
  * Wikipedia is a special case; has compressed downloads of databases ( https://wikipedia.org/wiki/Wikipedia:Database_download )
  * Github is a special case; has compressed downloads of repositories ( https://docs.github.com/en/get-started/start-your-journey/downloading-files-from-github )
@@ -730,33 +730,33 @@ static std::vector<FilePath> conversationDefaultHosts = {
 };
 
 /* @throw std::bad_alloc
- * @post If no question, `0 == questionsOrNull.bytecodes[x].size()` (new conversation synthesis).
+ * @post If no question, `0 == questionsOrNull.bytecodes[x].size()` (new  synthesis).
  * If no responses, `0 == responsesOrNull.bytecodes[x].size()` (ignore).
  * `questionsOrNull.signatures[x] = Universal Resource Locator`
  * @code Sha2(ResultList.bytecodes[x]) == ResultList.hashes[x] @endcode */
-void questionsResponsesFromHosts(ResultList &questionsOrNull, ResultList &responsesOrNull, const std::vector<FilePath> &hosts = conversationDefaultHosts);
+void questionsResponsesFromHosts(ResultList &questionsOrNull, ResultList &responsesOrNull, const std::vector<FilePath> &hosts = assistantDefaultHosts);
 void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &responsesOrNull, const FilePath &filepath = "index.xhtml");
-const std::vector<FilePath> conversationParseUrls(const FilePath &filepath = "index.xhtml"); /* TODO: for XML/XHTML could just use [ https://www.boost.io/libraries/regex/ https://github.com/boostorg/regex ] or [ https://www.boost.org/doc/libs/1_85_0/doc/html/property_tree/parsers.html#property_tree.parsers.xml_parser https://github.com/boostorg/property_tree/blob/develop/doc/xml_parser.qbk ] */
-const FileBytecode conversationParseQuestion(const FilePath &filepath = "index.xhtml"); /* TODO: regex or XML parser */
-const std::vector<FileBytecode> conversationParseResponses(const FilePath &filepath = "index.xhtml"); /* TODO: regex or XML parser */
+const std::vector<FilePath> ParseUrls(const FilePath &filepath = "index.xhtml"); /* TODO: for XML/XHTML could just use [ https://www.boost.io/libraries/regex/ https://github.com/boostorg/regex ] or [ https://www.boost.org/doc/libs/1_85_0/doc/html/property_tree/parsers.html#property_tree.parsers.xml_parser https://github.com/boostorg/property_tree/blob/develop/doc/xml_parser.qbk ] */
+const FileBytecode ParseQuestion(const FilePath &filepath = "index.xhtml"); /* TODO: regex or XML parser */
+const std::vector<FileBytecode> ParseResponses(const FilePath &filepath = "index.xhtml"); /* TODO: regex or XML parser */
 
 /* @pre `questionsOrNull` maps to `responsesOrNull`,
- * `0 == questionsOrNull.bytecodes[x].size()` for new conversation synthesis (empty question has responses),
+ * `0 == questionsOrNull.bytecodes[x].size()` for new  synthesis (empty question has responses),
  * `0 == responsesOrNull.bytecodes[x].size()` if should not respond (question does not have answers).
- * @post Can use `conversationCnsProcess(cns, text)` @code cns.isInitialized() @endcode */
-void produceConversationCns(const ResultList &questionsOrNull, const ResultList &responsesOrNull, Cns &cns);
+ * @post Can use `assistantCnsProcess(cns, text)` @code cns.isInitialized() @endcode */
+void produceAssistantCns(const ResultList &questionsOrNull, const ResultList &responsesOrNull, Cns &cns);
 
 /* All clients use is these 2 functions */
 /* `return cns.processStringToString(bytecodes);`
  * @pre @code cns.isInitialized() @encode */
-const std::string conversationCnsProcess(const Cns &cns, const std::string &bytecode);
-/* `while(std::cin >> questions) { std::cout << conversationCnsProcess(questions); }` but more complex
+const std::string assistantCnsProcess(const Cns &cns, const std::string &bytecode);
+/* `while(std::cin >> questions) { std::cout << assistantCnsProcess(questions); }` but more complex
  * @pre @code cns.isInitialized() @encode */
-void conversationCnsLoopProcess(const Cns &cns);
+void assistantCnsLoopProcess(const Cns &cns);
 ```
-`less` [cxx/ConversationCns.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ConversationCns.cxx)
+`less` [cxx/AssistantCns.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/AssistantCns.cxx)
 ```
-const bool conversationCnsTestsThrows() {
+const bool assistantCnsTestsThrows() {
 	ResultList questionsOrNull {
 		.bytecodes { /* UTF-8 */
 			ResultListBytecode("2^16"),
@@ -774,10 +774,10 @@ const bool conversationCnsTestsThrows() {
 		}
 	};
 	questionsResponsesFromHosts(questionsOrNull, responsesOrNull);
-	produceConversationCns(questionsOrNull, responsesOrNull, conversationCns);
+	produceAssistantCns(questionsOrNull, responsesOrNull, assistantCns);
 	return true;
 }
-void produceConversationCns(const ResultList &questionsOrNull, const ResultList &responsesOrNull, Cns &cns) {
+void produceAssistantCns(const ResultList &questionsOrNull, const ResultList &responsesOrNull, Cns &cns) {
 	std::vector<const std::tuple<const ResultListBytecode, const ResultListBytecode>> inputsToOutputs;
 	cns.setInputMode(cnsModeString);
 	cns.setOutputMode(cnsModeString);
@@ -802,13 +802,13 @@ void questionsResponsesFromHosts(ResultList &questionsOrNull, ResultList &respon
 	}
 }
 void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &responsesOrNull, const FilePath &xhtmlFile) {
-	auto noRobots = conversationParseUrls("robots.txt");
-	auto question = conversationParseQuestion(xhtmlFile);
+	auto noRobots = ParseUrls("robots.txt");
+	auto question = ParseQuestion(xhtmlFile);
 	if(question.size()) {
 		auto questionSha2 = Sha2(question);
 		if(!listHasValue(questionsOrNull.hashes, questionSha2)) {
 			questionsOrNull.hashes.insert(questionSha2);
-			auto responses = conversationParseResponses(xhtmlFile);
+			auto responses = ParseResponses(xhtmlFile);
 			for(auto response : responses) {
 				auto questionSha2 = Sha2(question);
 				auto responseSha2 = Sha2(response);
@@ -821,7 +821,7 @@ void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &respon
 			}
 		}
 	}
-	auto urls = conversationParseUrls(xhtmlFile);
+	auto urls = ParseUrls(xhtmlFile);
 	for(auto url : urls) {
 		if(!listHasValue(questionsOrNull.signatures, url) && !listHasValue(noRobots, url)) {
 			execvex("wget '" + url + "' -O" + xhtmlFile);
@@ -834,7 +834,7 @@ void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &respon
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #endif /* BOOST_VERSION */
-const std::vector<FilePath> conversationParseUrls(const FilePath &xhtmlFile) {
+const std::vector<FilePath> ParseUrls(const FilePath &xhtmlFile) {
 	const std::vector<FilePath> urls;
 #ifdef BOOST_VERSION
 	boost::property_tree::ptree pt;
@@ -847,18 +847,18 @@ const std::vector<FilePath> conversationParseUrls(const FilePath &xhtmlFile) {
 #endif /* else !BOOST_VERSION */
 	return urls;
 }
-const FileBytecode conversationParseQuestion(const FilePath &xhtmlFile) {} /* TODO */
-const std::vector<FileBytecode> conversationParseResponses(const FilePath &xhtmlFile) {} /* TODO */
+const FileBytecode ParseQuestion(const FilePath &xhtmlFile) {} /* TODO */
+const std::vector<FileBytecode> ParseResponses(const FilePath &xhtmlFile) {} /* TODO */
 
-const std::string conversationCnsProcess(const Cns &cns, const FileBytecode &bytecode) {
+const std::string assistantCnsProcess(const Cns &cns, const FileBytecode &bytecode) {
 	return cns.processToString(bytecode);
 }
 
-void conversationCnsLoopProcess(const Cns &cns) {
+void assistantCnsLoopProcess(const Cns &cns) {
 	std::string bytecode, previous;
 	int nthResponse = 0;
 	while(std::cin >> bytecode) {
-#ifdef IGNORE_PAST_CONVERSATIONS
+#ifdef IGNORE_PAST_MESSAGES
 		std::vector<std::string> responses = explodeToList(cns.processToString(bytecode), "<delimiterSeparatesMultiplePossibleResponses>");
 		if(bytecode == previous && responses.size() > 1 + nthResponse) {
 			++nthResponse; /* Similar to "suggestions" for next questions, but just uses previous question to give new responses */
@@ -875,7 +875,7 @@ void conversationCnsLoopProcess(const Cns &cns) {
  		} else {
   		nthResponse = 0;
 	 	}
-#endif /* IGNORE_PAST_CONVERSATIONS */
+#endif /* IGNORE_PAST_MESSAGES */
  		std::cout << responses.at(nthResponse);
  		previous = bytecode;
  		bytecode += '\n'; /* delimiter separates (and uses) multiple inputs */
@@ -934,9 +934,11 @@ inputs = samples of all (infections or fresh apps/SW,)
 outputs = EOF/null (if is infection that can not revert to fresh apps/SW,) or else outputs = fresh apps/SW;
 To setup synapses, must have access to huge sample databases (such as Virustotal's access.)
 
-Github has lots of FLOSS (Open Source Softwares) simulators of CNS at https://github.com/topics/artificial-neural-network which have uses to do conversations (such as "ChatGPT 4.0" or "Claude-3 Opus",) but not close to complex enough to house human consciousness: https://github.com/CarsonScott/HSOM
+Github has lots of FLOSS (Open Source Softwares) simulators of CNS at https://github.com/topics/artificial-neural-network which have uses to do assistants (such as "ChatGPT 4.0" or "Claude-3 Opus",) but not close to complex enough to house human consciousness:
 
-"apxr_run" (https://github.com/Rober-t/apxr_run/ , license is FLOSS) is almost complex enough to house human consciousness;
+"HSOM" ( https://github.com/CarsonScott/HSOM , license is FLOSS ) is a simple Python neural map.
+
+"apxr_run" ( https://github.com/Rober-t/apxr_run/ , license is FLOSS ) is almost complex enough to house human consciousness;
 "apxr_run" has various FLOSS neural network activation functions (absolute, average, standard deviation, sqrt, sin, tanh, log, sigmoid, cos), plus sensor functions (vector difference, quadratic, multiquadric, saturation [+D-zone], gaussian, cartesian/planar/polar distances): https://github.com/Rober-t/apxr_run/blob/master/src/lib/functions.erl
 Various FLOSS neuroplastic functions (self-modulation, Hebbian function, Oja's function): https://github.com/Rober-t/apxr_run/blob/master/src/lib/plasticity.erl
 Various FLOSS neural network input aggregator functions (dot products, product of differences, mult products): https://github.com/Rober-t/apxr_run/blob/master/src/agent_mgr/signal_aggregator.erl

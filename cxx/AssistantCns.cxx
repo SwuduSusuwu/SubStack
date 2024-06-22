@@ -1,19 +1,19 @@
 /* Dual licenses: choose "Creative Commons" or "Apache 2" (allows all uses) */
-#ifndef INCLUDES_cxx_ConversationCns_cxx
-#define INCLUDES_cxx_ConversationCns_cxx
+#ifndef INCLUDES_cxx_AssistantCns_cxx
+#define INCLUDES_cxx_AssistantCns_cxx
 #include "ClassCns.hxx" /* Cns, CnsMode, execvex */
 #include "ClassPortableExecutable.hxx" /* FilePath FileBytecode */
 #include "ClassResultList.hxx" /* ResultList listMaxSize listHasValue explodeToList ResultListBytecode */
 #include "ClassSha2.hxx" /* Sha2 */
-#include "ConversationCns.hxx" /* conversationParseUrls conversationParseQuestion conversationParseResponses */
+#include "AssistantCns.hxx" /* assistantParseUrls assistantParseQuestion assistantParseResponses */
 #include <cassert> /* assert */
 #include <iostream> /* std::cin std::cout */
 #include <string> /* std::string */
 #include <tuple> /* std::tuple */
 #include <vector> /* std::vector */
-/* (Work-in-progress) conversation bots with artificial CNS. */
+/* (Work-in-progress) assistant bots with artificial CNS. */
 namespace Susuwu {
-const bool conversationCnsTestsThrows() {
+const bool assistantCnsTestsThrows() {
 	ResultList questionsOrNull {
 		.bytecodes { /* UTF-8 */
 			ResultListBytecode("2^16"),
@@ -31,10 +31,10 @@ const bool conversationCnsTestsThrows() {
 		}
 	};
 	questionsResponsesFromHosts(questionsOrNull, responsesOrNull);
-	produceConversationCns(questionsOrNull, responsesOrNull, conversationCns);
+	produceAssistantCns(questionsOrNull, responsesOrNull, assistantCns);
 	return true;
 }
-void produceConversationCns(const ResultList &questionsOrNull, const ResultList &responsesOrNull, Cns &cns) {
+void produceAssistantCns(const ResultList &questionsOrNull, const ResultList &responsesOrNull, Cns &cns) {
 	std::vector<const std::tuple<const ResultListBytecode, const ResultListBytecode>> inputsToOutputs;
 	cns.setInputMode(cnsModeString);
 	cns.setOutputMode(cnsModeString);
@@ -59,13 +59,13 @@ void questionsResponsesFromHosts(ResultList &questionsOrNull, ResultList &respon
 	}
 }
 void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &responsesOrNull, const FilePath &localXhtml) {
-	auto noRobots = conversationParseUrls("robots.txt");
-	auto question = conversationParseQuestion(localXhtml);
+	auto noRobots = assistantParseUrls("robots.txt");
+	auto question = assistantParseQuestion(localXhtml);
 	if(!question.empty()) {
 		auto questionSha2 = Sha2(question);
 		if(!listHasValue(questionsOrNull.hashes, questionSha2)) {
 			questionsOrNull.hashes.insert(questionSha2);
-			auto responses = conversationParseResponses(localXhtml);
+			auto responses = assistantParseResponses(localXhtml);
 			for(const auto &response : responses) {
 				auto questionSha2 = Sha2(question);
 				auto responseSha2 = Sha2(response);
@@ -78,7 +78,7 @@ void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &respon
 			}
 		}
 	}
-	auto urls = conversationParseUrls(localXhtml);
+	auto urls = assistantParseUrls(localXhtml);
 	for(const auto &url : urls) {
 		if(!listHasValue(questionsOrNull.signatures, url) && !listHasValue(noRobots, url)) {
 			execvex("wget '" + url + "' -O" + localXhtml);
@@ -91,7 +91,7 @@ void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &respon
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #endif /* BOOST_VERSION */
-const std::vector<FilePath> conversationParseUrls(const FilePath &localXhtml) {
+const std::vector<FilePath> assistantParseUrls(const FilePath &localXhtml) {
 	const std::vector<FilePath> urls;
 #ifdef BOOST_VERSION
 	boost::property_tree::ptree pt;
@@ -104,18 +104,18 @@ const std::vector<FilePath> conversationParseUrls(const FilePath &localXhtml) {
 #endif /* else !BOOST_VERSION */
 	return urls;
 }
-const FileBytecode conversationParseQuestion(const FilePath &localXhtml) {} /* TODO */
-const std::vector<FileBytecode> conversationParseResponses(const FilePath &localXhtml) {} /* TODO */
+const FileBytecode assistantParseQuestion(const FilePath &localXhtml) {} /* TODO */
+const std::vector<FileBytecode> assistantParseResponses(const FilePath &localXhtml) {} /* TODO */
 
-const std::string conversationCnsProcess(const Cns &cns, const FileBytecode &bytecode) {
+const std::string assistantCnsProcess(const Cns &cns, const FileBytecode &bytecode) {
 	return cns.processToString(bytecode);
 }
 
-void conversationCnsLoopProcess(const Cns &cns) {
+void assistantCnsLoopProcess(const Cns &cns) {
 	std::string bytecode, previous;
 	int nthResponse = 0;
 	while(std::cin >> bytecode) {
-#ifdef IGNORE_PAST_CONVERSATIONS
+#ifdef IGNORE_PAST_MESSAGES
 		std::vector<std::string> responses = explodeToList(cns.processToString(bytecode), "<delimiterSeparatesMultiplePossibleResponses>");
 		if(bytecode == previous && responses.size() > 1 + nthResponse) {
 			++nthResponse; /* Similar to "suggestions" for next questions, but just uses previous question to give new responses */
@@ -132,16 +132,16 @@ void conversationCnsLoopProcess(const Cns &cns) {
  		} else {
   		nthResponse = 0;
 	 	}
-#endif /* IGNORE_PAST_CONVERSATIONS */
+#endif /* IGNORE_PAST_MESSAGES */
  		std::cout << responses.at(nthResponse);
  		previous = bytecode;
  		bytecode += '\n'; /* delimiter separates (and uses) multiple inputs */
 	}
 }
 
-/* To process fast (lag less,) use flags which auto-vectorizes/auto-parallelizes; To do `produceConversationCns` fast, use TensorFlow's `MapReduce`;
+/* To process fast (lag less,) use flags which auto-vectorizes/auto-parallelizes; To do `produceAssistantCns` fast, use TensorFlow's `MapReduce`;
  * https://swudususuwu.substack.com/p/howto-run-devices-phones-laptops
  */
 }; /* namespace Susuwu */
-#endif /* ndef INCLUDES_cxx_ConversationCns_cxx */
+#endif /* ndef INCLUDES_cxx_AssistantCns_cxx */
 

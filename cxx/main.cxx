@@ -2,7 +2,7 @@
 #ifndef INCLUDES_cxx_main_cxx
 #define INCLUDES_cxx_main_cxx
 #include "ClassCns.hxx" /* execves execvex */
-#include "ConversationCns.hxx" /* conversationCnsTestsThrows */
+#include "AssistantCns.hxx" /* assistantCnsTestsThrows */
 #include "Macros.hxx" /* ASSUME EXPECTS ENSURES NOEXCEPT NORETURN */
 #include "VirusAnalysis.hxx" /* virusAnalysisTestsThrows */
 #include <cstdlib> /* exit EXIT_SUCCESS */
@@ -27,8 +27,8 @@ int testHarnesses() EXPECTS(true) ENSURES(true) {
 	} else {
 		std::cout << "error" << std::endl;
 	}
-	std::cout << "conversationCnsTestsThrows(): " << std::flush;
-	if(conversationCnsTestsThrows()) {
+	std::cout << "assistantCnsTestsThrows(): " << std::flush;
+	if(assistantCnsTestsThrows()) {
 		std::cout << "pass" << std::endl;
 	} else {
 		std::cout << "error" << std::endl;

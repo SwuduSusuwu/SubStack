@@ -34,7 +34,7 @@ const bool virusAnalysisTestsThrows() {
 	};
 	produceAbortListSignatures(passList, abortList);
 	produceAnalysisCns(passOrNull, abortOrNull, ResultList(), analysisCns);
-	produceDisinfectionCns(passOrNull, abortOrNull, disinfectionCns);
+	produceVirusFixCns(passOrNull, abortOrNull, virusFixCns);
 	/* callbackHook("exec", */ [](const PortableExecutable &file) { /* TODO: OS-specific "hook"/"callback" for `exec()`/app-launches */
 		switch(virusAnalysis(file)) {
 		case virusAnalysisPass:
@@ -208,7 +208,7 @@ const VirusAnalysisResult cnsAnalysis(const PortableExecutable &file, const Resu
 	return cnsAnalysis_(file, fileHash);
 }
 
-void produceDisinfectionCns(const ResultList &passOrNull, const ResultList &abortOrNull, Cns &cns /* = disinfectionCns */) {
+void produceVirusFixCns(const ResultList &passOrNull, const ResultList &abortOrNull, Cns &cns /* = virusFixCns */) {
 	std::vector<const std::tuple<const FileBytecode, const FileBytecode>> inputsToOutputs;
 	cns.setInputMode(cnsModeString);
 	cns.setOutputMode(cnsModeString);
@@ -224,7 +224,7 @@ void produceDisinfectionCns(const ResultList &passOrNull, const ResultList &abor
 	cns.setupSynapses(inputsToOutputs);
 }
 
-const FileBytecode cnsDisinfection(const PortableExecutable &file, const Cns &cns /* = disinfectionCns */) {
+const FileBytecode cnsVirusFix(const PortableExecutable &file, const Cns &cns /* = virusFixCns */) {
 	return cns.processToString(file.bytecode);
 }
 
