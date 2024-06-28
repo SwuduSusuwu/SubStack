@@ -4,8 +4,8 @@ _[This post](https://swudususuwu.substack.com/p/howto-produce-better-virus-scann
 Static analysis + sandbox + CNS = 1 second (approx) analysis of **new executables** (protects all app launches,) but _caches_ reduce this to **less than 1ms** (just cost to lookup `ResultList::hashes`, which is `std::unordered_set<decltype(Sha2(const FileBytecode &))>`; a hashmap of hashes).
 
 `Licenses: allows all uses ("Creative Commons"/"Apache 2")`
-For the most new sources, use apps such as [iSH](https://apps.apple.com/us/app/ish-shell/id1436902243) (for **iOS**) or [Termux](https://play.google.com/store/apps/details?id=com.termux) (for **Android OS**) to run this:
-`git clone https://github.com/SwuduSusuwu/SubStack.git && cd Substack`
+For the most new sources (+ static libs), use apps such as [iSH](https://apps.apple.com/us/app/ish-shell/id1436902243) (for **iOS**) or [Termux](https://play.google.com/store/apps/details?id=com.termux) (for **Android OS**) to run this:
+`git clone https://github.com/SwuduSusuwu/SubStack.git && cd ./Substack/ && ./build`
 `less` [cxx/ClassPortableExecutable.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ClassPortableExecutable.hxx)
 ```
 typedef std::string FilePath; /* TODO: `std::char_traits<unsigned char>`, `std::basic_string<unsigned char>("string literal")` */
@@ -270,6 +270,13 @@ const int execves(const std::vector<const std::string> &argvS, const std::vector
 	}
 	argv.push_back(NULL);
 	const std::vector<std::string> envpSmutable = {envpS.cbegin(), envpS.cend()};
+	if(envpSmutable.empty()) {
+		const char *ldPreload = getenv("LD_PRELOAD");
+		if(ldPreload) {
+			/* Reuse LD_PRELOAD to fix https://github.com/termux-play-store/termux-issues/issues/24 */
+			envpSmutable.push_back(std::string("LD_PRELOAD=") + ldPreload);
+		}
+	}
 	std::vector<char *> envp;
 	for(auto x = envpSmutable.begin(); envpSmutable.end() != x; ++x) {
 		envp.push_back(const_cast<char *>(x->c_str()));
@@ -816,7 +823,7 @@ void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &respon
 					questionsOrNull.hashes.insert(questionSha2);
 					responsesOrNull.hashes.insert(responseSha2);
 					questionsOrNull.bytecodes.push_back(question);
-					responsesOrNull.bytecodes.push_back(response); 
+					responsesOrNull.bytecodes.push_back(response);
 				}
 			}
 		}
