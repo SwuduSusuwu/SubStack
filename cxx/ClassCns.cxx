@@ -5,6 +5,8 @@
 #include <vector> /* std::vector */
 #include <ctype.h> /* size_t */
 #ifdef _POSIX_VERSION
+#include <stdlib.h> /* getenv */
+#include <stdio.h> /* asprintf */
 #include <unistd.h> /* execve fork EXIT_FAILURE */
 #include <sys/wait.h> /* waitpid */
 #endif /* def _POSIX_VERSION */
@@ -30,6 +32,16 @@ const int execves(const std::vector<const std::string> &argvS, const std::vector
 	std::vector<char *> envp;
 	for(auto x = envpSmutable.begin(); envpSmutable.end() != x; ++x) {
 		envp.push_back(const_cast<char *>(x->c_str()));
+	}
+	if(envp.empty()) {
+		char* ld_preload = getenv("LD_PRELOAD");
+		if (ld_preload) {
+			// Keep LD_PRELOAD, necessary for now on the Google Play build of Termux.
+			char* ld_preload_env;
+			int allocated_bytes = asprintf(&ld_preload_env, "LD_PRELOAD=%s", ld_preload);
+			assert(allocated_bytes > 0);
+			envp.push_back(ld_preload_env);
+		}
 	}
 	envp.push_back(NULL);
 	execve(argv[0], &argv[0], &envp[0]); /* NORETURN */
