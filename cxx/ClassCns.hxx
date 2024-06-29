@@ -20,7 +20,7 @@ typedef enum CnsMode : char {
 #endif /* def CXX_17 else */
 } CnsMode;
 
-/* `int status; pid_t pid = fork() || execve(argv[0], &argv[0], &envp[0]); waitpid(pid, &status, 0); return status;`
+/* `argv = argvS + NULL; envp = envpS + NULL: pid_t pid = fork() || (envpS.empty() ? execv(argv[0], &argv[0]) : execve(argv[0], &argv[0], &envp[0])); int status; waitpid(pid, &status, 0); return status;`
  * @pre @code (-1 != access(argv[0], X_OK) @endcode */
 const int execves(/* const std::string &pathname, -- `execve` requires `&pathname == &argv[0]` */ const std::vector<const std::string> &argvS = {}, const std::vector<const std::string> &envpS = {});
 static const int execvex(const std::string &toSh) {return execves({"/bin/sh", "-c", toSh});}

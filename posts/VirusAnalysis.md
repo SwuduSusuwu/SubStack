@@ -161,7 +161,7 @@ typedef enum CnsMode : char {
 #endif /* def CXX_17 else */
 } CnsMode;
 
-/* `int status; pid_t pid = fork() || execve(argv[0], &argv[0], &envp[0]); waitpid(pid, &status, 0); return status;`
+/* `argv = argvS + NULL; envp = envpS + NULL; pid_t pid = fork() || (envpS.empty() ? execv(argv[0], &argv[0]) : execve(argv[0], &argv[0], &envp[0]); int status; waitpid(pid, &status, 0); return status;`
  * @pre @code (-1 != access(argv[0], X_OK) @endcode */
 const int execves(/* const std::string &pathname, -- `execve` requires `&pathname == &argv[0]` */ const std::vector<const std::string> &argvS = {}, const std::vector<const std::string> &envpS = {});
 static const int execvex(const std::string &toSh) {return execves({"/bin/sh", "-c", toSh});}
@@ -269,21 +269,19 @@ const int execves(const std::vector<const std::string> &argvS, const std::vector
 		argv.push_back(const_cast<char *>(x->c_str()));
 	}
 	argv.push_back(NULL);
-	const std::vector<std::string> envpSmutable = {envpS.cbegin(), envpS.cend()};
-	if(envpSmutable.empty()) {
-		const char *ldPreload = getenv("LD_PRELOAD");
-		if(ldPreload) {
-			/* Reuse LD_PRELOAD to fix https://github.com/termux-play-store/termux-issues/issues/24 */
-			envpSmutable.push_back(std::string("LD_PRELOAD=") + ldPreload);
+	if(envpS.empty()) {
+		/* Reuse LD_PRELOAD to fix https://github.com/termux-play-store/termux-issues/issues/24 */
+		execv(argv[0], &argv[0]); /* NORETURN */
+	} else {
+		const std::vector<std::string> envpSmutable = {envpS.cbegin(), envpS.cend()};
+		std::vector<char *> envp;
+		for(auto x = envpSmutable.begin(); envpSmutable.end() != x; ++x) {
+			envp.push_back(const_cast<char *>(x->c_str()));
 		}
+		envp.push_back(NULL);
+		execve(argv[0], &argv[0], &envp[0]); /* NORETURN */
 	}
-	std::vector<char *> envp;
-	for(auto x = envpSmutable.begin(); envpSmutable.end() != x; ++x) {
-		envp.push_back(const_cast<char *>(x->c_str()));
-	}
-	envp.push_back(NULL);
-	execve(argv[0], &argv[0], &envp[0]); /* NORETURN */
-	exit(EXIT_FAILURE);
+	exit(EXIT_FAILURE); /* execv*() is NORETURN */
 #endif /* def _POSIX_VERSION */
 }
 
