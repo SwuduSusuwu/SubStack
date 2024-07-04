@@ -2,6 +2,7 @@
 #pragma once
 #ifndef INCLUDES_cxx_ClassCns_hxx
 #define INCLUDES_cxx_ClassCns_hxx
+#include "ClassObject.hxx" /* Object */
 #include <cassert> /* assert */
 #include <cstddef> /* size_t */
 #include <string> /* std::string */
@@ -24,8 +25,9 @@ typedef enum CnsMode : char {
  * @pre @code (-1 != access(argv[0], X_OK) @endcode */
 const int execves(/* const std::string &pathname, -- `execve` requires `&pathname == &argv[0]` */ const std::vector<const std::string> &argvS = {}, const std::vector<const std::string> &envpS = {});
 static const int execvex(const std::string &toSh) {return execves({"/bin/sh", "-c", toSh});}
-typedef class Cns {
+typedef class Cns : Object {
 public:
+	const std::string getName() const {return "Susuwu::class Cns";}
 	virtual ~Cns() = default;
 	virtual const bool hasImplementation() const {return typeid(Cns) != typeid(this);}
 	virtual const bool isInitialized() const {return initialized;}

@@ -13,9 +13,10 @@ typedef FilePath FileBytecode; /* Uses `std::string` for bytecode (versus `std::
  * "If you are going to use the data in a string like fashon then you should opt for std::string as using a std::vector may confuse subsequent maintainers. If on the other hand most of the data manipulation looks like plain maths or vector like then a std::vector is more appropriate." -- https://stackoverflow.com/a/1556294/24473928
 */
 typedef FilePath FileHash; /* TODO: `std::unordered_set<std::basic_string<unsigned char>>` */
-typedef class PortableExecutable {
+typedef class PortableExecutable : Object {
 /* TODO: union of actual Portable Executable (Microsoft) + ELF (Linux) specifications */
 public:
+	const std::string getName() const {return "Susuwu::class PortableExecutable";}
 	FilePath path; /* Suchas "C:\Program.exe" or "/usr/bin/library.so" */
 	FileBytecode bytecode; /* compiled programs; bytecode */
 	std::string hex; /* `hexdump(path)`, hexadecimal, for C string functions */
@@ -39,7 +40,8 @@ public:
 typedef FileHash ResultListHash;
 typedef FileBytecode ResultListBytecode; /* Should have structure of FileBytecode, but is not just for files, can use for UTF8/webpages, so have a new type for this */
 typedef FilePath ResultListSignature; /* TODO: `typedef ResultListBytecode ResultListSignature; ResultListSignature("string literal");` */
-typedef struct ResultList { /* Lists of files (or pages) */
+typedef struct ResultList /* : Object */ { /* Lists of files (or pages) */
+	const std::string getName() const {return "Susuwu::struct ResultList";}
 	std::unordered_set<ResultListHash> hashes; /* Unique checksums of files (or pages), to avoid duplicates, plus to do fast checks for existance */
 	std::vector<ResultListSignature> signatures; /* Smallest substrings (or regexes, or Universal Resource Locator) unique to this, has uses close to `hashes` but can match if files have small differences */
 	std::vector<ResultListBytecode> bytecodes; /* Whole files (or webpages); uses lots of space, just populate this for signature synthesis (or training CNS). */
@@ -165,8 +167,9 @@ typedef enum CnsMode : char {
  * @pre @code (-1 != access(argv[0], X_OK) @endcode */
 const int execves(/* const std::string &pathname, -- `execve` requires `&pathname == &argv[0]` */ const std::vector<const std::string> &argvS = {}, const std::vector<const std::string> &envpS = {});
 static const int execvex(const std::string &toSh) {return execves({"/bin/sh", "-c", toSh});}
-typedef class Cns {
+typedef class Cns : Object {
 public:
+	const std::string getName() const {return "Susuwu::class Cns";}
 	virtual ~Cns() = default;
 	virtual const bool hasImplementation() const {return typeid(Cns) != typeid(this);}
 	virtual const bool isInitialized() const {return initialized;}
@@ -321,14 +324,14 @@ initial_range = (-0.5, 0.5)
 
 # Create layersOfNeurons+1 hierarchical layers of sizes = neuronsPerLayer, and outputNeurons for last
 self_organizing_network = SelfOrganizingNetwork(
-    input_size=input_size,
-    layer_sizes=layer_sizes,
-    input_percents=input_percents,
-    learning_rates=learning_rate,
-    boost_factors=boost_factor,
-    node_counts=node_count,
-    winner_counts=winner_count,
-		initial_ranges=initial_range)
+	input_size=input_size,
+	layer_sizes=layer_sizes,
+	input_percents=input_percents,
+	learning_rates=learning_rate,
+	boost_factors=boost_factor,
+	node_counts=node_count,
+	winner_counts=winner_count,
+	initial_ranges=initial_range)
 
 # Create a set of sparse samples
 samples = []");
@@ -336,22 +339,22 @@ samples = []");
 		PyRun_SimpleString("samples.append(" + sample.first() +" -> " + sample.last() + ")");
 	}
 	PyRun_SimpleString("for i in range(200):
-    self_organizing_network.train(samples)
+	self_organizing_network.train(samples)
 	");
 #else /* else !USE_PYRUN */
- 	PyObject *module = PyImport_ImportModule("hsom")
- 	if(NULL == module) {throw "'hsom' module not found";}
+	PyObject *module = PyImport_ImportModule("hsom")
+	if(NULL == module) {throw "'hsom' module not found";}
 	PyObject *selfOrganizingNetwork = PyObject_GetAttrString(module,(char*)"SelfOrganizingNetwork"); /* or	"PyObject *pDict = PyModule_GetDict(module);  PyObject *selfOrganizingNetwork = PyDict_GetItemString(pDict, (char*)"SelfOrganizingNetwork");" */
- 	if(NULL == selfOrganizingNetwork || !PyCallable_Check(selfOrganizingNetwork)) {throw "'SelfOrganizingNetwork' object not found";}
- 	double result = PyObject_CallFunction(selfOrganizingNetwork, "d", 2.0); /* or "PyObject *pValue=Py_BuildValue("(z)",(char*)"args");	PyObject *pResult=PyObject_CallObject(selfOrganizingNetwork, pValue); if(NULL == pResult) {throw "PyObject_CallObject failed";} double result = PyInt_AsLong(pResult)); Py_DECREF(pValue);" */
- 	Py_DECREF(module);
- ~HsomCns() {
+	if(NULL == selfOrganizingNetwork || !PyCallable_Check(selfOrganizingNetwork)) {throw "'SelfOrganizingNetwork' object not found";}
+	double result = PyObject_CallFunction(selfOrganizingNetwork, "d", 2.0); /* or "PyObject *pValue=Py_BuildValue("(z)",(char*)"args");	PyObject *pResult=PyObject_CallObject(selfOrganizingNetwork, pValue); if(NULL == pResult) {throw "PyObject_CallObject failed";} double result = PyInt_AsLong(pResult)); Py_DECREF(pValue);" */
+	Py_DECREF(module);
+~HsomCns() {
 #if PYTHON3
- 	Py_FinalizeEx();
+	Py_FinalizeEx();
 #else /* else !PYTHON */
- 	Py_Finalize();
+	Py_Finalize();
 #endif /* PYTHON3 else */
- }
+}
 #endif /* USE_PYRUN else */
 } HsomCns;
 #endif /* USE_HSOM_CNS */
@@ -802,7 +805,7 @@ void questionsResponsesFromHosts(ResultList &questionsOrNull, ResultList &respon
 	for(auto host : hosts) {
 		execvex("wget '" + host + "/robots.txt' -Orobots.txt");
 		execvex("wget '" + host + "' -Oindex.xhtml");
-        questionsOrNull.signatures.push_back(host);
+		questionsOrNull.signatures.push_back(host);
 		questionsResponsesFromXhtml(questionsOrNull, responsesOrNull, "index.xhtml");
 	}
 }
@@ -830,7 +833,7 @@ void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &respon
 	for(auto url : urls) {
 		if(!listHasValue(questionsOrNull.signatures, url) && !listHasValue(noRobots, url)) {
 			execvex("wget '" + url + "' -O" + xhtmlFile);
-            questionsOrNull.signatures.push_back(url);
+			questionsOrNull.signatures.push_back(url);
 			questionsResponsesFromXhtml(questionsOrNull, responsesOrNull, xhtmlFile);
 		}
 	}
@@ -878,7 +881,7 @@ void assistantCnsLoopProcess(const Cns &cns) {
 	 	if(bytecode == previous && responses.size() > 1 + nthResponse) {
 			++nthResponse; /* Similar to "suggestions" for next questions, but just uses previous question to give new responses */
  		} else {
-  		nthResponse = 0;
+			nthResponse = 0;
 	 	}
 #endif /* IGNORE_PAST_MESSAGES */
  		std::cout << responses.at(nthResponse);

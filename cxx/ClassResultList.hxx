@@ -2,7 +2,8 @@
 #pragma once
 #ifndef INCLUDES_cxx_ClassResultList_hxx
 #define INCLUDES_cxx_ClassResultList_hxx
-#include "ClassPortableExecutable.hxx" /* FilePath FileBytecode FileHash*/
+//#include "ClassObject.hxx" /* Object */ /* TODO: fix "Initialization of non-aggregate type" */
+#include "ClassPortableExecutable.hxx" /* FilePath FileBytecode FileHash */
 #include <algorithm> /* std::search std::find std::set_intersection */
 #include <cstddef> /* size_t */
 #if PREFERENCE_IS_CSTR
@@ -15,7 +16,8 @@ namespace Susuwu {
 typedef FileHash ResultListHash;
 typedef FileBytecode ResultListBytecode; /* Should have structure of FileBytecode, but is not just for files, can use for UTF8/webpages, so have a new type for this */
 typedef FilePath ResultListSignature; /* TODO: `typedef ResultListBytecode ResultListSignature; ResultListSignature("string literal");` */
-typedef struct ResultList { /* Lists of files (or pages) */
+typedef struct ResultList /* : Object */ { /* Lists of files (or pages) */
+	const std::string getName() const {return "Susuwu::struct ResultList";}
 	std::unordered_set<ResultListHash> hashes; /* Unique checksums of files (or pages), to avoid duplicates, plus to do fast checks for existance */
 	std::vector<ResultListSignature> signatures; /* Smallest substrings (or regexes, or Universal Resource Locator) unique to this, has uses close to `hashes` but can match if files have small differences */
 	std::vector<ResultListBytecode> bytecodes; /* Whole files (or webpages); uses lots of space, just populate this for signature synthesis (or training CNS). */
