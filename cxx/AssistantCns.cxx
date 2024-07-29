@@ -1,11 +1,12 @@
 /* Dual licenses: choose "Creative Commons" or "Apache 2" (allows all uses) */
 #ifndef INCLUDES_cxx_AssistantCns_cxx
 #define INCLUDES_cxx_AssistantCns_cxx
-#include "ClassCns.hxx" /* Cns, CnsMode, execvex */
+#include "AssistantCns.hxx" /* assistantParseUrls assistantParseQuestion assistantParseResponses */
+#include "ClassCns.hxx" /* Cns CnsMode execvex */
 #include "ClassPortableExecutable.hxx" /* FilePath FileBytecode */
 #include "ClassResultList.hxx" /* ResultList listMaxSize listHasValue explodeToList ResultListBytecode */
 #include "ClassSha2.hxx" /* Sha2 */
-#include "AssistantCns.hxx" /* assistantParseUrls assistantParseQuestion assistantParseResponses */
+#include "ClassSys.hxx" /* execvex */
 #include <cassert> /* assert */
 #include <iostream> /* std::cin std::cout */
 #include <string> /* std::string */

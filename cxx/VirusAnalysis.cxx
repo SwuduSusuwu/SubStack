@@ -1,10 +1,11 @@
 /* Dual licenses: choose "Creative Commons" or "Apache 2" (allows all uses) */
 #ifndef INCLUDES_cxx_VirusAnalysis_cxx
 #define INCLUDES_cxx_VirusAnalysis_cxx
-#include "ClassCns.hxx" /* Cns, CnsMode, execvex */
+#include "ClassCns.hxx" /* Cns CnsMode */
 #include "ClassPortableExecutable.hxx" /* PortableExecutable */
 #include "ClassResultList.hxx" /* ResultList size_t listMaxSize listHasValue ResultList listProduceUniqueSubstr listOfSubstrHasMatch */
 #include "ClassSha2.hxx" /* Sha2 */
+#include "ClassSys.hxx" /* execvex */
 #include "VirusAnalysis.hxx" /* passList, abortList, *AnalyisCaches */
 #include <algorithm> /* std::sort */
 #include <cassert> /* assert */

@@ -4,43 +4,8 @@
 #include <tuple> /* std::tuple */
 #include <vector> /* std::vector */
 #include <ctype.h> /* size_t */
-#ifdef _POSIX_VERSION
-#include <unistd.h> /* execve execv fork EXIT_FAILURE */
-#include <sys/wait.h> /* waitpid */
-#endif /* def _POSIX_VERSION */
 #include "ClassCns.hxx" /* CnsMode */
 namespace Susuwu {
-const int execves(const std::vector<const std::string> &argvS, const std::vector<const std::string> &envpS) {
-#ifdef _POSIX_VERSION
-	pid_t pid = fork();
-	if(0 != pid) {
-		int status;
-		assert(-1 != pid);
-		waitpid(pid, &status, 0);
-		return status;
-	} /* if 0, is fork */
-	const std::vector<std::string> argvSmutable = {argvS.cbegin(), argvS.cend()};
-	std::vector<char *> argv;
-	//for(auto x : argvSmutable) { /* with `fsanitize=address` this triggers "stack-use-after-scope" */
-	for(auto x = argvSmutable.begin(); argvSmutable.end() != x; ++x) {
-		argv.push_back(const_cast<char *>(x->c_str()));
-	}
-	argv.push_back(NULL);
-	if(envpS.empty()) { /* Reuse LD_PRELOAD to fix https://github.com/termux-play-store/termux-issues/issues/24 */
-		execv(argv[0], &argv[0]); /* NORETURN */
-	} else {
-		std::vector<std::string> envpSmutable = {envpS.cbegin(), envpS.cend()};
-		std::vector<char *> envp;
-		for(auto x = envpSmutable.begin(); envpSmutable.end() != x; ++x) {
-			envp.push_back(const_cast<char *>(x->c_str()));
-		}
-		envp.push_back(NULL);
-		execve(argv[0], &argv[0], &envp[0]); /* NORETURN */
-	}
-	exit(EXIT_FAILURE); /* execv*() is NORETURN */
-#endif /* def _POSIX_VERSION */
-}
-
 #ifdef USE_HSOM_CNS
 /* Sources: `git clone https://github.com/CarsonScott/HSOM.git`
  * Install: `pip install pynum && pip install json && pip install git+https://github.com/CarsonScott/HSOM.git`

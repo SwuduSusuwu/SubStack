@@ -1,8 +1,8 @@
 /* Licenses: allows all uses ("Creative Commons"/"Apache 2") */
 #ifndef INCLUDES_cxx_main_cxx
 #define INCLUDES_cxx_main_cxx
-#include "ClassCns.hxx" /* execves execvex */
 #include "AssistantCns.hxx" /* assistantCnsTestsThrows */
+#include "ClassSys.hxx" /* execves execvex */
 #include "Macros.hxx" /* ASSUME EXPECTS ENSURES NOEXCEPT NORETURN */
 #include "VirusAnalysis.hxx" /* virusAnalysisTestsThrows */
 #include <cstdlib> /* exit EXIT_SUCCESS */
