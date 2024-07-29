@@ -337,21 +337,23 @@ typedef class ApxrCns : Cns {
 ```
 `less` [cxx/ClassSys.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ClassSys.hxx)
 ```
-/* `argv = argvS + NULL; envp = envpS + NULL; pid_t pid = fork() || (envpS.empty() ? execv(argv[0], &argv[0]) : execve(argv[0], &argv[0], &envp[0]); int status; waitpid(pid, &status, 0); return status;`
+/* `argv = argvS + NULL; envp = envpS + NULL: pid_t pid = fork() || (envpS.empty() ? execv(argv[0], &argv[0]) : execve(argv[0], &argv[0], &envp[0])); return pid;`
  * @pre @code (-1 != access(argv[0], X_OK) @endcode */
-const int execves(/* const std::string &pathname, -- `execve` requires `&pathname == &argv[0]` */ const std::vector<const std::string> &argvS = {}, const std::vector<const std::string> &envpS = {});
+const pid_t execvesFork(/* const std::string &pathname, -- `execve` requires `&pathname == &argv[0]` */ const std::vector<const std::string> &argvS = {}, const std::vector<const std::string> &envpS = {});
+static const pid_t execvexFork(const std::string &toSh) {return execvesFork({"/bin/sh", "-c", toSh});}
+/* `pid_t pid = execvesFork(argvS, envpS); int status; waitpid(pid, &status, 0); return status;}` */
+const int execves(const std::vector<const std::string> &argvS = {}, const std::vector<const std::string> &envpS = {});
 static const int execvex(const std::string &toSh) {return execves({"/bin/sh", "-c", toSh});}
 ```
 `less` [cxx/ClassSys.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ClassSys.cxx)
 ```
-const int execves(const std::vector<const std::string> &argvS, const std::vector<const std::string> &envpS) {
+const pid_t execvesFork(const std::vector<const std::string> &argvS, const std::vector<const std::string> &envpS) {
 #ifdef _POSIX_VERSION
-	pid_t pid = fork();
+	const pid_t pid = fork();
 	if(0 != pid) {
 		int status;
 		assert(-1 != pid);
-		waitpid(pid, &status, 0);
-		return status;
+		return pid;
 	} /* if 0, is fork */
 	const std::vector<std::string> argvSmutable = {argvS.cbegin(), argvS.cend()};
 	std::vector<char *> argv;
@@ -360,11 +362,10 @@ const int execves(const std::vector<const std::string> &argvS, const std::vector
 		argv.push_back(const_cast<char *>(x->c_str()));
 	}
 	argv.push_back(NULL);
-	if(envpS.empty()) {
-		/* Reuse LD_PRELOAD to fix https://github.com/termux-play-store/termux-issues/issues/24 */
+	if(envpS.empty()) { /* Reuse LD_PRELOAD to fix https://github.com/termux-play-store/termux-issues/issues/24 */
 		execv(argv[0], &argv[0]); /* NORETURN */
 	} else {
-		const std::vector<std::string> envpSmutable = {envpS.cbegin(), envpS.cend()};
+		std::vector<std::string> envpSmutable = {envpS.cbegin(), envpS.cend()};
 		std::vector<char *> envp;
 		for(auto x = envpSmutable.begin(); envpSmutable.end() != x; ++x) {
 			envp.push_back(const_cast<char *>(x->c_str()));
@@ -375,7 +376,14 @@ const int execves(const std::vector<const std::string> &argvS, const std::vector
 	exit(EXIT_FAILURE); /* execv*() is NORETURN */
 #endif /* def _POSIX_VERSION */
 }
-
+const int execves(const std::vector<const std::string> &argvS, const std::vector<const std::string> &envpS) {
+#ifdef _POSIX_VERSION
+	const pid_t pid = execvesFork(argvS, envpS);
+	int status;
+	waitpid(pid, &status, 0);
+	return status;
+#endif /* _POSIX_VERSION */
+}
 ```
 `less` [cxx/VirusAnalysis.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/VirusAnalysis.hxx)
 ```

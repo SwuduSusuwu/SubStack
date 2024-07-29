@@ -1,24 +1,24 @@
 /* Dual licenses: choose "Creative Commons" or "Apache 2" (allows all uses) */
-#ifndef INCLUDES_cxx_Sys_cxx
-#define INCLUDES_cxx_Sys_cxx
-#include "Sys.hxx" /* CnsMode */
-#include <vector> /* std::vector */
+#ifndef INCLUDES_cxx_ClassSys_cxx
+#define INCLUDES_cxx_ClassSys_cxx
+#include "ClassSys.hxx" /* std::string std::vector */
+#include <cassert> /* assert */
 #include <cstdlib> /* exit EXIT_FAILURE */
-#include <ctype.h> /* size_t */
 #ifdef _POSIX_VERSION
 #include <sys/types.h> /* pid_t */
 #include <sys/wait.h> /* waitpid */
 #include <unistd.h> /* execve execv fork */
+#else
+typedef int pid_t;
 #endif /* def _POSIX_VERSION */
 namespace Susuwu {
-const int execves(const std::vector<const std::string> &argvS, const std::vector<const std::string> &envpS) {
+const pid_t execvesFork(const std::vector<const std::string> &argvS, const std::vector<const std::string> &envpS) {
 #ifdef _POSIX_VERSION
-	pid_t pid = fork();
+	const pid_t pid = fork();
 	if(0 != pid) {
 		int status;
 		assert(-1 != pid);
-		waitpid(pid, &status, 0);
-		return status;
+		return pid;
 	} /* if 0, is fork */
 	const std::vector<std::string> argvSmutable = {argvS.cbegin(), argvS.cend()};
 	std::vector<char *> argv;
@@ -41,7 +41,15 @@ const int execves(const std::vector<const std::string> &argvS, const std::vector
 	exit(EXIT_FAILURE); /* execv*() is NORETURN */
 #endif /* def _POSIX_VERSION */
 }
+const int execves(const std::vector<const std::string> &argvS, const std::vector<const std::string> &envpS) {
+#ifdef _POSIX_VERSION
+	const pid_t pid = execvesFork(argvS, envpS);
+	int status;
+	waitpid(pid, &status, 0);
+	return status;
+#endif /* _POSIX_VERSION */
+}
 
 }; /* namespace Susuwu */
-#endif /* ndef INCLUDES_cxx_Sys_cxx */
+#endif /* ndef INCLUDES_cxx_ClassSys_cxx */
 

@@ -1,10 +1,11 @@
 /* Dual licenses: choose "Creative Commons" or "Apache 2" (allows all uses) */
 #ifndef INCLUDES_cxx_ClassCns_cxx
 #define INCLUDES_cxx_ClassCns_cxx
-#include <tuple> /* std::tuple */
+#include "ClassCns.hxx" /* CnsMode std::string std::tuple */
+#include <cassert> /* assert */
+#include <cctype> /* size_t */
+#include <cstdlib> /* exit EXIT_FAILURE */
 #include <vector> /* std::vector */
-#include <ctype.h> /* size_t */
-#include "ClassCns.hxx" /* CnsMode */
 namespace Susuwu {
 #ifdef USE_HSOM_CNS
 /* Sources: `git clone https://github.com/CarsonScott/HSOM.git`
