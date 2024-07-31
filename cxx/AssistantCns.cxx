@@ -5,7 +5,7 @@
 #include "ClassCns.hxx" /* Cns CnsMode execvex */
 #include "ClassPortableExecutable.hxx" /* FilePath FileBytecode */
 #include "ClassResultList.hxx" /* ResultList listMaxSize listHasValue explodeToList ResultListBytecode */
-#include "ClassSha2.hxx" /* Sha2 */
+#include "ClassSha2.hxx" /* sha2 */
 #include "ClassSys.hxx" /* execvex */
 #include <cassert> /* assert */
 #include <iostream> /* std::cin std::cout */
@@ -63,13 +63,13 @@ void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &respon
 	auto noRobots = assistantParseUrls("robots.txt");
 	auto question = assistantParseQuestion(localXhtml);
 	if(!question.empty()) {
-		auto questionSha2 = Sha2(question);
+		auto questionSha2 = sha2(question);
 		if(!listHasValue(questionsOrNull.hashes, questionSha2)) {
 			questionsOrNull.hashes.insert(questionSha2);
 			auto responses = assistantParseResponses(localXhtml);
 			for(const auto &response : responses) {
-				auto questionSha2 = Sha2(question);
-				auto responseSha2 = Sha2(response);
+				auto questionSha2 = sha2(question);
+				auto responseSha2 = sha2(response);
 				if(!listHasValue(responsesOrNull.hashes, responseSha2)) {
 					questionsOrNull.hashes.insert(questionSha2);
 					responsesOrNull.hashes.insert(responseSha2);

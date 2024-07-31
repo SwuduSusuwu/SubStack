@@ -54,15 +54,15 @@
  *
  */
 int hkdf(SHAversion whichSha,
-    const unsigned char *salt, int salt_len,
-    const unsigned char *ikm, int ikm_len,
-    const unsigned char *info, int info_len,
-    uint8_t okm[ ], int okm_len)
+		const unsigned char *salt, int salt_len,
+		const unsigned char *ikm, int ikm_len,
+		const unsigned char *info, int info_len,
+		uint8_t okm[ ], int okm_len)
 {
-  uint8_t prk[USHAMaxHashSize];
-  return hkdfExtract(whichSha, salt, salt_len, ikm, ikm_len, prk) ||
-         hkdfExpand(whichSha, prk, USHAHashSize(whichSha), info,
-                    info_len, okm, okm_len);
+	uint8_t prk[USHAMaxHashSize];
+	return hkdfExtract(whichSha, salt, salt_len, ikm, ikm_len, prk) ||
+		 hkdfExpand(whichSha, prk, USHAHashSize(whichSha), info,
+		info_len, okm, okm_len);
 }
 
 /*
@@ -93,19 +93,19 @@ int hkdf(SHAversion whichSha,
  *
  */
 int hkdfExtract(SHAversion whichSha,
-    const unsigned char *salt, int salt_len,
-    const unsigned char *ikm, int ikm_len,
-    uint8_t prk[USHAMaxHashSize])
+		const unsigned char *salt, int salt_len,
+		const unsigned char *ikm, int ikm_len,
+		uint8_t prk[USHAMaxHashSize])
 {
-  unsigned char nullSalt[USHAMaxHashSize];
-  if (salt == 0) {
-    salt = nullSalt;
-    salt_len = USHAHashSize(whichSha);
-    memset(nullSalt, '\0', salt_len);
-  } else if (salt_len < 0) {
-    return shaBadParam;
-  }
-  return hmac(whichSha, ikm, ikm_len, salt, salt_len, prk);
+	unsigned char nullSalt[USHAMaxHashSize];
+	if (salt == 0) {
+		salt = nullSalt;
+		salt_len = USHAHashSize(whichSha);
+		memset(nullSalt, '\0', salt_len);
+	} else if (salt_len < 0) {
+		return shaBadParam;
+	}
+	return hmac(whichSha, ikm, ikm_len, salt, salt_len, prk);
 }
 
 /*
@@ -142,45 +142,45 @@ int hkdfExtract(SHAversion whichSha,
  *
  */
 int hkdfExpand(SHAversion whichSha, const uint8_t prk[ ], int prk_len,
-    const unsigned char *info, int info_len,
-    uint8_t okm[ ], int okm_len)
+		const unsigned char *info, int info_len,
+		uint8_t okm[ ], int okm_len)
 {
-  int hash_len, N;
-  unsigned char T[USHAMaxHashSize];
-  int Tlen, where, i;
+	int hash_len, N;
+	unsigned char T[USHAMaxHashSize];
+	int Tlen, where, i;
 
-  if (info == 0) {
-    info = (const unsigned char *)"";
-    info_len = 0;
-  } else if (info_len < 0) {
-    return shaBadParam;
-  }
-  if (okm_len <= 0) return shaBadParam;
-  if (!okm) return shaBadParam;
+	if (info == 0) {
+		info = (const unsigned char *)"";
+		info_len = 0;
+	} else if (info_len < 0) {
+		return shaBadParam;
+	}
+	if (okm_len <= 0) return shaBadParam;
+	if (!okm) return shaBadParam;
 
-  hash_len = USHAHashSize(whichSha);
-  if (prk_len < hash_len) return shaBadParam;
-  N = okm_len / hash_len;
-  if ((okm_len % hash_len) != 0) N++;
-  if (N > 255) return shaBadParam;
+	hash_len = USHAHashSize(whichSha);
+	if (prk_len < hash_len) return shaBadParam;
+	N = okm_len / hash_len;
+	if ((okm_len % hash_len) != 0) N++;
+	if (N > 255) return shaBadParam;
 
-  Tlen = 0;
-  where = 0;
-  for (i = 1; i <= N; i++) {
-    HMACContext context;
-    unsigned char c = i;
-    int ret = hmacReset(&context, whichSha, prk, prk_len) ||
-              hmacInput(&context, T, Tlen) ||
-              hmacInput(&context, info, info_len) ||
-              hmacInput(&context, &c, 1) ||
-              hmacResult(&context, T);
-    if (ret != shaSuccess) return ret;
-    memcpy(okm + where, T,
-           (i != N) ? hash_len : (okm_len - where));
-    where += hash_len;
-    Tlen = hash_len;
-  }
-  return shaSuccess;
+	Tlen = 0;
+	where = 0;
+	for (i = 1; i <= N; i++) {
+		HMACContext context;
+		unsigned char c = i;
+		int ret = hmacReset(&context, whichSha, prk, prk_len) ||
+		hmacInput(&context, T, Tlen) ||
+		hmacInput(&context, info, info_len) ||
+		hmacInput(&context, &c, 1) ||
+		hmacResult(&context, T);
+		if (ret != shaSuccess) return ret;
+		memcpy(okm + where, T,
+		 (i != N) ? hash_len : (okm_len - where));
+		where += hash_len;
+		Tlen = hash_len;
+	}
+	return shaSuccess;
 }
 
 /*
@@ -208,20 +208,20 @@ int hkdfExpand(SHAversion whichSha, const uint8_t prk[ ], int prk_len,
  *
  */
 int hkdfReset(HKDFContext *context, enum SHAversion whichSha,
-              const unsigned char *salt, int salt_len)
+		const unsigned char *salt, int salt_len)
 {
-  unsigned char nullSalt[USHAMaxHashSize];
-  if (!context) return shaNull;
+	unsigned char nullSalt[USHAMaxHashSize];
+	if (!context) return shaNull;
 
-  context->whichSha = whichSha;
-  context->hashSize = USHAHashSize(whichSha);
-  if (salt == 0) {
-    salt = nullSalt;
-    salt_len = context->hashSize;
-    memset(nullSalt, '\0', salt_len);
-  }
+	context->whichSha = whichSha;
+	context->hashSize = USHAHashSize(whichSha);
+	if (salt == 0) {
+		salt = nullSalt;
+		salt_len = context->hashSize;
+		memset(nullSalt, '\0', salt_len);
+	}
 
-  return hmacReset(&context->hmacContext, whichSha, salt, salt_len);
+	return hmacReset(&context->hmacContext, whichSha, salt, salt_len);
 }
 
 /*
@@ -245,12 +245,12 @@ int hkdfReset(HKDFContext *context, enum SHAversion whichSha,
  *
  */
 int hkdfInput(HKDFContext *context, const unsigned char *ikm,
-              int ikm_len)
+		int ikm_len)
 {
-  if (!context) return shaNull;
-  if (context->Corrupted) return context->Corrupted;
-  if (context->Computed) return context->Corrupted = shaStateError;
-  return hmacInput(&context->hmacContext, ikm, ikm_len);
+	if (!context) return shaNull;
+	if (context->Corrupted) return context->Corrupted;
+	if (context->Computed) return context->Corrupted = shaStateError;
+	return hmacInput(&context->hmacContext, ikm, ikm_len);
 }
 
 /*
@@ -274,12 +274,12 @@ int hkdfInput(HKDFContext *context, const unsigned char *ikm,
  *   sha Error Code.
  */
 int hkdfFinalBits(HKDFContext *context, uint8_t ikm_bits,
-                  unsigned int ikm_bit_count)
+		unsigned int ikm_bit_count)
 {
-  if (!context) return shaNull;
-  if (context->Corrupted) return context->Corrupted;
-  if (context->Computed) return context->Corrupted = shaStateError;
-  return hmacFinalBits(&context->hmacContext, ikm_bits, ikm_bit_count);
+	if (!context) return shaNull;
+	if (context->Corrupted) return context->Corrupted;
+	if (context->Computed) return context->Corrupted = shaStateError;
+	return hmacFinalBits(&context->hmacContext, ikm_bits, ikm_bit_count);
 }
 
 /*
@@ -313,23 +313,23 @@ int hkdfFinalBits(HKDFContext *context, uint8_t ikm_bits,
  *
  */
 int hkdfResult(HKDFContext *context,
-               uint8_t prk[USHAMaxHashSize],
-               const unsigned char *info, int info_len,
-               uint8_t okm[ ], int okm_len)
+		 uint8_t prk[USHAMaxHashSize],
+		 const unsigned char *info, int info_len,
+		 uint8_t okm[ ], int okm_len)
 {
-  uint8_t prkbuf[USHAMaxHashSize];
-  int ret;
+	uint8_t prkbuf[USHAMaxHashSize];
+	int ret;
 
-  if (!context) return shaNull;
-  if (context->Corrupted) return context->Corrupted;
-  if (context->Computed) return context->Corrupted = shaStateError;
-  if (!okm) return context->Corrupted = shaBadParam;
-  if (!prk) prk = prkbuf;
+	if (!context) return shaNull;
+	if (context->Corrupted) return context->Corrupted;
+	if (context->Computed) return context->Corrupted = shaStateError;
+	if (!okm) return context->Corrupted = shaBadParam;
+	if (!prk) prk = prkbuf;
 
-  ret = hmacResult(&context->hmacContext, prk) ||
-        hkdfExpand(context->whichSha, prk, context->hashSize, info,
-                   info_len, okm, okm_len);
-  context->Computed = 1;
-  return context->Corrupted = ret;
+	ret = hmacResult(&context->hmacContext, prk) ||
+		hkdfExpand(context->whichSha, prk, context->hashSize, info,
+		 info_len, okm, okm_len);
+	context->Computed = 1;
+	return context->Corrupted = ret;
 }
 

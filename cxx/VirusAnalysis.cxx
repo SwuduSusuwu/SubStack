@@ -4,7 +4,7 @@
 #include "ClassCns.hxx" /* Cns CnsMode */
 #include "ClassPortableExecutable.hxx" /* PortableExecutable */
 #include "ClassResultList.hxx" /* ResultList size_t listMaxSize listHasValue ResultList listProduceUniqueSubstr listOfSubstrHasMatch */
-#include "ClassSha2.hxx" /* Sha2 */
+#include "ClassSha2.hxx" /* sha2 */
 #include "ClassSys.hxx" /* execvex */
 #include "VirusAnalysis.hxx" /* passList, abortList, *AnalyisCaches */
 #include <algorithm> /* std::sort */
@@ -50,7 +50,7 @@ const bool virusAnalysisTestsThrows() {
 	return true;
 }
 const VirusAnalysisResult virusAnalysis(const PortableExecutable &file) {
-	const auto fileHash = Sha2(file.bytecode);
+	const auto fileHash = sha2(file.bytecode);
 	for(const auto &analysis : virusAnalyses) {
 		switch(analysis(file, fileHash)) {
 			case virusAnalysisPass:

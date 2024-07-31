@@ -8,7 +8,7 @@ extern "C" {
 #include "../c/rfc6234/sha.h" /* SHA256HashSize, SHA256Context, SHA256Reset, SHA256Input, SHA256Result, SHA1*, SHA512*  */
 }
 namespace Susuwu {
-/* const */ FileHash /* 128 bits, not null-terminated */ Sha1(const FileBytecode &bytecode) {
+/* const */ FileHash /* 128 bits, not null-terminated */ sha1(const FileBytecode &bytecode) {
 	FileHash result;
 	SHA1Context context;
 	result.reserve(SHA1HashSize);
@@ -18,7 +18,7 @@ namespace Susuwu {
 	return result;
 }
 
-/* const */ FileHash /* 256 bits, not null-terminated */ Sha256(const FileBytecode &bytecode) {
+/* const */ FileHash /* 256 bits, not null-terminated */ sha256(const FileBytecode &bytecode) {
 	FileHash result;
 	SHA256Context context;
 	result.reserve(SHA256HashSize);
@@ -28,7 +28,7 @@ namespace Susuwu {
 	return result;
 }
 
-/* const */ FileHash /* 512 bits, not null-terminated */ Sha512(const FileBytecode &bytecode) {
+/* const */ FileHash /* 512 bits, not null-terminated */ sha512(const FileBytecode &bytecode) {
 	FileHash result;
 	SHA512Context context;
 	result.reserve(SHA512HashSize);

@@ -1,7 +1,7 @@
 **Virus analysis tools should use local static analysis + sandboxes + artificial CNS (central nervous systems) to secure us**
 _[This post](https://swudususuwu.substack.com/p/howto-produce-better-virus-scanners) allows all uses._
 
-Static analysis + sandbox + CNS = 1 second (approx) analysis of **new executables** (protects all app launches,) but _caches_ reduce this to **less than 1ms** (just cost to lookup `ResultList::hashes`, which is `std::unordered_set<decltype(Sha2(const FileBytecode &))>`; a hashmap of hashes).
+Static analysis + sandbox + CNS = 1 second (approx) analysis of **new executables** (protects all app launches,) but _caches_ reduce this to **less than 1ms** (just cost to lookup `ResultList::hashes`, which is `std::unordered_set<decltype(sha2(const FileBytecode &))>`; a hashmap of hashes).
 
 `Licenses: allows all uses ("Creative Commons"/"Apache 2")`
 For the most new sources (+ static libs), use apps such as [iSH](https://apps.apple.com/us/app/ish-shell/id1436902243) (for **iOS**) or [Termux](https://play.google.com/store/apps/details?id=com.termux) (for **Android OS**) to run this:
@@ -25,7 +25,7 @@ public:
 `less` [cxx/ClassSha2.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ClassSha2.cxx)
 ```
 /* Uses https://www.rfc-editor.org/rfc/rfc6234#section-8.2.2 */
-/* const */ FileHash /* 256 bits, not null-terminated */ Sha2(const FileBytecode &bytecode) {
+/* const */ FileHash /* 256 bits, not null-terminated */ sha2(const FileBytecode &bytecode) {
 	FileHash result;
 	SHA256Context context;
 	result.reserve(SHA256HashSize);
@@ -451,7 +451,7 @@ static std::map<ResultListHash, VirusAnalysisResult> hashAnalysisCaches, signatu
 
 typedef const VirusAnalysisResult (*VirusAnalysisFun)(const PortableExecutable &file, const ResultListHash &fileHash);
 static std::vector<typeof(VirusAnalysisFun)> virusAnalyses = {hashAnalysis, signatureAnalysis, staticAnalysis, cnsAnalysis, sandboxAnalysis /* sandbox is slow, so put last*/};
-const VirusAnalysisResult virusAnalysis(const PortableExecutable &file); /* auto hash = Sha2(file.bytecode); for(VirusAnalysisFun analysis : virusAnalyses) {analysis(file, hash);} */
+const VirusAnalysisResult virusAnalysis(const PortableExecutable &file); /* auto hash = sha2(file.bytecode); for(VirusAnalysisFun analysis : virusAnalyses) {analysis(file, hash);} */
 static const VirusAnalysisResult submitSampleToHosts(const PortableExecutable &file) {return virusAnalysisRequiresReview;} /* TODO: requires compatible hosts to upload to */
 
 /* Setup virusFix CNS, uses more resources than `produceAnalysisCns()` */
@@ -508,7 +508,7 @@ const bool virusAnalysisTestsThrows() {
 	return true;
 }
 const VirusAnalysisResult virusAnalysis(const PortableExecutable &file) {
-	const auto fileHash = Sha2(file.bytecode);
+	const auto fileHash = sha2(file.bytecode);
 	for(const auto &analysis : virusAnalyses) {
 		switch(analysis(file, fileHash)) {
 			case virusAnalysisPass:
@@ -755,7 +755,7 @@ static std::vector<FilePath> assistantDefaultHosts = {
  * @post If no question, `0 == questionsOrNull.bytecodes[x].size()` (new  synthesis).
  * If no responses, `0 == responsesOrNull.bytecodes[x].size()` (ignore).
  * `questionsOrNull.signatures[x] = Universal Resource Locator`
- * @code Sha2(ResultList.bytecodes[x]) == ResultList.hashes[x] @endcode */
+ * @code sha2(ResultList.bytecodes[x]) == ResultList.hashes[x] @endcode */
 void questionsResponsesFromHosts(ResultList &questionsOrNull, ResultList &responsesOrNull, const std::vector<FilePath> &hosts = assistantDefaultHosts);
 void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &responsesOrNull, const FilePath &filepath = "index.xhtml");
 const std::vector<FilePath> ParseUrls(const FilePath &filepath = "index.xhtml"); /* TODO: for XML/XHTML could just use [ https://www.boost.io/libraries/regex/ https://github.com/boostorg/regex ] or [ https://www.boost.org/doc/libs/1_85_0/doc/html/property_tree/parsers.html#property_tree.parsers.xml_parser https://github.com/boostorg/property_tree/blob/develop/doc/xml_parser.qbk ] */
@@ -827,13 +827,13 @@ void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &respon
 	auto noRobots = ParseUrls("robots.txt");
 	auto question = ParseQuestion(xhtmlFile);
 	if(question.size()) {
-		auto questionSha2 = Sha2(question);
+		auto questionSha2 = sha2(question);
 		if(!listHasValue(questionsOrNull.hashes, questionSha2)) {
 			questionsOrNull.hashes.insert(questionSha2);
 			auto responses = ParseResponses(xhtmlFile);
 			for(auto response : responses) {
-				auto questionSha2 = Sha2(question);
-				auto responseSha2 = Sha2(response);
+				auto questionSha2 = sha2(question);
+				auto responseSha2 = sha2(response);
 				if(!listHasValue(responsesOrNull.hashes, responseSha2)) {
 					questionsOrNull.hashes.insert(questionSha2);
 					responsesOrNull.hashes.insert(responseSha2);
@@ -907,7 +907,7 @@ void assistantCnsLoopProcess(const Cns &cns) {
 ========
 
 **Hash resources:**
-Is just a checksum (such as Sha-2) of all sample inputs, which maps to "this passes" (or "this does not pass".)
+Is just a checksum (such as sha-2) of all sample inputs, which maps to "this passes" (or "this does not pass".)
 https://wikipedia.org/wiki/Sha-2
 
 **Signature resources:**

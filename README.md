@@ -18,9 +18,9 @@ Conventions = Mozilla Org (ergo Firefox) style:
 
     Indentation = tabs; as much tabs as braces
 
-    Braces:
+    Braces, functions:
 
-        bool F(bool s, bool x) {
+        bool camelCase(bool s, bool x) {
 
             if(s && x) {
 
