@@ -6,15 +6,17 @@
 
 Now use [_FFmpeg Media Encoder_ - Apps on Google Play](https://play.google.com/store/apps/details?id=com.silentlexx.ffmpeggui) (_SilentLexx_) with much success. It has a visual interface to `fmpeg` but can process commands from text. Alternative (have not used): [FFmpeg - Apps on Google Play](https://play.google.com/store/apps/details?id=com.crossplat.ffmpegmobile) (FFmpeg from CrossPlat).
 
-For misc Linuxes (suchas [Android-Termux](https://play.google.com/store/apps/details?id=com.termux)); `apt-get install ffmpeg`. For iOS; [https://shaunhevey.com/posts/how-to-use-ffmpeg-on-ios/](https://shaunhevey.com/posts/how-to-use-ffmpeg-on-ios/). For OSX; `brew install ffmpeg --with-fdk-aac --with-ffplay --with-freetype --with-libass --with-libvorbis --with-libvpx --with-opus` (or [alternatives](https://superuser.com/questions/624561/install-ffmpeg-on-os-x/624562#624562)). For Windows; [FFmpeg - Official app in the Microsoft Store](https://apps.microsoft.com/detail/9nb2flx7x7wg?hl=en-za&gl=ZA).
+For misc Linuxes (suchas [Android-Termux](https://play.google.com/store/apps/details?id=com.termux)); `apt-get install ffmpeg && termux-setup-storage`. For iOS; [https://shaunhevey.com/posts/how-to-use-ffmpeg-on-ios/](https://shaunhevey.com/posts/how-to-use-ffmpeg-on-ios/). For OSX; `brew install ffmpeg --with-fdk-aac --with-ffplay --with-freetype --with-libass --with-libvorbis --with-libvpx --with-opus` (or [alternatives](https://superuser.com/questions/624561/install-ffmpeg-on-os-x/624562#624562)). For Windows; [FFmpeg - Official app in the Microsoft Store](https://apps.microsoft.com/detail/9nb2flx7x7wg?hl=en-za&gl=ZA).
 
-[*Note*: have moved default paths `/Music/` to `/Sounds/`, `/Movies/` to `/Visuals/`]
+[*Notice*: have moved default paths `/Music/` to `/Sounds/`, `/Movies/` to `/Visuals/`]
+
+[*Notice*: Can use examples with _FFmpeg Media Encoder_ or _Termux_ as-is (use absolute paths).]
 
 Example `visuals.mp4` was *4gb*, to compress to *224mb* used `ffmpeg -i "/storage/emulated/0/Visuals/screen-20240629-045526.mp4" -framerate 30 -c:v libx264 -crf 32 -preset slower "/storage/emulated/0/Visuals/visuals.mp4"`
 
 The `libx264` codec compresses visuals best. `-preset slower` instructs it to compress more. You can replace `-crf 32` with `-b:v 2m` to set an exact goal of “compress to *2mbps*”.
 
-[*Note*: On some devices, _Android OS_’s permissions require to output to `/storage/emulated/0/Download/`]
+[*Notice*: On some devices, _Android OS_’s permissions require to output to `/storage/emulated/0/Download/`]
 
 Suppose you want to mux `sounds.mp4` with `visuals.mp4`,
 
@@ -30,9 +32,9 @@ Suppose you want the mix the sounds from `visuals.mp4` with the loop from `sound
 
     `fmpeg` -i "/storage/emulated/0/Visuals/visuals.mp4" -stream_loop -1 -i "/storage/emulated/0/Sounds/demux.m4a" -map 0:a:0 -map 1:a:0 -filter_complex amix=inputs=2:duration=shortest "/storage/emulated/0/Sounds/demux2.m4a" 
      
-    `fmpeg` -i "/storage/emulated/0/Visuals/visuals.mp4" -i "/storage/emulated/0/Sounds/demux2.m4a" -map 0:v:0 -c copy -map 1:a:0 -shortest "/storage/emulated/Visuals/mux2.mp4" 
+    `fmpeg` -i "/storage/emulated/0/Visuals/visuals.mp4" -i "/storage/emulated/0/Sounds/demux2.m4a" -map 0:v:0 -c copy -map 1:a:0 -shortest "/storage/emulated/0/Visuals/mux2.mp4"
 
-[*Note*: `-c copy` is not compatible with `-filter_complex`; unless you want to reincode the visuals (slow), is 2 steps to do this]
+[*Notice*: `-c copy` is not compatible with `-filter_complex`; unless you want to reincode the visuals (slow), is 2 steps to do this]
 
 Suppose you wish to produce a *10fps* HD `.gif` from the first *24* seconds of `visual.mp4`:
 `ffmpeg -i "/storage/emulated/0/Visuals/visual.mp4" -map 0:v:0 -pix_fmt rgb24 -r 10 -s 1920x1080 -t 24 "/storage/emulated/0/Visuals/visual.gif"`
