@@ -10,6 +10,16 @@
 #include <vector> /* std::vector */
 /* (Work-in-progress) virus analysis (can use hashes, signatures, static analysis, sandboxes, and artificial CNS (central nervous systems */
 namespace Susuwu {
+typedef enum VirusAnalysisHook : char {
+	virusAnalysisHookDefault = 0,      /* "real-time" virus scans not initialized */
+	virusAnalysisHookQuery   = 0,      /* return present hooks (as enum) */
+	virusAnalysisHookClear   = 1 << 0, /* unhook (remove present hooks), then parse rest of bits */
+	virusAnalysisHookExec    = 1 << 1, /* hook {execl(), execlp(), execle(), execv(), execvp(), execvpe()} */
+	virusAnalysisHookNewFile = 1 << 2, /* hook (for modeNew in {"w+", "a", "a+"}) fwrite((void *)ptr, (size_t)size, (size_t)nmemb, {fopen((const char *)pathname, modeNew), fdopen((int)fd, modeNew), freopen((const char *)pathname, modeNew, (FILE *)stream)}) */
+} VirusAnalysisHook;
+static const VirusAnalysisHook castToVirusAnalysisHook(int virusAnalysisHook) {return static_cast<VirusAnalysisHook>(virusAnalysisHook);} /* C++ has `template<enum U> int operator|(enum U, enum U);` without `enum U(int);` */
+static VirusAnalysisHook globalVirusAnalysisHook = virusAnalysisHookDefault; /* Just use virusAnalysisHook() to set+get this, virusAnalysisGetHook() to get this */
+
 typedef enum VirusAnalysisResult : char {
 	virusAnalysisAbort = static_cast<char>(false), /* do not launch */
 	virusAnalysisPass = static_cast<char>(true), /* launch this (file passes) */
@@ -20,10 +30,19 @@ typedef enum VirusAnalysisResult : char {
 static ResultList passList, abortList; /* hosts produce, clients initialize shared clones of this from disk */
 static Cns analysisCns, virusFixCns; /* hosts produce, clients initialize shared clones of this from disk */
 
-/* `return (produceAbortListSignatures(EXAMPLES) && produceAnalysisCns(EXAMPLES) && produceVirusFixCns(EXAMPLES));`
+/* `return (produceAbortListSignatures(EXAMPLES) && produceAnalysisCns(EXAMPLES) && produceVirusFixCns(EXAMPLES)) && virusAnalysisHookTestsThrows();`
+ * @throw std::bad_alloc, std::runtime_error
  * @pre @code analysisCns.hasImplementation() && virusFixCns.hasImplementation() @endcode */
 const bool virusAnalysisTestsThrows();
 static const bool virusAnalysisTests() {try {return virusAnalysisTestsThrows();} catch(...) {return false;}}
+const bool virusAnalysisHookTestsThrows(); /* return for(x: VirusAnalysisHook) {x == virusAnalysisHook(x)};` */
+static const bool virusAnalysisHookTests() {try {return virusAnalysisHookTestsThrows();} catch(...) {return false;}}
+
+/* Use to turn off, query status of, or turn on what other virus scanners refer to as "real-time scans"
+ * @pre @code (virusAnalysisHookDefault == virusAnalysisGetHook() || virusAnalysisHookExec == virusAnalysisGetHook() || virusAnalysisHookNewFile == virusAnalysisGetHook() || castToVirusAnalysisHook(virusAnalysisHookExec | virusAnalysisHookNewFile) == virusAnalysisGetHook()) @endcode
+ * @post @code (virusAnalysisHookDefault == virusAnalysisGetHook() || virusAnalysisHookExec == virusAnalysisGetHook() || virusAnalysisHookNewFile == virusAnalysisGetHook() || castToVirusAnalysisHook(virusAnalysisHookExec | virusAnalysisHookNewFile) == virusAnalysisGetHook()) @endcode */
+const VirusAnalysisHook virusAnalysisHook(VirusAnalysisHook);
+static const VirusAnalysisHook virusAnalysisGetHook() {return virusAnalysisHook(virusAnalysisHookQuery);}
 
 const VirusAnalysisResult hashAnalysis(const PortableExecutable &file, const ResultListHash &fileHash); /* `if(abortList[file]) {return Abort;} if(passList[file] {return Pass;} return Continue;` */
 

@@ -5,13 +5,14 @@
 #include "ClassPortableExecutable.hxx" /* PortableExecutable */
 #include "ClassResultList.hxx" /* ResultList size_t listMaxSize listHasValue ResultList listProduceUniqueSubstr listOfSubstrHasMatch */
 #include "ClassSha2.hxx" /* sha2 */
-#include "ClassSys.hxx" /* execvex */
+#include "ClassSys.hxx" /* execvex hasRoot setRoot */
 #include "VirusAnalysis.hxx" /* passList, abortList, *AnalyisCaches */
 #include <algorithm> /* std::sort */
 #include <cassert> /* assert */
 #include <cmath> /* round */
 #include <fstream> /* std::ifstream */
-#include <string> /* std::string */
+#include <stdexcept> /* std::runtime_error */
+#include <string> /* std::string std::to_string */
 #include <tuple> /* std::tuple std::get */
 #include <vector> /* std::vector */
 /* (Work-in-progress) virus analysis: uses hashes, signatures, static analysis, sandboxes, plus artificial CNS (central nervous systems) */
@@ -36,19 +37,82 @@ const bool virusAnalysisTestsThrows() {
 	produceAbortListSignatures(passList, abortList);
 	produceAnalysisCns(passOrNull, abortOrNull, ResultList(), analysisCns);
 	produceVirusFixCns(passOrNull, abortOrNull, virusFixCns);
-	/* callbackHook("exec", */ [](const PortableExecutable &file) { /* TODO: OS-specific "hook"/"callback" for `exec()`/app-launches */
-		switch(virusAnalysis(file)) {
-		case virusAnalysisPass:
-			return true; /* launch this */
-		case virusAnalysisRequiresReview:
-			submitSampleToHosts(file); /* manual review */
-			return false;
-		default:
-			return false; /* abort */
-		}
-	} /* ) */ ;
+	const bool originalRootStatus = hasRoot();
+	setRoot(true);
+	virusAnalysisHookTestsThrows();
+	setRoot(originalRootStatus);
 	return true;
 }
+
+const bool virusAnalysisHookTestsThrows() {
+	const VirusAnalysisHook originalHookStatus = virusAnalysisGetHook();
+	VirusAnalysisHook hookStatus = virusAnalysisHook(castToVirusAnalysisHook(virusAnalysisHookClear | virusAnalysisHookExec));
+	if(virusAnalysisHookExec != hookStatus) {
+		throw std::runtime_error("`virusAnalysisHook(castToVirusAnalysisHook(virusAnalysisHookClear | virusAnalysisHookExec))` == " + std::to_string(hookStatus));
+		return false;
+	}
+	hookStatus = virusAnalysisHook(castToVirusAnalysisHook(virusAnalysisHookClear | virusAnalysisHookNewFile));
+	if(virusAnalysisHookNewFile != hookStatus) {
+		throw std::runtime_error("`virusAnalysisHook(castToVirusAnalysisHook(virusAnalysisHookClear | virusAnalysisHookNewFile))` == " + std::to_string(hookStatus));
+		return false;
+	}
+	hookStatus = virusAnalysisHook(virusAnalysisHookClear);
+	if(virusAnalysisHookDefault != hookStatus) {
+		throw std::runtime_error("`virusAnalysisHook(virusAnalysisHookClear)` == " + std::to_string(hookStatus));
+		return false;
+	}
+	hookStatus = virusAnalysisHook(castToVirusAnalysisHook(virusAnalysisHookExec | virusAnalysisHookNewFile));
+	if(castToVirusAnalysisHook(virusAnalysisHookExec | virusAnalysisHookNewFile) != hookStatus) {
+		throw std::runtime_error("`virusAnalysisHook(castToVirusAnalysisHook(virusAnalysisExec | virusAnalysisHookNewFile))` == " + std::to_string(hookStatus));
+		return false;
+	}
+	hookStatus = virusAnalysisHook(castToVirusAnalysisHook(virusAnalysisHookClear | originalHookStatus));
+	if(originalHookStatus != hookStatus) {
+		throw std::runtime_error("`virusAnalysisHook(castToVirusAnalysisHook(virusAnalysisHookClear | originalHookStatus))` == " + std::to_string(hookStatus));
+		return false;
+	}
+	return true;
+}
+const VirusAnalysisHook virusAnalysisHook(VirusAnalysisHook virusAnalysisHookStatus) {
+	const VirusAnalysisHook originalHookStatus = globalVirusAnalysisHook;
+	if(virusAnalysisHookQuery == virusAnalysisHookStatus || originalHookStatus == virusAnalysisHookStatus) {
+		return originalHookStatus;
+	}
+	if(virusAnalysisHookClear & virusAnalysisHookStatus) {
+		/* TODO: undo OS-specific "hook"s/"callback"s */
+		globalVirusAnalysisHook = virusAnalysisHookDefault;
+	}
+	if(virusAnalysisHookExec & virusAnalysisHookStatus) {
+		/* callbackHook("exec*", */ [](const PortableExecutable &file) { /* TODO: OS-specific "hook"/"callback" for `exec()`/app-launches */
+			switch(virusAnalysis(file)) {
+			case virusAnalysisPass:
+				return true; /* launch this */
+			case virusAnalysisRequiresReview:
+				submitSampleToHosts(file); /* manual review */
+					return false;
+			default:
+				return false; /* abort */
+			}
+		} /* ) */ ;
+		globalVirusAnalysisHook = castToVirusAnalysisHook(globalVirusAnalysisHook | virusAnalysisHookExec);
+	}
+	if(virusAnalysisHookNewFile & virusAnalysisHookStatus) {
+		/* callbackHook("fwrite", */ [](const PortableExecutable &file) { /* TODO: OS-specific "hook"/"callback" for new files/downloads */
+			switch(virusAnalysis(file)) {
+			case virusAnalysisPass:
+				return true; /* launch this */
+			case virusAnalysisRequiresReview:
+				submitSampleToHosts(file); /* manual review */
+				return false;
+			default:
+				return false; /* abort */
+			}
+		} /* ) */ ;
+		globalVirusAnalysisHook = castToVirusAnalysisHook(globalVirusAnalysisHook | virusAnalysisHookNewFile);
+	}
+	return virusAnalysisGetHook();
+}
+
 const VirusAnalysisResult virusAnalysis(const PortableExecutable &file) {
 	const auto fileHash = sha2(file.bytecode);
 	for(const auto &analysis : virusAnalyses) {

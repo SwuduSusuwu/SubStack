@@ -449,6 +449,16 @@ const bool setRoot(bool root) {
 ```
 `less` [cxx/VirusAnalysis.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/VirusAnalysis.hxx)
 ```
+typedef enum VirusAnalysisHook : char {
+	virusAnalysisHookDefault = 0,      /* "real-time" virus scans not initialized */
+	virusAnalysisHookQuery   = 0,      /* return present hooks (as enum) */
+	virusAnalysisHookClear   = 1 << 0, /* unhook (remove present hooks), then parse rest of bits */
+	virusAnalysisHookExec    = 1 << 1, /* hook {execl(), execlp(), execle(), execv(), execvp(), execvpe()} */
+	virusAnalysisHookNewFile = 1 << 2, /* hook (for modeNew in {"w+", "a", "a+"}) fwrite((void *)ptr, (size_t)size, (size_t)nmemb, {fopen((const char *)pathname, modeNew), fdopen((int)fd, modeNew), freopen((const char *)pathname, modeNew, (FILE *)stream)}) */
+} VirusAnalysisHook;
+static const VirusAnalysisHook castToVirusAnalysisHook(int virusAnalysisHook) {return static_cast<VirusAnalysisHook>(virusAnalysisHook);} /* C++ has `template<enum U> int operator|(enum U, enum U);` without `enum U(int);` */
+static VirusAnalysisHook globalVirusAnalysisHook = virusAnalysisHookDefault; /* Just use virusAnalysisHook() to set+get this, virusAnalysisGetHook() to get this */
+
 typedef enum VirusAnalysisResult : char {
 	virusAnalysisAbort = static_cast<char>(false), /* do not launch */
 	virusAnalysisPass = static_cast<char>(true), /* launch this (file passes) */
@@ -459,10 +469,19 @@ typedef enum VirusAnalysisResult : char {
 static ResultList passList, abortList; /* hosts produce, clients initialize shared clones of this from disk */
 static Cns analysisCns, virusFixCns; /* hosts produce, clients initialize shared clones of this from disk */
 
-/* `return (produceAbortListSignatures(EXAMPLES) && produceAnalysisCns(EXAMPLES) && produceVirusFixCns(EXAMPLES));`
+/* `return (produceAbortListSignatures(EXAMPLES) && produceAnalysisCns(EXAMPLES) && produceVirusFixCns(EXAMPLES)) && virusAnalysisHookTestsThrows();`
+ * @throw std::bad_alloc, std::runtime_error
  * @pre @code analysisCns.hasImplementation() && virusFixCns.hasImplementation() @endcode */
 const bool virusAnalysisTestsThrows();
 static const bool virusAnalysisTests() {try {return virusAnalysisTestsThrows();} catch(...) {return false;}}
+const bool virusAnalysisHookTestsThrows(); /* return for(x: VirusAnalysisHook) {x == virusAnalysisHook(x)};` */
+static const bool virusAnalysisHookTests() {try {return virusAnalysisHookTestsThrows();} catch(...) {return false;}}
+
+/* Use to turn off, query status of, or turn on what other virus scanners refer to as "real-time scans"
+ * @pre @code (virusAnalysisHookDefault == virusAnalysisGetHook() || virusAnalysisHookExec == virusAnalysisGetHook() || virusAnalysisHookNewFile == virusAnalysisGetHook() || castToVirusAnalysisHook(virusAnalysisHookExec | virusAnalysisHookNewFile) == virusAnalysisGetHook()) @endcode
+ * @post @code (virusAnalysisHookDefault == virusAnalysisGetHook() || virusAnalysisHookExec == virusAnalysisGetHook() || virusAnalysisHookNewFile == virusAnalysisGetHook() || castToVirusAnalysisHook(virusAnalysisHookExec | virusAnalysisHookNewFile) == virusAnalysisGetHook()) @endcode */
+const VirusAnalysisHook virusAnalysisHook(VirusAnalysisHook);
+static const VirusAnalysisHook virusAnalysisGetHook() {return virusAnalysisHook(virusAnalysisHookQuery);}
 
 const VirusAnalysisResult hashAnalysis(const PortableExecutable &file, const ResultListHash &fileHash); /* `if(abortList[file]) {return Abort;} if(passList[file] {return Pass;} return Continue;` */
 
@@ -475,7 +494,7 @@ const VirusAnalysisResult hashAnalysis(const PortableExecutable &file, const Res
  * @pre @code passList.bytecodes.size() && abortList.bytecodes.size() && !listsIntersect(passList.bytecodes, abortList.bytecodes) @endcode
  * @post @code abortList.signatures.size() @endcode */
 void produceAbortListSignatures(const ResultList &passList, ResultList &abortList);
- /* `if(intersection(file.bytecode, abortList.signatures)) {return VirusAnalysisRequiresReview;} return VirusAnalysisContinue;`
+ /* `if(intersection(file.bytecode, abortList.signatures)) {return VirusAnalysisRequiresReview;} return VirusAnalysisContinue;` 
 	* @pre @code abortList.signatures.size() @endcode */
 const VirusAnalysisResult signatureAnalysis(const PortableExecutable &file, const ResultListHash &fileHash);
 
@@ -493,8 +512,8 @@ static std::vector<std::string> stracePotentialDangers = {"write(*)"};
 const VirusAnalysisResult straceOutputsAnalysis(const FilePath &straceOutput); /* TODO: regex */
 
 /* Analysis CNS */
-/* To train (setup synapses) the CNS, is slow plus requires access to huge file databases,
-but the synapses use small resources (allow clients to do fast analysis.)
+/* Setup analysis CNS; is slow to produce (requires access to huge file databases);
+but once produced, uses few resources (allow clients to do fast analysis.)
  * @pre @code cns.hasImplementation() && pass.bytecodes.size() && abort.bytecodes.size() @endcode
  * @post @code cns.isInitialized() @endcode */
 void produceAnalysisCns(const ResultList &pass, const ResultList &abort,
@@ -516,7 +535,7 @@ static std::vector<typeof(VirusAnalysisFun)> virusAnalyses = {hashAnalysis, sign
 const VirusAnalysisResult virusAnalysis(const PortableExecutable &file); /* auto hash = sha2(file.bytecode); for(VirusAnalysisFun analysis : virusAnalyses) {analysis(file, hash);} */
 static const VirusAnalysisResult submitSampleToHosts(const PortableExecutable &file) {return virusAnalysisRequiresReview;} /* TODO: requires compatible hosts to upload to */
 
-/* Setup virusFix CNS, uses more resources than `produceAnalysisCns()` */
+/* Setup virus fix CMS, uses more resources than `produceAnalysisCns()` */
 /* `abortOrNull` should map to `passOrNull` (`ResultList` is composed of `std::tuple`s, because just `produceVirusFixCns()` requires this),
  * with `abortOrNull->bytecodes[x] = NULL` (or "\0") for new SW synthesis,
  * and `passOrNull->bytecodes[x] = NULL` (or "\0") if infected and CNS can not cleanse this.
@@ -529,10 +548,9 @@ void produceVirusFixCns(
 	Cns &cns = virusFixCns
 );
 
-/* Uses more resources than `cnsAnalysis()`, can undo infection from bytecodes (restore to fresh SW)
+/* Uses more resources than `cnsAnalysis()`, can undo infection from bytecodes (restore to fresh SW) 
  * @pre @code cns.isInitialized() @endcode */
 const std::string cnsVirusFix(const PortableExecutable &file, const Cns &cns = virusFixCns);
-
 ```
 `less` [cxx/VirusAnalysis.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/VirusAnalysis.cxx)
 ```
@@ -556,19 +574,82 @@ const bool virusAnalysisTestsThrows() {
 	produceAbortListSignatures(passList, abortList);
 	produceAnalysisCns(passOrNull, abortOrNull, ResultList(), analysisCns);
 	produceVirusFixCns(passOrNull, abortOrNull, virusFixCns);
-	/* callbackHook("exec", */ [](const PortableExecutable &file) { /* TODO: OS-specific "hook"/"callback" for `exec()`/app-launches */
-		switch(virusAnalysis(file)) {
-		case virusAnalysisPass:
-			return true; /* launch this */
-		case virusAnalysisRequiresReview:
-			submitSampleToHosts(file); /* manual review */
-			return false;
-		default:
-			return false; /* abort */
-		}
-	} /* ) */ ;
+	const bool originalRootStatus = hasRoot();
+	setRoot(true);
+	virusAnalysisHookTestsThrows();
+	setRoot(originalRootStatus);
 	return true;
 }
+
+const bool virusAnalysisHookTestsThrows() {
+	const VirusAnalysisHook originalHookStatus = virusAnalysisGetHook();
+	VirusAnalysisHook hookStatus = virusAnalysisHook(castToVirusAnalysisHook(virusAnalysisHookClear | virusAnalysisHookExec));
+	if(virusAnalysisHookExec != hookStatus) {
+		throw std::runtime_error("`virusAnalysisHook(castToVirusAnalysisHook(virusAnalysisHookClear | virusAnalysisHookExec))` == " + std::to_string(hookStatus));
+		return false;
+	}
+	hookStatus = virusAnalysisHook(castToVirusAnalysisHook(virusAnalysisHookClear | virusAnalysisHookNewFile));
+	if(virusAnalysisHookNewFile != hookStatus) {
+		throw std::runtime_error("`virusAnalysisHook(castToVirusAnalysisHook(virusAnalysisHookClear | virusAnalysisHookNewFile))` == " + std::to_string(hookStatus));
+		return false;
+	}
+	hookStatus = virusAnalysisHook(virusAnalysisHookClear);
+	if(virusAnalysisHookDefault != hookStatus) {
+		throw std::runtime_error("`virusAnalysisHook(virusAnalysisHookClear)` == " + std::to_string(hookStatus));
+		return false;
+	}
+	hookStatus = virusAnalysisHook(castToVirusAnalysisHook(virusAnalysisHookExec | virusAnalysisHookNewFile));
+	if(castToVirusAnalysisHook(virusAnalysisHookExec | virusAnalysisHookNewFile) != hookStatus) {
+		throw std::runtime_error("`virusAnalysisHook(castToVirusAnalysisHook(virusAnalysisExec | virusAnalysisHookNewFile))` == " + std::to_string(hookStatus));
+		return false;
+	}
+	hookStatus = virusAnalysisHook(castToVirusAnalysisHook(virusAnalysisHookClear | originalHookStatus));
+	if(originalHookStatus != hookStatus) {
+		throw std::runtime_error("`virusAnalysisHook(castToVirusAnalysisHook(virusAnalysisHookClear | originalHookStatus))` == " + std::to_string(hookStatus));
+		return false;
+	}
+	return true;
+}
+const VirusAnalysisHook virusAnalysisHook(VirusAnalysisHook virusAnalysisHookStatus) {
+	const VirusAnalysisHook originalHookStatus = globalVirusAnalysisHook;
+	if(virusAnalysisHookQuery == virusAnalysisHookStatus || originalHookStatus == virusAnalysisHookStatus) {
+		return originalHookStatus;
+	}
+	if(virusAnalysisHookClear & virusAnalysisHookStatus) {
+		/* TODO: undo OS-specific "hook"s/"callback"s */
+		globalVirusAnalysisHook = virusAnalysisHookDefault;
+	}
+	if(virusAnalysisHookExec & virusAnalysisHookStatus) {
+		/* callbackHook("exec*", */ [](const PortableExecutable &file) { /* TODO: OS-specific "hook"/"callback" for `exec()`/app-launches */
+			switch(virusAnalysis(file)) {
+			case virusAnalysisPass:
+				return true; /* launch this */
+			case virusAnalysisRequiresReview:
+				submitSampleToHosts(file); /* manual review */
+					return false;
+			default:
+				return false; /* abort */
+			}
+		} /* ) */ ;
+		globalVirusAnalysisHook = castToVirusAnalysisHook(globalVirusAnalysisHook | virusAnalysisHookExec);
+	}
+	if(virusAnalysisHookNewFile & virusAnalysisHookStatus) {
+		/* callbackHook("fwrite", */ [](const PortableExecutable &file) { /* TODO: OS-specific "hook"/"callback" for new files/downloads */
+			switch(virusAnalysis(file)) {
+			case virusAnalysisPass:
+				return true; /* launch this */
+			case virusAnalysisRequiresReview:
+				submitSampleToHosts(file); /* manual review */
+				return false;
+			default:
+				return false; /* abort */
+			}
+		} /* ) */ ;
+		globalVirusAnalysisHook = castToVirusAnalysisHook(globalVirusAnalysisHook | virusAnalysisHookNewFile);
+	}
+	return virusAnalysisGetHook();
+}
+
 const VirusAnalysisResult virusAnalysis(const PortableExecutable &file) {
 	const auto fileHash = sha2(file.bytecode);
 	for(const auto &analysis : virusAnalyses) {
