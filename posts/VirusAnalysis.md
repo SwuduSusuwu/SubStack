@@ -694,6 +694,7 @@ const FileBytecode cnsVirusFix(const PortableExecutable &file, const Cns &cns /*
 #include "Macros.hxx" /* ASSUME EXPECTS ENSURES NOEXCEPT NORETURN */
 #include "VirusAnalysis.hxx" /* virusAnalysisTestsThrows */
 #include <cstdlib> /* exit EXIT_SUCCESS */
+#include <exception> /* std::exception */
 #include <iostream> /* cout flush endl */
 namespace Susuwu {
 void noExcept() NOEXCEPT;
@@ -710,16 +711,24 @@ int testHarnesses() EXPECTS(true) ENSURES(true) {
 	std::cout << "execvex(): " << std::flush;
 	(EXIT_SUCCESS == execvex("/bin/echo pass")) || std::cout << "error" << std::endl;
 	std::cout << "virusAnalysisTestsThrows(): " << std::flush;
-	if(virusAnalysisTestsThrows()) {
-		std::cout << "pass" << std::endl;
-	} else {
-		std::cout << "error" << std::endl;
+	try {
+		if(virusAnalysisTestsThrows()) {
+			std::cout << "pass" << std::endl;
+		} else {
+			std::cout << "error" << std::endl;
+		}
+	} catch(std::exception &ex) {
+		std::cout << "error [throw std::exception(\"" << ex.what() << "\");]" << std::endl;
 	}
 	std::cout << "assistantCnsTestsThrows(): " << std::flush;
-	if(assistantCnsTestsThrows()) {
-		std::cout << "pass" << std::endl;
-	} else {
-		std::cout << "error" << std::endl;
+	try {
+		if(assistantCnsTestsThrows()) {
+			std::cout << "pass" << std::endl;
+		} else {
+			std::cout << "error" << std::endl;
+		}
+	} catch(std::exception &ex) {
+		std::cout << "error [throw std::exception(\"" << ex.what() << "\");]" << std::endl;
 	}
 	noReturn();
 }
