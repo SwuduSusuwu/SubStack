@@ -350,6 +350,17 @@ const bool hasRoot();
 /* #if _POSIX_VERSION, `root ? (seteuid(0) : (seteuid(getuid() || getenv("SUDO_UID")), setuid(geteuid)); return hasRoot();` #endif
  * Usage: setRoot(true); functionsWhichRequireRoot; setRoot(false); */
 const bool setRoot(bool root); /* root ? (seteuid(0) : (seteuid(getuid() || atoi(getenv("SUDO_UID"))), setuid(geteuid)); return hasRoot(); */
+
+template<typename Func, typename... Args>
+auto templateCatchAll(Func func, Args... args) {
+	try {
+		return func(args...);
+	} catch (const std::exception &ex) {
+		std::cerr << "[Error: {throw std::exception(\"" << ex.what() << "\");}]" << std::endl;
+		return decltype(func(args...))(); /* `func(args...)`'s default return value; if `int func(args...)`, `return 0;`. If `bool func()`, `return false;` */
+	}
+}
+
 ```
 `less` [cxx/ClassSys.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ClassSys.cxx)
 ```
@@ -833,8 +844,8 @@ const FileBytecode cnsVirusFix(const PortableExecutable &file, const Cns &cns /*
 ```
 `less` [cxx/main.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/main.cxx)
 ```
-#include "ClassSys.hxx" /* execves execvex */
 #include "AssistantCns.hxx" /* assistantCnsTestsThrows */
+#include "ClassSys.hxx" /* execves execvex templateCatchAll */
 #include "Macros.hxx" /* ASSUME EXPECTS ENSURES NOEXCEPT NORETURN */
 #include "VirusAnalysis.hxx" /* virusAnalysisTestsThrows */
 #include <cstdlib> /* exit EXIT_SUCCESS */
@@ -855,24 +866,16 @@ int testHarnesses() EXPECTS(true) ENSURES(true) {
 	std::cout << "execvex(): " << std::flush;
 	(EXIT_SUCCESS == execvex("/bin/echo pass")) || std::cout << "error" << std::endl;
 	std::cout << "virusAnalysisTestsThrows(): " << std::flush;
-	try {
-		if(virusAnalysisTestsThrows()) {
-			std::cout << "pass" << std::endl;
-		} else {
-			std::cout << "error" << std::endl;
-		}
-	} catch(std::exception &ex) {
-		std::cout << "error [throw std::exception(\"" << ex.what() << "\");]" << std::endl;
+	if(templateCatchAll(virusAnalysisTestsThrows)) {
+		std::cout << "pass" << std::endl;
+	} else {
+		std::cout << "error" << std::endl;
 	}
 	std::cout << "assistantCnsTestsThrows(): " << std::flush;
-	try {
-		if(assistantCnsTestsThrows()) {
-			std::cout << "pass" << std::endl;
-		} else {
-			std::cout << "error" << std::endl;
-		}
-	} catch(std::exception &ex) {
-		std::cout << "error [throw std::exception(\"" << ex.what() << "\");]" << std::endl;
+	if(templateCatchAll(assistantCnsTestsThrows)) {
+		std::cout << "pass" << std::endl;
+	} else {
+		std::cout << "error" << std::endl;
 	}
 	noReturn();
 }

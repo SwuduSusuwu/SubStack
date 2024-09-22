@@ -2,7 +2,7 @@
 #ifndef INCLUDES_cxx_main_cxx
 #define INCLUDES_cxx_main_cxx
 #include "AssistantCns.hxx" /* assistantCnsTestsThrows */
-#include "ClassSys.hxx" /* execves execvex */
+#include "ClassSys.hxx" /* execves execvex templateCatchAll */
 #include "Macros.hxx" /* ASSUME EXPECTS ENSURES NOEXCEPT NORETURN */
 #include "VirusAnalysis.hxx" /* virusAnalysisTestsThrows */
 #include <cstdlib> /* exit EXIT_SUCCESS */
@@ -23,24 +23,16 @@ int testHarnesses() EXPECTS(true) ENSURES(true) {
 	std::cout << "execvex(): " << std::flush;
 	(EXIT_SUCCESS == execvex("/bin/echo pass")) || std::cout << "error" << std::endl;
 	std::cout << "virusAnalysisTestsThrows(): " << std::flush;
-	try {
-		if(virusAnalysisTestsThrows()) {
-			std::cout << "pass" << std::endl;
-		} else {
-			std::cout << "error" << std::endl;
-		}
-	} catch(std::exception &ex) {
-		std::cout << "error [throw std::exception(\"" << ex.what() << "\");]" << std::endl;
+	if(templateCatchAll(virusAnalysisTestsThrows)) {
+		std::cout << "pass" << std::endl;
+	} else {
+		std::cout << "error" << std::endl;
 	}
 	std::cout << "assistantCnsTestsThrows(): " << std::flush;
-	try {
-		if(assistantCnsTestsThrows()) {
-			std::cout << "pass" << std::endl;
-		} else {
-			std::cout << "error" << std::endl;
-		}
-	} catch(std::exception &ex) {
-		std::cout << "error [throw std::exception(\"" << ex.what() << "\");]" << std::endl;
+	if(templateCatchAll(assistantCnsTestsThrows)) {
+		std::cout << "pass" << std::endl;
+	} else {
+		std::cout << "error" << std::endl;
 	}
 	noReturn();
 }
