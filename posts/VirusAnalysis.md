@@ -456,7 +456,8 @@ typedef enum VirusAnalysisHook : char {
 	virusAnalysisHookExec    = 1 << 1, /* hook {execl(), execlp(), execle(), execv(), execvp(), execvpe()} */
 	virusAnalysisHookNewFile = 1 << 2, /* hook (for modeNew in {"w+", "a", "a+"}) fwrite((void *)ptr, (size_t)size, (size_t)nmemb, {fopen((const char *)pathname, modeNew), fdopen((int)fd, modeNew), freopen((const char *)pathname, modeNew, (FILE *)stream)}) */
 } VirusAnalysisHook;
-static const VirusAnalysisHook castToVirusAnalysisHook(int virusAnalysisHook) {return static_cast<VirusAnalysisHook>(virusAnalysisHook);} /* C++ has `template<enum U> int operator|(enum U, enum U);` without `enum U(int);` */
+static const VirusAnalysisHook operator|(VirusAnalysisHook x,  VirusAnalysisHook s) {return static_cast<VirusAnalysisHook>(static_cast<unsigned>(x) | static_cast<unsigned>(s));}
+static const VirusAnalysisHook operator&(VirusAnalysisHook x,  VirusAnalysisHook s) {return static_cast<VirusAnalysisHook>(static_cast<unsigned>(x) & static_cast<unsigned>(s));}
 static VirusAnalysisHook globalVirusAnalysisHook = virusAnalysisHookDefault; /* Just use virusAnalysisHook() to set+get this, virusAnalysisGetHook() to get this */
 
 typedef enum VirusAnalysisResult : char {
@@ -478,8 +479,8 @@ const bool virusAnalysisHookTestsThrows(); /* return for(x: VirusAnalysisHook) {
 static const bool virusAnalysisHookTests() {try {return virusAnalysisHookTestsThrows();} catch(...) {return false;}}
 
 /* Use to turn off, query status of, or turn on what other virus scanners refer to as "real-time scans"
- * @pre @code (virusAnalysisHookDefault == virusAnalysisGetHook() || virusAnalysisHookExec == virusAnalysisGetHook() || virusAnalysisHookNewFile == virusAnalysisGetHook() || castToVirusAnalysisHook(virusAnalysisHookExec | virusAnalysisHookNewFile) == virusAnalysisGetHook()) @endcode
- * @post @code (virusAnalysisHookDefault == virusAnalysisGetHook() || virusAnalysisHookExec == virusAnalysisGetHook() || virusAnalysisHookNewFile == virusAnalysisGetHook() || castToVirusAnalysisHook(virusAnalysisHookExec | virusAnalysisHookNewFile) == virusAnalysisGetHook()) @endcode */
+ * @pre @code (virusAnalysisHookDefault == virusAnalysisGetHook() || virusAnalysisHookExec == virusAnalysisGetHook() || virusAnalysisHookNewFile == virusAnalysisGetHook() || (virusAnalysisHookExec | virusAnalysisHookNewFile) == virusAnalysisGetHook()) @endcode
+ * @post @code (virusAnalysisHookDefault == virusAnalysisGetHook() || virusAnalysisHookExec == virusAnalysisGetHook() || virusAnalysisHookNewFile == virusAnalysisGetHook() || (virusAnalysisHookExec | virusAnalysisHookNewFile) == virusAnalysisGetHook()) @endcode */
 const VirusAnalysisHook virusAnalysisHook(VirusAnalysisHook);
 static const VirusAnalysisHook virusAnalysisGetHook() {return virusAnalysisHook(virusAnalysisHookQuery);}
 
@@ -583,14 +584,14 @@ const bool virusAnalysisTestsThrows() {
 
 const bool virusAnalysisHookTestsThrows() {
 	const VirusAnalysisHook originalHookStatus = virusAnalysisGetHook();
-	VirusAnalysisHook hookStatus = virusAnalysisHook(castToVirusAnalysisHook(virusAnalysisHookClear | virusAnalysisHookExec));
+	VirusAnalysisHook hookStatus = virusAnalysisHook(virusAnalysisHookClear | virusAnalysisHookExec);
 	if(virusAnalysisHookExec != hookStatus) {
-		throw std::runtime_error("`virusAnalysisHook(castToVirusAnalysisHook(virusAnalysisHookClear | virusAnalysisHookExec))` == " + std::to_string(hookStatus));
+		throw std::runtime_error("`virusAnalysisHook(virusAnalysisHookClear | virusAnalysisHookExec)` == " + std::to_string(hookStatus));
 		return false;
 	}
-	hookStatus = virusAnalysisHook(castToVirusAnalysisHook(virusAnalysisHookClear | virusAnalysisHookNewFile));
+	hookStatus = virusAnalysisHook(virusAnalysisHookClear | virusAnalysisHookNewFile);
 	if(virusAnalysisHookNewFile != hookStatus) {
-		throw std::runtime_error("`virusAnalysisHook(castToVirusAnalysisHook(virusAnalysisHookClear | virusAnalysisHookNewFile))` == " + std::to_string(hookStatus));
+		throw std::runtime_error("`virusAnalysisHook(virusAnalysisHookClear | virusAnalysisHookNewFile)` == " + std::to_string(hookStatus));
 		return false;
 	}
 	hookStatus = virusAnalysisHook(virusAnalysisHookClear);
@@ -598,14 +599,14 @@ const bool virusAnalysisHookTestsThrows() {
 		throw std::runtime_error("`virusAnalysisHook(virusAnalysisHookClear)` == " + std::to_string(hookStatus));
 		return false;
 	}
-	hookStatus = virusAnalysisHook(castToVirusAnalysisHook(virusAnalysisHookExec | virusAnalysisHookNewFile));
-	if(castToVirusAnalysisHook(virusAnalysisHookExec | virusAnalysisHookNewFile) != hookStatus) {
-		throw std::runtime_error("`virusAnalysisHook(castToVirusAnalysisHook(virusAnalysisExec | virusAnalysisHookNewFile))` == " + std::to_string(hookStatus));
+	hookStatus = virusAnalysisHook(virusAnalysisHookExec | virusAnalysisHookNewFile);
+	if((virusAnalysisHookExec | virusAnalysisHookNewFile) != hookStatus) {
+		throw std::runtime_error("`virusAnalysisHook(virusAnalysisExec | virusAnalysisHookNewFile)` == " + std::to_string(hookStatus));
 		return false;
 	}
-	hookStatus = virusAnalysisHook(castToVirusAnalysisHook(virusAnalysisHookClear | originalHookStatus));
+	hookStatus = virusAnalysisHook(virusAnalysisHookClear | originalHookStatus);
 	if(originalHookStatus != hookStatus) {
-		throw std::runtime_error("`virusAnalysisHook(castToVirusAnalysisHook(virusAnalysisHookClear | originalHookStatus))` == " + std::to_string(hookStatus));
+		throw std::runtime_error("`virusAnalysisHook(virusAnalysisHookClear | originalHookStatus)` == " + std::to_string(hookStatus));
 		return false;
 	}
 	return true;
@@ -631,7 +632,7 @@ const VirusAnalysisHook virusAnalysisHook(VirusAnalysisHook virusAnalysisHookSta
 				return false; /* abort */
 			}
 		} /* ) */ ;
-		globalVirusAnalysisHook = castToVirusAnalysisHook(globalVirusAnalysisHook | virusAnalysisHookExec);
+		globalVirusAnalysisHook = (globalVirusAnalysisHook | virusAnalysisHookExec);
 	}
 	if(virusAnalysisHookNewFile & virusAnalysisHookStatus) {
 		/* callbackHook("fwrite", */ [](const PortableExecutable &file) { /* TODO: OS-specific "hook"/"callback" for new files/downloads */
@@ -645,7 +646,7 @@ const VirusAnalysisHook virusAnalysisHook(VirusAnalysisHook virusAnalysisHookSta
 				return false; /* abort */
 			}
 		} /* ) */ ;
-		globalVirusAnalysisHook = castToVirusAnalysisHook(globalVirusAnalysisHook | virusAnalysisHookNewFile);
+		globalVirusAnalysisHook = (globalVirusAnalysisHook | virusAnalysisHookNewFile);
 	}
 	return virusAnalysisGetHook();
 }
@@ -1136,5 +1137,5 @@ For systems with lots of resources, could have local sandboxes/CNS;
 For systems with less resources, could just submit samples of unknown apps/SW to hosts to perform analysis;
 Could have small local sandboxes (that just run for a few seconds) and small CNS (just billions of neurons with hundreds of layers,
 versus the trillions of neurons with thousands of layers of cortices that antivirus hosts would use for this);
-Allows reuses of workflows the analysis tool has (could just add (small) local sandboxes, or just add artificial CNS to antivirus hosts for extra analysis.)
+Allows reuses of workflows which an existant analysis tool has -- can just add (small) local sandboxes, or just add artificial CNS to antivirus hosts for extra analysis.
 

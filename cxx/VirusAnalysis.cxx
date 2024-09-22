@@ -46,14 +46,14 @@ const bool virusAnalysisTestsThrows() {
 
 const bool virusAnalysisHookTestsThrows() {
 	const VirusAnalysisHook originalHookStatus = virusAnalysisGetHook();
-	VirusAnalysisHook hookStatus = virusAnalysisHook(castToVirusAnalysisHook(virusAnalysisHookClear | virusAnalysisHookExec));
+	VirusAnalysisHook hookStatus = virusAnalysisHook(virusAnalysisHookClear | virusAnalysisHookExec);
 	if(virusAnalysisHookExec != hookStatus) {
-		throw std::runtime_error("`virusAnalysisHook(castToVirusAnalysisHook(virusAnalysisHookClear | virusAnalysisHookExec))` == " + std::to_string(hookStatus));
+		throw std::runtime_error("`virusAnalysisHook(virusAnalysisHookClear | virusAnalysisHookExec)` == " + std::to_string(hookStatus));
 		return false;
 	}
-	hookStatus = virusAnalysisHook(castToVirusAnalysisHook(virusAnalysisHookClear | virusAnalysisHookNewFile));
+	hookStatus = virusAnalysisHook(virusAnalysisHookClear | virusAnalysisHookNewFile);
 	if(virusAnalysisHookNewFile != hookStatus) {
-		throw std::runtime_error("`virusAnalysisHook(castToVirusAnalysisHook(virusAnalysisHookClear | virusAnalysisHookNewFile))` == " + std::to_string(hookStatus));
+		throw std::runtime_error("`virusAnalysisHook(virusAnalysisHookClear | virusAnalysisHookNewFile)` == " + std::to_string(hookStatus));
 		return false;
 	}
 	hookStatus = virusAnalysisHook(virusAnalysisHookClear);
@@ -61,14 +61,14 @@ const bool virusAnalysisHookTestsThrows() {
 		throw std::runtime_error("`virusAnalysisHook(virusAnalysisHookClear)` == " + std::to_string(hookStatus));
 		return false;
 	}
-	hookStatus = virusAnalysisHook(castToVirusAnalysisHook(virusAnalysisHookExec | virusAnalysisHookNewFile));
-	if(castToVirusAnalysisHook(virusAnalysisHookExec | virusAnalysisHookNewFile) != hookStatus) {
-		throw std::runtime_error("`virusAnalysisHook(castToVirusAnalysisHook(virusAnalysisExec | virusAnalysisHookNewFile))` == " + std::to_string(hookStatus));
+	hookStatus = virusAnalysisHook(virusAnalysisHookExec | virusAnalysisHookNewFile);
+	if((virusAnalysisHookExec | virusAnalysisHookNewFile) != hookStatus) {
+		throw std::runtime_error("`virusAnalysisHook(virusAnalysisExec | virusAnalysisHookNewFile)` == " + std::to_string(hookStatus));
 		return false;
 	}
-	hookStatus = virusAnalysisHook(castToVirusAnalysisHook(virusAnalysisHookClear | originalHookStatus));
+	hookStatus = virusAnalysisHook(virusAnalysisHookClear | originalHookStatus);
 	if(originalHookStatus != hookStatus) {
-		throw std::runtime_error("`virusAnalysisHook(castToVirusAnalysisHook(virusAnalysisHookClear | originalHookStatus))` == " + std::to_string(hookStatus));
+		throw std::runtime_error("`virusAnalysisHook(virusAnalysisHookClear | originalHookStatus)` == " + std::to_string(hookStatus));
 		return false;
 	}
 	return true;
@@ -94,7 +94,7 @@ const VirusAnalysisHook virusAnalysisHook(VirusAnalysisHook virusAnalysisHookSta
 				return false; /* abort */
 			}
 		} /* ) */ ;
-		globalVirusAnalysisHook = castToVirusAnalysisHook(globalVirusAnalysisHook | virusAnalysisHookExec);
+		globalVirusAnalysisHook = (globalVirusAnalysisHook | virusAnalysisHookExec);
 	}
 	if(virusAnalysisHookNewFile & virusAnalysisHookStatus) {
 		/* callbackHook("fwrite", */ [](const PortableExecutable &file) { /* TODO: OS-specific "hook"/"callback" for new files/downloads */
@@ -108,7 +108,7 @@ const VirusAnalysisHook virusAnalysisHook(VirusAnalysisHook virusAnalysisHookSta
 				return false; /* abort */
 			}
 		} /* ) */ ;
-		globalVirusAnalysisHook = castToVirusAnalysisHook(globalVirusAnalysisHook | virusAnalysisHookNewFile);
+		globalVirusAnalysisHook = (globalVirusAnalysisHook | virusAnalysisHookNewFile);
 	}
 	return virusAnalysisGetHook();
 }
