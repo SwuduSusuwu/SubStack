@@ -14,7 +14,7 @@
 #include <vector> /* std::vector */
 /* (Work-in-progress) assistant bots with artificial CNS. */
 namespace Susuwu {
-const bool assistantCnsTestsThrows() {
+const bool assistantCnsTests() {
 	ResultList questionsOrNull {
 		.bytecodes { /* UTF-8 */
 			ResultListBytecode("2^16"),

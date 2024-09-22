@@ -1,12 +1,11 @@
 /* Licenses: allows all uses ("Creative Commons"/"Apache 2") */
 #ifndef INCLUDES_cxx_main_cxx
 #define INCLUDES_cxx_main_cxx
-#include "AssistantCns.hxx" /* assistantCnsTestsThrows */
+#include "AssistantCns.hxx" /* assistantCnsTestsNoexcept */
 #include "ClassSys.hxx" /* execves execvex templateCatchAll */
 #include "Macros.hxx" /* ASSUME EXPECTS ENSURES NOEXCEPT NORETURN */
-#include "VirusAnalysis.hxx" /* virusAnalysisTestsThrows */
+#include "VirusAnalysis.hxx" /* virusAnalysisTestsNoexcept */
 #include <cstdlib> /* exit EXIT_SUCCESS */
-#include <exception> /* std::exception */
 #include <iostream> /* cout flush endl */
 namespace Susuwu {
 void noExcept() NOEXCEPT;
@@ -22,14 +21,14 @@ int testHarnesses() EXPECTS(true) ENSURES(true) {
 	(EXIT_SUCCESS == execves({"/bin/echo", "pass"})) || std::cout << "error" << std::endl;
 	std::cout << "execvex(): " << std::flush;
 	(EXIT_SUCCESS == execvex("/bin/echo pass")) || std::cout << "error" << std::endl;
-	std::cout << "virusAnalysisTestsThrows(): " << std::flush;
-	if(templateCatchAll(virusAnalysisTestsThrows)) {
+	std::cout << "virusAnalysisTestsNoexcept(): " << std::flush;
+	if(virusAnalysisTestsNoexcept()) {
 		std::cout << "pass" << std::endl;
 	} else {
 		std::cout << "error" << std::endl;
 	}
-	std::cout << "assistantCnsTestsThrows(): " << std::flush;
-	if(templateCatchAll(assistantCnsTestsThrows)) {
+	std::cout << "assistantCnsTestsNoexcept(): " << std::flush;
+	if(assistantCnsTestsNoexcept()) {
 		std::cout << "pass" << std::endl;
 	} else {
 		std::cout << "error" << std::endl;

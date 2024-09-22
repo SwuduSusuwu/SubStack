@@ -28,11 +28,11 @@ const bool hasRoot();
 const bool setRoot(bool root); /* root ? (seteuid(0) : (seteuid(getuid() || atoi(getenv("SUDO_UID"))), setuid(geteuid)); return hasRoot(); */
 
 template<typename Func, typename... Args>
-auto templateCatchAll(Func func, Args... args) {
+auto templateCatchAll(Func func, const std::string &funcName, Args... args) {
 	try {
 		return func(args...);
 	} catch (const std::exception &ex) {
-		std::cerr << "[Error: {throw std::exception(\"" << ex.what() << "\");}]" << std::endl;
+		std::cerr << "[Error: " << funcName << " {throw std::exception(\"" << ex.what() << "\");}]" << std::endl;
 		return decltype(func(args...))(); /* `func(args...)`'s default return value; if `int func(args...)`, `return 0;`. If `bool func()`, `return false;` */
 	}
 }

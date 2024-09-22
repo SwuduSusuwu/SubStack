@@ -352,11 +352,11 @@ const bool hasRoot();
 const bool setRoot(bool root); /* root ? (seteuid(0) : (seteuid(getuid() || atoi(getenv("SUDO_UID"))), setuid(geteuid)); return hasRoot(); */
 
 template<typename Func, typename... Args>
-auto templateCatchAll(Func func, Args... args) {
+auto templateCatchAll(Func func, const std::string &funcName, Args... args) {
 	try {
 		return func(args...);
 	} catch (const std::exception &ex) {
-		std::cerr << "[Error: {throw std::exception(\"" << ex.what() << "\");}]" << std::endl;
+		std::cerr << "[Error: " << name << " {throw std::exception(\"" << ex.what() << "\");}]" << std::endl;
 		return decltype(func(args...))(); /* `func(args...)`'s default return value; if `int func(args...)`, `return 0;`. If `bool func()`, `return false;` */
 	}
 }
@@ -481,13 +481,13 @@ typedef enum VirusAnalysisResult : char {
 static ResultList passList, abortList; /* hosts produce, clients initialize shared clones of this from disk */
 static Cns analysisCns, virusFixCns; /* hosts produce, clients initialize shared clones of this from disk */
 
-/* `return (produceAbortListSignatures(EXAMPLES) && produceAnalysisCns(EXAMPLES) && produceVirusFixCns(EXAMPLES)) && virusAnalysisHookTestsThrows();`
+/* `return (produceAbortListSignatures(EXAMPLES) && produceAnalysisCns(EXAMPLES) && produceVirusFixCns(EXAMPLES)) && virusAnalysisHookTests();`
  * @throw std::bad_alloc, std::runtime_error
  * @pre @code analysisCns.hasImplementation() && virusFixCns.hasImplementation() @endcode */
-const bool virusAnalysisTestsThrows();
-static const bool virusAnalysisTests() {try {return virusAnalysisTestsThrows();} catch(...) {return false;}}
-const bool virusAnalysisHookTestsThrows(); /* return for(x: VirusAnalysisHook) {x == virusAnalysisHook(x)};` */
-static const bool virusAnalysisHookTests() {try {return virusAnalysisHookTestsThrows();} catch(...) {return false;}}
+const bool virusAnalysisTests();
+static const bool virusAnalysisTestsNoexcept() NOEXCEPT {return templateCatchAll(virusAnalysisTests, "virusAnalysisTests()");}
+const bool virusAnalysisHookTests; /* return for(x: VirusAnalysisHook) {x == virusAnalysisHook(x)};` */
+static const bool virusAnalysisHookTestsNoexcept() NOEXCEPT {return templateCatchAll(virusAnalysisHookTests, "virusAnalysisHookTests()");}
 
 /* Use to turn off, query status of, or turn on what other virus scanners refer to as "real-time scans"
  * @pre @code (virusAnalysisHookDefault == virusAnalysisGetHook() || virusAnalysisHookExec == virusAnalysisGetHook() || virusAnalysisHookNewFile == virusAnalysisGetHook() || (virusAnalysisHookExec | virusAnalysisHookNewFile) == virusAnalysisGetHook()) @endcode
@@ -566,7 +566,7 @@ const std::string cnsVirusFix(const PortableExecutable &file, const Cns &cns = v
 ```
 `less` [cxx/VirusAnalysis.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/VirusAnalysis.cxx)
 ```
-const bool virusAnalysisTestsThrows() {
+const bool virusAnalysisTests() {
 	const ResultList abortOrNull {
 		.bytecodes {  /* Produce from an antivirus vendor's (such as VirusTotal.com's) infection databases */
 			"infection",
@@ -588,12 +588,12 @@ const bool virusAnalysisTestsThrows() {
 	produceVirusFixCns(passOrNull, abortOrNull, virusFixCns);
 	const bool originalRootStatus = hasRoot();
 	setRoot(true);
-	virusAnalysisHookTestsThrows();
+	virusAnalysisHookTests();
 	setRoot(originalRootStatus);
 	return true;
 }
 
-const bool virusAnalysisHookTestsThrows() {
+const bool virusAnalysisHookTests() {
 	const VirusAnalysisHook originalHookStatus = virusAnalysisGetHook();
 	VirusAnalysisHook hookStatus = virusAnalysisHook(virusAnalysisHookClear | virusAnalysisHookExec);
 	if(virusAnalysisHookExec != hookStatus) {
@@ -844,12 +844,11 @@ const FileBytecode cnsVirusFix(const PortableExecutable &file, const Cns &cns /*
 ```
 `less` [cxx/main.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/main.cxx)
 ```
-#include "AssistantCns.hxx" /* assistantCnsTestsThrows */
-#include "ClassSys.hxx" /* execves execvex templateCatchAll */
+#include "AssistantCns.hxx" /* assistantCnsTestsNoexcept */
+#include "ClassSys.hxx" /* execves execvex */
 #include "Macros.hxx" /* ASSUME EXPECTS ENSURES NOEXCEPT NORETURN */
-#include "VirusAnalysis.hxx" /* virusAnalysisTestsThrows */
+#include "VirusAnalysis.hxx" /* virusAnalysisTestsNoexcept */
 #include <cstdlib> /* exit EXIT_SUCCESS */
-#include <exception> /* std::exception */
 #include <iostream> /* cout flush endl */
 namespace Susuwu {
 void noExcept() NOEXCEPT;
@@ -865,14 +864,14 @@ int testHarnesses() EXPECTS(true) ENSURES(true) {
 	(EXIT_SUCCESS == execves({"/bin/echo", "pass"})) || std::cout << "error" << std::endl;
 	std::cout << "execvex(): " << std::flush;
 	(EXIT_SUCCESS == execvex("/bin/echo pass")) || std::cout << "error" << std::endl;
-	std::cout << "virusAnalysisTestsThrows(): " << std::flush;
-	if(templateCatchAll(virusAnalysisTestsThrows)) {
+	std::cout << "virusAnalysisTestsNoexcept(): " << std::flush;
+	if(virusAnalysisTestsNoexcept()) {
 		std::cout << "pass" << std::endl;
 	} else {
 		std::cout << "error" << std::endl;
 	}
-	std::cout << "assistantCnsTestsThrows(): " << std::flush;
-	if(templateCatchAll(assistantCnsTestsThrows)) {
+	std::cout << "assistantCnsTestsNoexcept(): " << std::flush;
+	if(assistantCnsTestsNoexcept()) {
 		std::cout << "pass" << std::endl;
 	} else {
 		std::cout << "error" << std::endl;
@@ -895,8 +894,8 @@ static Cns assistantCns;
  * @throw std::bad_alloc
  * @throw std::logic_error
  * @pre @code assistantCns.hasImplementation() @endcode */
-const bool assistantCnsTestsThrows();
-static const bool assistantCnsTests() { try{ return assistantCnsTestsThrows(); } catch(...) { return false; }}
+const bool assistantCnsTests();
+static const bool assistantCnsTestsNoexcept() NOEXCEPT {return templateCatchAll(assistantCnsTests, "assistantCnsTests()");}
 static std::vector<FilePath> assistantDefaultHosts = {
 /* Universal Resources Locators of hosts which `questionsResponsesFromHosts()` uses
  * Wikipedia is a special case; has compressed downloads of databases ( https://wikipedia.org/wiki/Wikipedia:Database_download )
@@ -934,7 +933,7 @@ void assistantCnsLoopProcess(const Cns &cns);
 ```
 `less` [cxx/AssistantCns.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/AssistantCns.cxx)
 ```
-const bool assistantCnsTestsThrows() {
+const bool assistantCnsTests() {
 	ResultList questionsOrNull {
 		.bytecodes { /* UTF-8 */
 			ResultListBytecode("2^16"),

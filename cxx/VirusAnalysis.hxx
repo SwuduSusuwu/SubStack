@@ -2,9 +2,11 @@
 #pragma once
 #ifndef INCLUDES_cxx_VirusAnalysis_hxx
 #define INCLUDES_cxx_VirusAnalysis_hxx
-#include "ClassCns.hxx" /* Cns, CnsMode */
+#include "ClassCns.hxx" /* Cns CnsMode */
+#include "ClassSys.hxx" /* templateCatchAll */
 #include "ClassPortableExecutable.hxx" /* PortableExecutable FilePath FileBytecode */
-#include "ClassResultList.hxx" /* ResultList, smallestUniqueSubstr */
+#include "ClassResultList.hxx" /* ResultList smallestUniqueSubstr */
+#include "Macros.hxx" /* NOEXCEPT */
 #include <map> /* std::map */
 #include <string> /* std::string */
 #include <vector> /* std::vector */
@@ -31,13 +33,13 @@ typedef enum VirusAnalysisResult : char {
 static ResultList passList, abortList; /* hosts produce, clients initialize shared clones of this from disk */
 static Cns analysisCns, virusFixCns; /* hosts produce, clients initialize shared clones of this from disk */
 
-/* `return (produceAbortListSignatures(EXAMPLES) && produceAnalysisCns(EXAMPLES) && produceVirusFixCns(EXAMPLES)) && virusAnalysisHookTestsThrows();`
+/* `return (produceAbortListSignatures(EXAMPLES) && produceAnalysisCns(EXAMPLES) && produceVirusFixCns(EXAMPLES)) && virusAnalysisHookTests();`
  * @throw std::bad_alloc, std::runtime_error
  * @pre @code analysisCns.hasImplementation() && virusFixCns.hasImplementation() @endcode */
-const bool virusAnalysisTestsThrows();
-static const bool virusAnalysisTests() {try {return virusAnalysisTestsThrows();} catch(...) {return false;}}
-const bool virusAnalysisHookTestsThrows(); /* return for(x: VirusAnalysisHook) {x == virusAnalysisHook(x)};` */
-static const bool virusAnalysisHookTests() {try {return virusAnalysisHookTestsThrows();} catch(...) {return false;}}
+const bool virusAnalysisTests();
+static const bool virusAnalysisTestsNoexcept() NOEXCEPT {return templateCatchAll(virusAnalysisTests, "virusAnalysisTests()");}
+const bool virusAnalysisHookTests(); /* return for(x: VirusAnalysisHook) {x == virusAnalysisHook(x)};` */
+static const bool virusAnalysisHookTestsNoexcept() NOEXCEPT {return templateCatchAll(virusAnalysisHookTests, "virusAnalysisHookTests()");}
 
 /* Use to turn off, query status of, or turn on what other virus scanners refer to as "real-time scans"
  * @pre @code (virusAnalysisHookDefault == virusAnalysisGetHook() || virusAnalysisHookExec == virusAnalysisGetHook() || virusAnalysisHookNewFile == virusAnalysisGetHook() || (virusAnalysisHookExec | virusAnalysisHookNewFile) == virusAnalysisGetHook()) @endcode

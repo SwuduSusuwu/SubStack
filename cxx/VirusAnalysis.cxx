@@ -17,7 +17,7 @@
 #include <vector> /* std::vector */
 /* (Work-in-progress) virus analysis: uses hashes, signatures, static analysis, sandboxes, plus artificial CNS (central nervous systems) */
 namespace Susuwu {
-const bool virusAnalysisTestsThrows() {
+const bool virusAnalysisTests() {
 	const ResultList abortOrNull {
 		.bytecodes {  /* Produce from an antivirus vendor's (such as VirusTotal.com's) infection databases */
 			"infection",
@@ -39,12 +39,12 @@ const bool virusAnalysisTestsThrows() {
 	produceVirusFixCns(passOrNull, abortOrNull, virusFixCns);
 	const bool originalRootStatus = hasRoot();
 	setRoot(true);
-	virusAnalysisHookTestsThrows();
+	virusAnalysisHookTests();
 	setRoot(originalRootStatus);
 	return true;
 }
 
-const bool virusAnalysisHookTestsThrows() {
+const bool virusAnalysisHookTests() {
 	const VirusAnalysisHook originalHookStatus = virusAnalysisGetHook();
 	VirusAnalysisHook hookStatus = virusAnalysisHook(virusAnalysisHookClear | virusAnalysisHookExec);
 	if(virusAnalysisHookExec != hookStatus) {

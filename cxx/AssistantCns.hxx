@@ -3,8 +3,10 @@
 #ifndef INCLUDES_cxx_AssistantCns_hxx
 #define INCLUDES_cxx_AssistantCns_hxx
 #include "ClassCns.hxx" /* Cns CnsMode */
+#include "ClassSys.hxx" /* templateCatchAll */
 #include "ClassPortableExecutable.hxx" /* FilePath FileBytecode */
 #include "ClassResultList.hxx" /* ResultList */
+#include "Macros.hxx" /* NOEXCEPT */
 #include <string> /* std::string */
 #include <vector> /* std::vector */
 /* (Work-in-progress) assistant bots with artificial CNS ("HSOM" (the simple Python artificial CNS) is enough to do this), which should have results almost as complex as "ChatGPT 4.0" (or as "Claude-3 Opus"); */
@@ -15,8 +17,8 @@ static Cns assistantCns;
  * @throw std::bad_alloc
  * @throw std::logic_error
  * @pre @code assistantCns.hasImplementation() @endcode */
-const bool assistantCnsTestsThrows();
-static const bool assistantCnsTests() { try{ return assistantCnsTestsThrows(); } catch(...) { return false; }}
+const bool assistantCnsTests();
+static const bool assistantCnsTestsNoexcept() NOEXCEPT {return templateCatchAll(assistantCnsTests, "assistantCnsTests()");}
 static std::vector<FilePath> assistantDefaultHosts = {
 /* Universal Resources Locators of hosts which `questionsResponsesFromHosts()` uses
  * Wikipedia is a special case; has compressed downloads of databases ( https://wikipedia.org/wiki/Wikipedia:Database_download )
