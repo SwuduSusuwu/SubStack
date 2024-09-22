@@ -337,6 +337,14 @@ typedef class ApxrCns : Cns {
 ```
 `less` [cxx/ClassSys.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ClassSys.hxx)
 ```
+extern int classSysArgc;
+extern const char **classSysArgs;
+/* Called from main(), stores {argc, args} into {classSysArgc, classSysArgs}
+ * Much simpler to use path from args[0] (versus https://stackoverflow.com/questions/1528298/get-path-of-executable/34109000#34109000)
+ * @pre @code (0 < argc && nullptr != args && nullptr != args[0]
+ * @post @code (0 < classSysArgc && nullptr != classSysArgs && nullptr != classSysArgs[0] */
+void classSysInit(int argc, const char *args[]);
+
 /* `argv = argvS + NULL; envp = envpS + NULL: pid_t pid = fork() || (envpS.empty() ? execv(argv[0], &argv[0]) : execve(argv[0], &argv[0], &envp[0])); return pid;`
  * @pre @code (-1 != access(argv[0], X_OK) @endcode */
 const pid_t execvesFork(/* const std::string &pathname, -- `execve` requires `&pathname == &argv[0]` */ const std::vector<const std::string> &argvS = {}, const std::vector<const std::string> &envpS = {});
@@ -364,6 +372,15 @@ auto templateCatchAll(Func func, const std::string &funcName, Args... args) {
 ```
 `less` [cxx/ClassSys.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ClassSys.cxx)
 ```
+int classSysArgc = 0;
+const char **classSysArgs = {nullptr};
+void classSysInit(int argc, const char *args[]) {
+	if(0 < (classSysArgc = argc)) {
+		assert(nullptr != (classSysArgs = args));
+		assert(nullptr != args[0]);
+	}
+}
+
 const pid_t execvesFork(const std::vector<const std::string> &argvS, const std::vector<const std::string> &envpS) {
 #ifdef _POSIX_VERSION
 	const pid_t pid = fork();
@@ -880,6 +897,7 @@ int testHarnesses() EXPECTS(true) ENSURES(true) {
 }
 }; /* namespace Susuwu */
 int main(int argc, const char **args) {
+	Susuwu::classSysInit(argc, args);
 	return Susuwu::testHarnesses();
 }
 ```

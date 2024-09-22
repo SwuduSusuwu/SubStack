@@ -17,6 +17,15 @@
 typedef int pid_t;
 #endif /* def _POSIX_VERSION */
 namespace Susuwu {
+int classSysArgc = 0;
+const char **classSysArgs = {nullptr};
+void classSysInit(int argc, const char *args[]) {
+	if(0 < (classSysArgc = argc)) {
+		assert(nullptr != (classSysArgs = args));
+		assert(nullptr != args[0]);
+	}
+}
+
 const pid_t execvesFork(const std::vector<const std::string> &argvS, const std::vector<const std::string> &envpS) {
 #ifdef _POSIX_VERSION
 	const pid_t pid = fork();
