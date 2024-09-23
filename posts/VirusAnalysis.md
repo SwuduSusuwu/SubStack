@@ -125,6 +125,9 @@ const std::tuple<typename List::value_type::const_iterator, typename List::value
 template<class List>
 /* Usage: auto it = listOfSubstrFindMatch(resultList.signatures, bytecode)); if(it) {std::cout << "value matches ResultList.signatures[" << it << "]";} */
 auto listOfSubstrFindMatch(const List &list, const typename List::value_type &x) {
+	if(list.empty()) {
+		return decltype(list.back().cend())();
+	}
 	for(const auto &value : list) {
 #if PREFERENCE_IS_CSTR
 		auto result = memmem(&x[0], strlen(&x[0]), &value[0], strlen(&value[0]));
@@ -141,7 +144,7 @@ auto listOfSubstrFindMatch(const List &list, const typename List::value_type &x)
 template<class List>
 /* Usage: if(listOfSubstrHasMatch(resultList.signatures, bytecode)) {std::cout << "value matches ResultList.signatures";} */
 const bool listOfSubstrHasMatch(const List &list, const typename List::value_type &x) {
-	return list.back().cend() != listOfSubstrFindMatch(list, x);
+	return (!list.empty()) && list.back().cend() != listOfSubstrFindMatch(list, x);
 }
 
 template<class S>
@@ -598,7 +601,7 @@ std::vector<std::string> syscallPotentialDangers = {
 };
 std::vector<std::string> stracePotentialDangers = {"write(*)"};
 std::map<ResultListHash, VirusAnalysisResult> hashAnalysisCaches, signatureAnalysisCaches, staticAnalysisCaches, cnsAnalysisCaches, sandboxAnalysisCaches; /* temporary caches; memoizes results */
-std::vector<typeof(VirusAnalysisFun)> virusAnalyses = {hashAnalysis/*, signatureAnalysis TODO: fix crash*/, staticAnalysis, cnsAnalysis, sandboxAnalysis /* sandbox is slow, so put last*/};
+std::vector<typeof(VirusAnalysisFun)> virusAnalyses = {hashAnalysis, signatureAnalysis, staticAnalysis, cnsAnalysis, sandboxAnalysis /* sandbox is slow, so put last*/};
 
 const bool virusAnalysisTests() {
 	const ResultList abortOrNull {

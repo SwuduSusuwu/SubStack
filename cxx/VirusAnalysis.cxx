@@ -25,7 +25,7 @@ std::vector<std::string> syscallPotentialDangers = {
 };
 std::vector<std::string> stracePotentialDangers = {"write(*)"};
 std::map<ResultListHash, VirusAnalysisResult> hashAnalysisCaches, signatureAnalysisCaches, staticAnalysisCaches, cnsAnalysisCaches, sandboxAnalysisCaches; /* temporary caches; memoizes results */
-std::vector<typeof(VirusAnalysisFun)> virusAnalyses = {hashAnalysis/*, signatureAnalysis TODO: fix crash*/, staticAnalysis, cnsAnalysis, sandboxAnalysis /* sandbox is slow, so put last*/};
+std::vector<typeof(VirusAnalysisFun)> virusAnalyses = {hashAnalysis, signatureAnalysis, staticAnalysis, cnsAnalysis, sandboxAnalysis /* sandbox is slow, so put last*/};
 
 const bool virusAnalysisTests() {
 	const ResultList abortOrNull {
