@@ -5,7 +5,6 @@
 #include "ClassObject.hxx" /* Object */
 #include <string> /* std::string */
 #include <fstream> /* std::ifstream */
-#include <sstream> /* std::stringstream */
 namespace Susuwu {
 typedef std::string FilePath; /* TODO: `std::char_traits<unsigned char>`, `std::basic_string<unsigned char>("string literal")` */
 typedef FilePath FileBytecode; /* Uses `std::string` for bytecode (versus `std::vector`) because:
@@ -25,9 +24,8 @@ public:
 } PortableExecutable;
 typedef class PortableExecutableBytecode : public PortableExecutable {
 public:
-	PortableExecutableBytecode(FilePath path_) : input(path_) {path = path_; if(input.good()) {buffer << input.rdbuf(); path = path_; bytecode = buffer.str();}}
+	PortableExecutableBytecode(FilePath path_) : input(path_) {path = path_; if(input.good()) {bytecode = std::string(std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>());}}
 	std::ifstream input;
-	std::stringstream buffer;
 } PortableExecutableBytecode;
 }; /* namespace Susuwu */
 #endif /* ndef INCLUDES_cxx_ClassPortableExecutable_hxx */
