@@ -16,11 +16,20 @@ typedef FilePath FileHash; /* TODO: `std::unordered_set<std::basic_string<unsign
 typedef class PortableExecutable : Object {
 /* TODO: union of actual Portable Executable (Microsoft) + ELF (Linux) specifications */
 public:
+	PortableExecutable(FilePath path_ = "") : path(path_) {}
+	PortableExecutable(FilePath path_, FileBytecode bytecode_) : path(path_), bytecode(bytecode_) {}
+/*TODO: overload on typedefs which map to the same types:	PortableExecutable(FilePath path_, std::string hex_) : path(path_), hex(hex_) {} */
 	const std::string getName() const {return "Susuwu::class PortableExecutable";}
 	FilePath path; /* Suchas "C:\Program.exe" or "/usr/bin/library.so" */
 	FileBytecode bytecode; /* compiled programs; bytecode */
 	std::string hex; /* `hexdump(path)`, hexadecimal, for C string functions */
 } PortableExecutable;
+typedef class PortableExecutableBytecode : public PortableExecutable {
+public:
+	PortableExecutableBytecode(FilePath path_) : input(path_) {path = path_; if(input.good()) {buffer << input.rdbuf(); path = path_; bytecode = buffer.str();}}
+	std::ifstream input;
+	std::stringstream buffer;
+} PortableExecutableBytecode;
 ```
 `less` [cxx/ClassSha2.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ClassSha2.cxx)
 ```
@@ -560,7 +569,7 @@ const VirusAnalysisResult cnsAnalysis(const PortableExecutable &file, const Resu
 static std::map<ResultListHash, VirusAnalysisResult> hashAnalysisCaches, signatureAnalysisCaches, staticAnalysisCaches, cnsAnalysisCaches, sandboxAnalysisCaches; /* temporary caches; memoizes results */
 
 typedef const VirusAnalysisResult (*VirusAnalysisFun)(const PortableExecutable &file, const ResultListHash &fileHash);
-static std::vector<typeof(VirusAnalysisFun)> virusAnalyses = {hashAnalysis, signatureAnalysis, staticAnalysis, cnsAnalysis, sandboxAnalysis /* sandbox is slow, so put last*/};
+static std::vector<typeof(VirusAnalysisFun)> virusAnalyses = {hashAnalysis/*, signatureAnalysis TODO: fix crash, staticAnalysis TODO: fix crash*/, cnsAnalysis, sandboxAnalysis /* sandbox is slow, so put last*/};
 const VirusAnalysisResult virusAnalysis(const PortableExecutable &file); /* auto hash = sha2(file.bytecode); for(VirusAnalysisFun analysis : virusAnalyses) {analysis(file, hash);} */
 static const VirusAnalysisResult submitSampleToHosts(const PortableExecutable &file) {return virusAnalysisRequiresReview;} /* TODO: requires compatible hosts to upload to */
 
@@ -603,6 +612,12 @@ const bool virusAnalysisTests() {
 	produceAbortListSignatures(passList, abortList);
 	produceAnalysisCns(passOrNull, abortOrNull, ResultList(), analysisCns);
 	produceVirusFixCns(passOrNull, abortOrNull, virusFixCns);
+	if(0 < classSysArgc) {
+		PortableExecutableBytecode executable(classSysArgs[0]);
+		if(virusAnalysisAbort == virusAnalysis(executable)) {
+			throw std::runtime_error("`virusAnalysisAbort == virusAnalysis(args[0]);`. With such false positives, shouldn't hook kernel modules");
+		}
+	}
 	const bool originalRootStatus = hasRoot();
 	setRoot(true);
 	virusAnalysisHookTests();

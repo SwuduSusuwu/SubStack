@@ -5,7 +5,7 @@
 #include "ClassPortableExecutable.hxx" /* PortableExecutable */
 #include "ClassResultList.hxx" /* ResultList size_t listMaxSize listHasValue ResultList listProduceUniqueSubstr listOfSubstrHasMatch */
 #include "ClassSha2.hxx" /* sha2 */
-#include "ClassSys.hxx" /* execvex hasRoot setRoot */
+#include "ClassSys.hxx" /* classSysArgc classSysArgs execvex hasRoot setRoot */
 #include "VirusAnalysis.hxx" /* passList, abortList, *AnalyisCaches */
 #include <algorithm> /* std::sort */
 #include <cassert> /* assert */
@@ -37,6 +37,12 @@ const bool virusAnalysisTests() {
 	produceAbortListSignatures(passList, abortList);
 	produceAnalysisCns(passOrNull, abortOrNull, ResultList(), analysisCns);
 	produceVirusFixCns(passOrNull, abortOrNull, virusFixCns);
+	if(0 < classSysArgc) {
+		PortableExecutableBytecode executable(classSysArgs[0]);
+		if(virusAnalysisAbort == virusAnalysis(executable)) {
+			throw std::runtime_error("`virusAnalysisAbort == virusAnalysis(args[0]);`. With such false positives, shouldn't hook kernel modules");
+		}
+	}
 	const bool originalRootStatus = hasRoot();
 	setRoot(true);
 	virusAnalysisHookTests();
