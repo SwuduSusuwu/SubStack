@@ -25,7 +25,7 @@ std::vector<std::string> syscallPotentialDangers = {
 };
 std::vector<std::string> stracePotentialDangers = {"write(*)"};
 std::map<ResultListHash, VirusAnalysisResult> hashAnalysisCaches, signatureAnalysisCaches, staticAnalysisCaches, cnsAnalysisCaches, sandboxAnalysisCaches; /* temporary caches; memoizes results */
-std::vector<typeof(VirusAnalysisFun)> virusAnalyses = {hashAnalysis/*, signatureAnalysis TODO: fix crash, staticAnalysis TODO: fix crash*/, cnsAnalysis, sandboxAnalysis /* sandbox is slow, so put last*/};
+std::vector<typeof(VirusAnalysisFun)> virusAnalyses = {hashAnalysis/*, signatureAnalysis TODO: fix crash*/, staticAnalysis, cnsAnalysis, sandboxAnalysis /* sandbox is slow, so put last*/};
 
 const bool virusAnalysisTests() {
 	const ResultList abortOrNull {
@@ -182,6 +182,7 @@ void produceAbortListSignatures(const ResultList &passList, ResultList &abortLis
 }
 
 const std::vector<std::string> importedFunctionsList(const PortableExecutable &file) {
+	return {}; /* fixes crash, until importedFunctionsList is implemented/finished */
 /* TODO
  * Resources; “Portable Executable” for Windows ( https://learn.microsoft.com/en-us/windows/win32/debug/pe-format https://wikipedia.org/wiki/Portable_Executable ,
  * “Extended Linker Format” for most others such as UNIX/Linuxes ( https://wikipedia.org/wiki/Executable_and_Linkable_Format ),
