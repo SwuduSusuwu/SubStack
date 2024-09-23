@@ -503,8 +503,8 @@ typedef enum VirusAnalysisResult : char {
 	virusAnalysisContinue /* continue to next tests (is normal; most analyses can not prove a file passes) */
 } VirusAnalysisResult; /* if(virusAnalysisAbort != VirusAnalysisResult) {static_assert(true == static_cast<bool>(VirusAnalysisResult));} */
 
-static ResultList passList, abortList; /* hosts produce, clients initialize shared clones of this from disk */
-static Cns analysisCns, virusFixCns; /* hosts produce, clients initialize shared clones of this from disk */
+extern ResultList passList, abortList; /* hosts produce, clients initialize shared clones of this from disk */
+extern Cns analysisCns, virusFixCns; /* hosts produce, clients initialize shared clones of this from disk */
 
 /* `return (produceAbortListSignatures(EXAMPLES) && produceAnalysisCns(EXAMPLES) && produceVirusFixCns(EXAMPLES)) && virusAnalysisHookTests();`
  * @throw std::bad_alloc, std::runtime_error
@@ -538,14 +538,12 @@ const VirusAnalysisResult signatureAnalysis(const PortableExecutable &file, cons
 /* Static analysis */
 /* @throw bad_alloc */
 const std::vector<std::string> importedFunctionsList(const PortableExecutable &file);
-static std::vector<std::string> syscallPotentialDangers = {
-	"memopen", "fwrite", "socket", "GetProcAddress", "IsVmPresent"
-};
+extern std::vector<std::string> syscallPotentialDangers;
 const VirusAnalysisResult staticAnalysis(const PortableExecutable &file, const ResultListHash &fileHash); /* if(intersection(importedFunctionsList(file), dangerFunctionsList)) {return RequiresReview;} return Continue;` */
 
 /* Analysis sandbox */
 const VirusAnalysisResult sandboxAnalysis(const PortableExecutable &file, const ResultListHash &fileHash); /* `chroot(strace(file)) >> outputs; return straceOutputsAnalysis(outputs);` */
-static std::vector<std::string> stracePotentialDangers = {"write(*)"};
+extern std::vector<std::string> stracePotentialDangers;
 const VirusAnalysisResult straceOutputsAnalysis(const FilePath &straceOutput); /* TODO: regex */
 
 /* Analysis CNS */
@@ -565,10 +563,11 @@ const float cnsAnalysisScore(const PortableExecutable &file, const ResultListHas
 const VirusAnalysisResult cnsAnalysis_(const PortableExecutable &file, const ResultListHash &fileHash, const Cns &cns = analysisCns);
 const VirusAnalysisResult cnsAnalysis(const PortableExecutable &file, const ResultListHash &fileHash);
 
-static std::map<ResultListHash, VirusAnalysisResult> hashAnalysisCaches, signatureAnalysisCaches, staticAnalysisCaches, cnsAnalysisCaches, sandboxAnalysisCaches; /* temporary caches; memoizes results */
+extern std::map<ResultListHash, VirusAnalysisResult> hashAnalysisCaches, signatureAnalysisCaches, staticAnalysisCaches, cnsAnalysisCaches, sandboxAnalysisCaches; /* temporary caches; memoizes results */
 
 typedef const VirusAnalysisResult (*VirusAnalysisFun)(const PortableExecutable &file, const ResultListHash &fileHash);
-static std::vector<typeof(VirusAnalysisFun)> virusAnalyses = {hashAnalysis/*, signatureAnalysis TODO: fix crash, staticAnalysis TODO: fix crash*/, cnsAnalysis, sandboxAnalysis /* sandbox is slow, so put last*/};
+extern std::vector<typeof(VirusAnalysisFun)> virusAnalyses;
+
 const VirusAnalysisResult virusAnalysis(const PortableExecutable &file); /* auto hash = sha2(file.bytecode); for(VirusAnalysisFun analysis : virusAnalyses) {analysis(file, hash);} */
 static const VirusAnalysisResult submitSampleToHosts(const PortableExecutable &file) {return virusAnalysisRequiresReview;} /* TODO: requires compatible hosts to upload to */
 
@@ -591,6 +590,16 @@ const std::string cnsVirusFix(const PortableExecutable &file, const Cns &cns = v
 ```
 `less` [cxx/VirusAnalysis.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/VirusAnalysis.cxx)
 ```
+VirusAnalysisHook globalVirusAnalysisHook = virusAnalysisHookDefault; /* Just use virusAnalysisHook() to set+get this, virusAnalysisGetHook() to get this */
+ResultList passList, abortList; /* hosts produce, clients initialize shared clones of this from disk */
+Cns analysisCns, virusFixCns; /* hosts produce, clients initialize shared clones of this from disk */
+std::vector<std::string> syscallPotentialDangers = {
+	"memopen", "fwrite", "socket", "GetProcAddress", "IsVmPresent"
+};
+std::vector<std::string> stracePotentialDangers = {"write(*)"};
+std::map<ResultListHash, VirusAnalysisResult> hashAnalysisCaches, signatureAnalysisCaches, staticAnalysisCaches, cnsAnalysisCaches, sandboxAnalysisCaches; /* temporary caches; memoizes results */
+std::vector<typeof(VirusAnalysisFun)> virusAnalyses = {hashAnalysis/*, signatureAnalysis TODO: fix crash, staticAnalysis TODO: fix crash*/, cnsAnalysis, sandboxAnalysis /* sandbox is slow, so put last*/};
+
 const bool virusAnalysisTests() {
 	const ResultList abortOrNull {
 		.bytecodes {  /* Produce from an antivirus vendor's (such as VirusTotal.com's) infection databases */
@@ -920,7 +929,7 @@ To run most of this fast (lag less,) use `CXXFLAGS` which auto-vectorizes/auto-p
 For comparison; `produceVirusFixCns` is close to assistants (such as "ChatGPT 4.0" or "Claude-3 Opus";) have such demo as `produceAssistantCns`;
 `less` [cxx/AssistantCns.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/AssistantCns.hxx)
 ```
-static Cns assistantCns;
+extern Cns assistantCns;
 
 /* if (with example inputs) these functions (`questionsResponsesFromHosts()` `produceAssistantCns()`) pass, `return true;`
  * @throw std::bad_alloc
@@ -928,15 +937,12 @@ static Cns assistantCns;
  * @pre @code assistantCns.hasImplementation() @endcode */
 const bool assistantCnsTests();
 static const bool assistantCnsTestsNoexcept() NOEXCEPT {return templateCatchAll(assistantCnsTests, "assistantCnsTests()");}
-static std::vector<FilePath> assistantDefaultHosts = {
+
 /* Universal Resources Locators of hosts which `questionsResponsesFromHosts()` uses
  * Wikipedia is a special case; has compressed downloads of databases ( https://wikipedia.org/wiki/Wikipedia:Database_download )
  * Github is a special case; has compressed downloads of repositories ( https://docs.github.com/en/get-started/start-your-journey/downloading-files-from-github )
  */
-	"https://stackoverflow.com",
-	"https://superuser.com",
-	"https://quora.com"
-};
+extern std::vector<FilePath> assistantDefaultHosts;
 
 /* @throw std::bad_alloc
  * @post If no question, `0 == questionsOrNull.bytecodes[x].size()` (new  synthesis).
@@ -965,6 +971,13 @@ void assistantCnsLoopProcess(const Cns &cns);
 ```
 `less` [cxx/AssistantCns.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/AssistantCns.cxx)
 ```
+Cns assistantCns;
+std::vector<FilePath> assistantDefaultHosts = {
+	"https://stackoverflow.com",
+	"https://superuser.com",
+	"https://quora.com"
+};
+
 const bool assistantCnsTests() {
 	ResultList questionsOrNull {
 		.bytecodes { /* UTF-8 */

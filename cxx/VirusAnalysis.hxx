@@ -21,7 +21,7 @@ typedef enum VirusAnalysisHook : char {
 } VirusAnalysisHook;
 static const VirusAnalysisHook operator|(VirusAnalysisHook x,  VirusAnalysisHook s) {return static_cast<VirusAnalysisHook>(static_cast<unsigned>(x) | static_cast<unsigned>(s));}
 static const VirusAnalysisHook operator&(VirusAnalysisHook x,  VirusAnalysisHook s) {return static_cast<VirusAnalysisHook>(static_cast<unsigned>(x) & static_cast<unsigned>(s));}
-static VirusAnalysisHook globalVirusAnalysisHook = virusAnalysisHookDefault; /* Just use virusAnalysisHook() to set+get this, virusAnalysisGetHook() to get this */
+extern VirusAnalysisHook globalVirusAnalysisHook /*= virusAnalysisHookDefault*/; /* Just use virusAnalysisHook() to set+get this, virusAnalysisGetHook() to get this */
 
 typedef enum VirusAnalysisResult : char {
 	virusAnalysisAbort = static_cast<char>(false), /* do not launch */
@@ -30,8 +30,8 @@ typedef enum VirusAnalysisResult : char {
 	virusAnalysisContinue /* continue to next tests (is normal; most analyses can not prove a file passes) */
 } VirusAnalysisResult; /* if(virusAnalysisAbort != VirusAnalysisResult) {static_assert(true == static_cast<bool>(VirusAnalysisResult));} */
 
-static ResultList passList, abortList; /* hosts produce, clients initialize shared clones of this from disk */
-static Cns analysisCns, virusFixCns; /* hosts produce, clients initialize shared clones of this from disk */
+extern ResultList passList, abortList; /* hosts produce, clients initialize shared clones of this from disk */
+extern Cns analysisCns, virusFixCns; /* hosts produce, clients initialize shared clones of this from disk */
 
 /* `return (produceAbortListSignatures(EXAMPLES) && produceAnalysisCns(EXAMPLES) && produceVirusFixCns(EXAMPLES)) && virusAnalysisHookTests();`
  * @throw std::bad_alloc, std::runtime_error
@@ -65,14 +65,12 @@ const VirusAnalysisResult signatureAnalysis(const PortableExecutable &file, cons
 /* Static analysis */
 /* @throw bad_alloc */
 const std::vector<std::string> importedFunctionsList(const PortableExecutable &file);
-static std::vector<std::string> syscallPotentialDangers = {
-	"memopen", "fwrite", "socket", "GetProcAddress", "IsVmPresent"
-};
+extern std::vector<std::string> syscallPotentialDangers;
 const VirusAnalysisResult staticAnalysis(const PortableExecutable &file, const ResultListHash &fileHash); /* if(intersection(importedFunctionsList(file), dangerFunctionsList)) {return RequiresReview;} return Continue;` */
 
 /* Analysis sandbox */
 const VirusAnalysisResult sandboxAnalysis(const PortableExecutable &file, const ResultListHash &fileHash); /* `chroot(strace(file)) >> outputs; return straceOutputsAnalysis(outputs);` */
-static std::vector<std::string> stracePotentialDangers = {"write(*)"};
+extern std::vector<std::string> stracePotentialDangers;
 const VirusAnalysisResult straceOutputsAnalysis(const FilePath &straceOutput); /* TODO: regex */
 
 /* Analysis CNS */
@@ -92,10 +90,10 @@ const float cnsAnalysisScore(const PortableExecutable &file, const ResultListHas
 const VirusAnalysisResult cnsAnalysis_(const PortableExecutable &file, const ResultListHash &fileHash, const Cns &cns = analysisCns);
 const VirusAnalysisResult cnsAnalysis(const PortableExecutable &file, const ResultListHash &fileHash);
 
-static std::map<ResultListHash, VirusAnalysisResult> hashAnalysisCaches, signatureAnalysisCaches, staticAnalysisCaches, cnsAnalysisCaches, sandboxAnalysisCaches; /* temporary caches; memoizes results */
+extern std::map<ResultListHash, VirusAnalysisResult> hashAnalysisCaches, signatureAnalysisCaches, staticAnalysisCaches, cnsAnalysisCaches, sandboxAnalysisCaches; /* temporary caches; memoizes results */
 
 typedef const VirusAnalysisResult (*VirusAnalysisFun)(const PortableExecutable &file, const ResultListHash &fileHash);
-static std::vector<typeof(VirusAnalysisFun)> virusAnalyses = {hashAnalysis/*, signatureAnalysis TODO: fix crash, staticAnalysis TODO: fix crash*/, cnsAnalysis, sandboxAnalysis /* sandbox is slow, so put last*/};
+extern std::vector<typeof(VirusAnalysisFun)> virusAnalyses;
 const VirusAnalysisResult virusAnalysis(const PortableExecutable &file); /* auto hash = sha2(file.bytecode); for(VirusAnalysisFun analysis : virusAnalyses) {analysis(file, hash);} */
 static const VirusAnalysisResult submitSampleToHosts(const PortableExecutable &file) {return virusAnalysisRequiresReview;} /* TODO: requires compatible hosts to upload to */
 

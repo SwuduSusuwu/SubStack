@@ -14,6 +14,13 @@
 #include <vector> /* std::vector */
 /* (Work-in-progress) assistant bots with artificial CNS. */
 namespace Susuwu {
+Cns assistantCns;
+std::vector<FilePath> assistantDefaultHosts = {
+	"https://stackoverflow.com",
+	"https://superuser.com",
+	"https://quora.com"
+};
+
 const bool assistantCnsTests() {
 	ResultList questionsOrNull {
 		.bytecodes { /* UTF-8 */

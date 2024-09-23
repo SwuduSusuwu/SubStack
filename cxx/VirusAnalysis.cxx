@@ -17,6 +17,16 @@
 #include <vector> /* std::vector */
 /* (Work-in-progress) virus analysis: uses hashes, signatures, static analysis, sandboxes, plus artificial CNS (central nervous systems) */
 namespace Susuwu {
+VirusAnalysisHook globalVirusAnalysisHook = virusAnalysisHookDefault; /* Just use virusAnalysisHook() to set+get this, virusAnalysisGetHook() to get this */
+ResultList passList, abortList; /* hosts produce, clients initialize shared clones of this from disk */
+Cns analysisCns, virusFixCns; /* hosts produce, clients initialize shared clones of this from disk */
+std::vector<std::string> syscallPotentialDangers = {
+	"memopen", "fwrite", "socket", "GetProcAddress", "IsVmPresent"
+};
+std::vector<std::string> stracePotentialDangers = {"write(*)"};
+std::map<ResultListHash, VirusAnalysisResult> hashAnalysisCaches, signatureAnalysisCaches, staticAnalysisCaches, cnsAnalysisCaches, sandboxAnalysisCaches; /* temporary caches; memoizes results */
+std::vector<typeof(VirusAnalysisFun)> virusAnalyses = {hashAnalysis/*, signatureAnalysis TODO: fix crash, staticAnalysis TODO: fix crash*/, cnsAnalysis, sandboxAnalysis /* sandbox is slow, so put last*/};
+
 const bool virusAnalysisTests() {
 	const ResultList abortOrNull {
 		.bytecodes {  /* Produce from an antivirus vendor's (such as VirusTotal.com's) infection databases */

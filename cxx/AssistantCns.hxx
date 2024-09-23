@@ -11,7 +11,7 @@
 #include <vector> /* std::vector */
 /* (Work-in-progress) assistant bots with artificial CNS ("HSOM" (the simple Python artificial CNS) is enough to do this), which should have results almost as complex as "ChatGPT 4.0" (or as "Claude-3 Opus"); */
 namespace Susuwu {
-static Cns assistantCns;
+extern Cns assistantCns;
 
 /* if (with example inputs) these functions (`questionsResponsesFromHosts()` `produceAssistantCns()`) pass, `return true;`
  * @throw std::bad_alloc
@@ -19,15 +19,12 @@ static Cns assistantCns;
  * @pre @code assistantCns.hasImplementation() @endcode */
 const bool assistantCnsTests();
 static const bool assistantCnsTestsNoexcept() NOEXCEPT {return templateCatchAll(assistantCnsTests, "assistantCnsTests()");}
-static std::vector<FilePath> assistantDefaultHosts = {
+
 /* Universal Resources Locators of hosts which `questionsResponsesFromHosts()` uses
  * Wikipedia is a special case; has compressed downloads of databases ( https://wikipedia.org/wiki/Wikipedia:Database_download )
  * Github is a special case; has compressed downloads of repositories ( https://docs.github.com/en/get-started/start-your-journey/downloading-files-from-github )
  */
-	"https://stackoverflow.com",
-	"https://superuser.com",
-	"https://quora.com"
-};
+extern std::vector<FilePath> assistantDefaultHosts;
 
 /* @throw std::bad_alloc
  * @post If no question, `0 == questionsOrNull.bytecodes[x].size()` (new message synthesis).
