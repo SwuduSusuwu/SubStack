@@ -97,12 +97,12 @@ auto listFindSubstr(const List &list, typename List::value_type::const_iterator 
 			return result;
 		}
 	}
-	return list.back().cend();
+	return decltype(list.back().cend())();
 }
 template<class List>
 /* @pre @code s < x @endcode */
 const bool listHasSubstr(const List &list, typename List::value_type::const_iterator s, typename List::value_type::const_iterator x) {
-	return list.back().cend() != listFindSubstr(list, s, x);
+	return decltype(list.back().cend())() != listFindSubstr(list, s, x);
 }
 template<class List>
 /* Usage: resultList.signatures.push_back({listProduceUniqueSubstr(resultList.bytecodes, bytecode)); */
@@ -125,9 +125,6 @@ const std::tuple<typename List::value_type::const_iterator, typename List::value
 template<class List>
 /* Usage: auto it = listOfSubstrFindMatch(resultList.signatures, bytecode)); if(it) {std::cout << "value matches ResultList.signatures[" << it << "]";} */
 auto listOfSubstrFindMatch(const List &list, const typename List::value_type &x) {
-	if(list.empty()) {
-		return decltype(list.back().cend())();
-	}
 	for(const auto &value : list) {
 #if PREFERENCE_IS_CSTR
 		auto result = memmem(&x[0], strlen(&x[0]), &value[0], strlen(&value[0]));
@@ -139,12 +136,12 @@ auto listOfSubstrFindMatch(const List &list, const typename List::value_type &x)
 			return result;
 		}
 	}
-	return list.back().cend();
+	return decltype(list.back().cend())();
 }
 template<class List>
 /* Usage: if(listOfSubstrHasMatch(resultList.signatures, bytecode)) {std::cout << "value matches ResultList.signatures";} */
 const bool listOfSubstrHasMatch(const List &list, const typename List::value_type &x) {
-	return (!list.empty()) && list.back().cend() != listOfSubstrFindMatch(list, x);
+	return decltype(list.back().cend())() != listOfSubstrFindMatch(list, x);
 }
 
 template<class S>
