@@ -3,7 +3,7 @@
 #define INCLUDES_cxx_VirusAnalysis_cxx
 #include "ClassCns.hxx" /* Cns CnsMode */
 #include "ClassPortableExecutable.hxx" /* PortableExecutable */
-#include "ClassResultList.hxx" /* ResultList size_t listMaxSize listHasValue ResultList listProduceUniqueSubstr listOfSubstrHasMatch */
+#include "ClassResultList.hxx" /* ResultList size_t listMaxSize listHasValue ResultList listProduceSignature listHasSignatureOfValue */
 #include "ClassSha2.hxx" /* sha2 */
 #include "ClassSys.hxx" /* classSysArgc classSysArgs execvex hasRoot setRoot */
 #include "VirusAnalysis.hxx" /* passList, abortList, *AnalyisCaches */
@@ -166,7 +166,7 @@ const VirusAnalysisResult signatureAnalysis(const PortableExecutable &file, cons
 		const auto result = signatureAnalysisCaches.at(fileHash);
 		return result;
 	} catch (...) {
-		if(listOfSubstrHasMatch(abortList.signatures, file.bytecode)) {
+		if(listHasSignatureOfValue(abortList.signatures, file.bytecode)) {
 			return signatureAnalysisCaches[fileHash] = virusAnalysisAbort;
 		}
 		return signatureAnalysisCaches[fileHash] = virusAnalysisContinue;
@@ -176,7 +176,7 @@ const VirusAnalysisResult signatureAnalysis(const PortableExecutable &file, cons
 void produceAbortListSignatures(const ResultList &passList, ResultList &abortList) {
 	abortList.signatures.reserve(abortList.bytecodes.size());
 	for(const auto &file : abortList.bytecodes) {
-		auto tuple = listProduceUniqueSubstr(passList.bytecodes, file);
+		auto tuple = listProduceSignature(passList.bytecodes, file);
 		abortList.signatures.push_back(ResultListSignature(std::get<0>(tuple), std::get<1>(tuple)));
 	} /* The most simple signature is a substring, but some analyses use regexes. */
 }

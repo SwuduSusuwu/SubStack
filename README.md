@@ -38,7 +38,7 @@ Conventions = Mozilla Org (ergo Firefox) style:
 
     `git add NewFile`: "+NewFile", `git rm Exists`: "-Exists", `touch Exists && git add Exists`: "@Exists"
 
-    Simple wildcards/regex for multiple files: "@ChangedPath/.* -> NewPath/.*"
+    Simple wildcards/regex for multiple files: "@ChangedPath/.* -> NewPath/.*" or `%s/oldFunction/newFunction/`
 
     Include guards:
 

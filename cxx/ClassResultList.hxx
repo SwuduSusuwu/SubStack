@@ -16,11 +16,11 @@ namespace Susuwu {
 typedef FileHash ResultListHash;
 typedef FileBytecode ResultListBytecode; /* Should have structure of FileBytecode, but is not just for files, can use for UTF8/webpages, so have a new type for this */
 typedef FilePath ResultListSignature; /* TODO: `typedef ResultListBytecode ResultListSignature; ResultListSignature("string literal");` */
-typedef struct ResultList /* : Object */ { /* Lists of files (or pages) */
+typedef struct ResultList /* : Object */ { /* Lists of {metadata, executables (or pages)} */
 	const std::string getName() const {return "Susuwu::struct ResultList";}
-	std::unordered_set<ResultListHash> hashes; /* Unique checksums of files (or pages), to avoid duplicates, plus to do fast checks for existance */
-	std::vector<ResultListSignature> signatures; /* Smallest substrings (or regexes, or Universal Resource Locator) unique to this, has uses close to `hashes` but can match if files have small differences */
-	std::vector<ResultListBytecode> bytecodes; /* Whole files (or webpages); uses lots of space, just populate this for signature synthesis (or training CNS). */
+	std::unordered_set<ResultListHash> hashes; /* Checksums of executables (or pages); to avoid duplicates, plus to do constant ("O(1)") test for which executables (or pages) exists */
+	std::vector<ResultListSignature> signatures; /* Smallest substrings (or regexes, or Universal Resource Locators) which can identify `bytecodes`; has uses close to `hashes`, but can match if executables (or pages) have small differences */
+	std::vector<ResultListBytecode> bytecodes; /* Whole executables (for `VirusAnalysis`) or webpages (for `AssistantCns`); huge disk usage, just load this for signature synthesis (or CNS backpropagation). */
 } ResultList;
 
 template<class List>
@@ -48,6 +48,7 @@ const bool listsIntersect(const List &list, const List &list2) {
 }
 
 template<class List>
+/* return list's const_iterator to first instance of x, or list.cend() (if not found) */
 auto listFindValue(const List &list, const typename List::value_type &x) {
 	return std::find(list.cbegin(), list.cend(), x);
 }
@@ -56,7 +57,8 @@ const bool listHasValue(const List &list, const typename List::value_type &x) {
 	return list.cend() != listFindValue(list, x);
 }
 template<class List>
-/* @pre @code s < x @endcode */
+/* return list's const_iterator to first instance of Substr{s, x}, or default iterator (if not found)
+ * @pre @code s < x @endcode */
 auto listFindSubstr(const List &list, typename List::value_type::const_iterator s, typename List::value_type::const_iterator x) {
 #pragma unroll
 	for(const auto &value : list) {
@@ -73,8 +75,9 @@ const bool listHasSubstr(const List &list, typename List::value_type::const_iter
 	return decltype(list.back().cend())() != listFindSubstr(list, s, x);
 }
 template<class List>
-/* Usage: resultList.signatures.push_back({listProduceUniqueSubstr(resultList.bytecodes, bytecode)); */
-const std::tuple<typename List::value_type::const_iterator, typename List::value_type::const_iterator> listProduceUniqueSubstr(const List &list, const typename List::value_type &value) {
+/* Returns shortest substr from `value`, which is not found in `list`
+ * Usage: resultList.signatures.push_back({listProduceSignature(resultList.bytecodes, bytecode)); */
+const std::tuple<typename List::value_type::const_iterator, typename List::value_type::const_iterator> listProduceSignature(const List &list, const typename List::value_type &value) {
 	size_t smallest = value.size();
 	auto retBegin = value.cbegin(), retEnd = value.cend();
 	for(auto s = retBegin; value.cend() != s; ++s) {
@@ -87,12 +90,12 @@ const std::tuple<typename List::value_type::const_iterator, typename List::value
 				retBegin = s, retEnd = x;
 			}
 		}
-	} /* Incremental `for()` loops, is a slow method to produce unique substrings; should use binary searches, or look for the standard function which optimizes this. */
+	} /* Incremental `for()` loops, is O(n^2 * m) complex formula to produce signatures; should use binary searches, or look for the Standard Template Lib (or Boost) function which optimizes this. */
 	return {retBegin, retEnd};
 }
 template<class List>
-/* Usage: auto it = listOfSubstrFindMatch(resultList.signatures, bytecode)); if(it) {std::cout << "value matches ResultList.signatures[" << it << "]";} */
-auto listOfSubstrFindMatch(const List &list, const typename List::value_type &x) {
+/* Usage: auto it = listFindSignatureOfValue(resultList.signatures, input)); if(it) {std::cout << "input has resultList.signatures[" << std::string(it) << "]";} */
+auto listFindSignatureOfValue(const List &list, const typename List::value_type &x) {
 	for(const auto &value : list) {
 #if PREFERENCE_IS_CSTR
 		auto result = memmem(&x[0], strlen(&x[0]), &value[0], strlen(&value[0]));
@@ -107,9 +110,9 @@ auto listOfSubstrFindMatch(const List &list, const typename List::value_type &x)
 	return decltype(list.back().cend())();
 }
 template<class List>
-/* Usage: if(listOfSubstrHasMatch(resultList.signatures, bytecode)) {std::cout << "value matches ResultList.signatures";} */
-const bool listOfSubstrHasMatch(const List &list, const typename List::value_type &x) {
-	return decltype(list.back().cend())() != listOfSubstrFindMatch(list, x);
+/* Usage: if(listHasSignatureOfValue(resultList.signatures, input)) {std::cout << "input has signature from ResultList.signatures";} */
+const bool listHasSignatureOfValue(const List &list, const typename List::value_type &x) {
+	return decltype(list.back().cend())() != listFindSignatureOfValue(list, x);
 }
 
 template<class S>
