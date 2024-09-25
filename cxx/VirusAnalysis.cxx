@@ -28,7 +28,7 @@ std::map<ResultListHash, VirusAnalysisResult> hashAnalysisCaches, signatureAnaly
 std::vector<typeof(VirusAnalysisFun)> virusAnalyses = {hashAnalysis, signatureAnalysis, staticAnalysis, cnsAnalysis, sandboxAnalysis /* sandbox is slow, so put last*/};
 
 const bool virusAnalysisTests() {
-	const ResultList abortOrNull {
+	ResultList abortOrNull {
 		.bytecodes {  /* Produce from an antivirus vendor's (such as VirusTotal.com's) infection databases */
 			"infection",
 			"infectedSW",
@@ -36,7 +36,7 @@ const bool virusAnalysisTests() {
 			""
 		}
 	};
-	const ResultList passOrNull {
+	ResultList passOrNull {
 		.bytecodes {  /* Produce from an antivirus vendor's (such as VirusTotal.com's) fresh-files databases */
 			"",
 			"SW",
@@ -44,7 +44,11 @@ const bool virusAnalysisTests() {
 			"newSW"
 		}
 	};
-	produceAbortListSignatures(passList, abortList);
+	produceAbortListSignatures(passOrNull, abortOrNull);
+	assert(4 == passOrNull.bytecodes.size());
+	assert(0 == passOrNull.signatures.size());
+	assert(4 == abortOrNull.bytecodes.size());
+	assert(abortOrNull.bytecodes.size() - 1 /* discount empty substr */ == abortOrNull.signatures.size());
 	produceAnalysisCns(passOrNull, abortOrNull, ResultList(), analysisCns);
 	produceVirusFixCns(passOrNull, abortOrNull, virusFixCns);
 	if(0 < classSysArgc) {
