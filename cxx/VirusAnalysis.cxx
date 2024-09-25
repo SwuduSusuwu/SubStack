@@ -3,10 +3,10 @@
 #define INCLUDES_cxx_VirusAnalysis_cxx
 #include "ClassCns.hxx" /* Cns CnsMode */
 #include "ClassPortableExecutable.hxx" /* PortableExecutable */
-#include "ClassResultList.hxx" /* ResultList size_t listMaxSize listHasValue ResultList listProduceSignature listHasSignatureOfValue */
+#include "ClassResultList.hxx" /* size_t listMaxSize listHasValue listProduceSignature listHasSignatureOfValue ResultList resultListDumpTo */
 #include "ClassSha2.hxx" /* sha2 */
 #include "ClassSys.hxx" /* classSysArgc classSysArgs execvex hasRoot setRoot */
-#include "VirusAnalysis.hxx" /* passList, abortList, *AnalyisCaches */
+#include "VirusAnalysis.hxx" /* passList abortList *AnalyisCaches */
 #include <algorithm> /* std::sort */
 #include <cassert> /* assert */
 #include <cmath> /* round */
@@ -45,6 +45,10 @@ const bool virusAnalysisTests() {
 		}
 	};
 	produceAbortListSignatures(passOrNull, abortOrNull);
+	std::cout << "resultListDumpTo(.list = passOrNull, .os = std::cout, .whitespace = true, .pascalValues = false);" << std::endl;
+	resultListDumpTo(passOrNull, std::cout, true, false);
+	std::cout << "resultListDumpTo(.list = abortOrNull, .os = std::cout, .whitespace = false, .pascalValues = false);" << std::endl;
+	resultListDumpTo(abortOrNull, std::cout, false, false), std::cout << std::endl;
 	assert(4 == passOrNull.bytecodes.size());
 	assert(0 == passOrNull.signatures.size());
 	assert(4 == abortOrNull.bytecodes.size());

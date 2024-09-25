@@ -662,6 +662,10 @@ const bool virusAnalysisTests() {
 		}
 	};
 	produceAbortListSignatures(passOrNull, abortOrNull);
+	std::cout << "resultListDumpTo(.list = passOrNull, .os = std::cout, .whitespace = true, .pascalValues = false);" << std::endl;
+	resultListDumpTo(passOrNull, std::cout, true, false);
+	std::cout << "resultListDumpTo(.list = abortOrNull, .os = std::cout, .whitespace = false, .pascalValues = false);" << std::endl;
+	resultListDumpTo(abortOrNull, std::cout, false, false), std::cout << std::endl;
 	assert(4 == passOrNull.bytecodes.size());
 	assert(0 == passOrNull.signatures.size());
 	assert(4 == abortOrNull.bytecodes.size());
