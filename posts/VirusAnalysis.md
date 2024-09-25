@@ -36,8 +36,8 @@ public:
 /* const */ FileHash /* 256 bits, not null-terminated */ sha2(const FileBytecode &bytecode) {
 	FileHash result;
 	SHA256Context context;
-	result.reserve(SHA256HashSize);
-	SHA256Reset(&context);
+	result.resize(SHA256HashSize);
+	SHA256Reset(&context); /* If undefined, link sha224-256.o */
 	SHA256Input(&context, reinterpret_cast<const unsigned char *>(bytecode.c_str()), bytecode.size());
 	SHA256Result(&context, const_cast<unsigned char *>(reinterpret_cast<const unsigned char *>(result.c_str())));
 	return result;
