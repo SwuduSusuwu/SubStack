@@ -9,6 +9,8 @@
 #if PREFERENCE_IS_CSTR
 #include <cstring> /* strlen memmem */
 #endif /* PREFERENCE_IS_CSTR */
+#include <iomanip> /* std::hex std::dec */
+#include <ostream> /* std::ostream */
 #include <tuple> /* std::tuple std::get */
 #include <unordered_set> /* std::unordered_set */
 #include <vector> /* std::vector */
@@ -33,6 +35,44 @@ const size_t listMaxSize(const List &list) {
 	auto it = std::max_element(list.cbegin(), list.cend(), [](const auto &s, const auto &x) { return s.size() < x.size(); });
 	return it->size();
 #endif /* PREFERENCE_IS_CSTR else */
+}
+
+template<class List>
+void listDumpTo(const List &list, std::ostream &os, const bool whitespace, const bool pascalValues) {
+	size_t index = 0;
+	os << '{';
+	for(const auto &value : list) {
+		if(0 != index) {
+			os << ',';
+		}
+		if(whitespace) {
+			os << std::endl << '\t';
+		}
+		os << index++;
+		if(pascalValues) {
+				os << value.size() << value;
+		} else {
+			os << "=>0x";
+			for(char ch : value) {
+				os << std::hex << static_cast<int>(ch);
+			}
+			os << std::dec;
+		}
+	}
+	if(whitespace) {
+		os << "\n};" << std::endl;
+	} else {
+		os << "};";
+	}
+}
+template<class List>
+void resultListDumpTo(const List &list, std::ostream &os, const bool whitespace, const bool pascalValues) {
+	os << "list.hashes" << (whitespace ? " = " : "=");
+	listDumpTo(list.hashes, os, whitespace, pascalValues);
+	os << "list.signatures" << (whitespace ? " = " : "=");
+	listDumpTo(list.signatures, os, whitespace, pascalValues);
+	os << "list.bytecodes" << (whitespace ? " = " : "=");
+	listDumpTo(list.bytecodes, os, whitespace, pascalValues);
 }
 
 /* @pre @code std::is_sorted(list.cbegin(), list.cend()) && std::is_sorted(list2.cbegin(), list2.cend()) @endcode */
