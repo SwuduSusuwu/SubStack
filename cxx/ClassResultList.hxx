@@ -4,6 +4,7 @@
 #define INCLUDES_cxx_ClassResultList_hxx
 //#include "ClassObject.hxx" /* Object */ /* TODO: fix "Initialization of non-aggregate type" */
 #include "ClassPortableExecutable.hxx" /* FilePath FileBytecode FileHash */
+#include "ClassSha2.hxx" /* sha2 */
 #include <algorithm> /* std::search std::find std::set_intersection */
 #include <cstddef> /* size_t */
 #if PREFERENCE_IS_CSTR
@@ -73,6 +74,19 @@ void resultListDumpTo(const List &list, std::ostream &os, const bool whitespace,
 	listDumpTo(list.signatures, os, whitespace, pascalValues);
 	os << "list.bytecodes" << (whitespace ? " = " : "=");
 	listDumpTo(list.bytecodes, os, whitespace, pascalValues);
+}
+
+template<class List, class List2>
+/*	@pre @code !(list.empty() || hashes.full()) @endcode
+ *	@post @code !hashes.empty() @endcode */
+void listToHashes(const List &list /* ResultList::bytecodes or ResultList::hex*/, List2 &hashes /* ResultList::hashess */) {
+	for(const auto &value : list) {
+		hashes.insert(sha2(value));
+	}
+}
+/* Usage: if ResultList was not produced with hashes */
+static void resultListProduceHashes(ResultList &resultList) {
+	listToHashes(resultList.bytecodes, resultList.hashes);
 }
 
 /* @pre @code std::is_sorted(list.cbegin(), list.cend()) && std::is_sorted(list2.cbegin(), list2.cend()) @endcode */

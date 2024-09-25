@@ -105,6 +105,19 @@ void resultListDumpTo(const List &list, std::ostream &os, const bool whitespace,
 	listDumpTo(list.bytecodes, os, whitespace, pascalValues);
 }
 
+template<class List, class List2>
+/*	@pre @code !(list.empty() || hashes.full()) @endcode
+ *	@post @code !hashes.empty() @endcode */
+void listToHashes(const List &list /* ResultList::bytecodes or ResultList::hex*/, List2 &hashes /* ResultList::hashess */) {
+	for(const auto &value : list) {
+		hashes.insert(sha2(value));
+	}
+}
+/* Usage: if ResultList was not produced with hashes */
+static void resultListProduceHashes(ResultList &resultList) {
+	listToHashes(resultList.bytecodes, resultList.hashes);
+}
+
 /* @pre @code std::is_sorted(list.cbegin(), list.cend()) && std::is_sorted(list2.cbegin(), list2.cend()) @endcode */
 template<class List>
 const List listIntersections(const List &list, const List &list2) {
