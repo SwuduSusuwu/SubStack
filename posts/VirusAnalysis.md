@@ -88,10 +88,13 @@ template<class List>
 const bool listHasValue(const List &list, const typename List::value_type &x) {
 	return list.cend() != listFindValue(list, x);
 }
+
+template<class List>
+const typename List::value_type::const_iterator listDefaultIterator = typename List::value_type::const_iterator(); /* Equates to "Not found" */
 template<class List>
 /* return list's const_iterator to first instance of Substr{s, x}, or default iterator (if not found)
  * @pre @code s < x @endcode */
-auto listFindSubstr(const List &list, typename List::value_type::const_iterator s, typename List::value_type::const_iterator x) {
+typeof listDefaultIterator<List> listFindSubstr(const List &list, typename List::value_type::const_iterator s, typename List::value_type::const_iterator x) {
 #pragma unroll
 	for(const auto &value : list) {
 		auto result = std::search(value.cbegin(), value.cend(), s, x, [](char ch1, char ch2) { return ch1 == ch2; });
@@ -99,12 +102,12 @@ auto listFindSubstr(const List &list, typename List::value_type::const_iterator 
 			return result;
 		}
 	}
-	return decltype(list.back().cend())();
+	return listDefaultIterator<List>;
 }
 template<class List>
 /* @pre @code s < x @endcode */
 const bool listHasSubstr(const List &list, typename List::value_type::const_iterator s, typename List::value_type::const_iterator x) {
-	return decltype(list.back().cend())() != listFindSubstr(list, s, x);
+	return listDefaultIterator<List> != listFindSubstr(list, s, x);
 }
 template<class List>
 /* Returns shortest substr from `value`, which is not found in `list`
@@ -127,7 +130,7 @@ const std::tuple<typename List::value_type::const_iterator, typename List::value
 }
 template<class List>
 /* Usage: auto it = listFindSignatureOfValue(resultList.signatures, input)); if(it) {std::cout << "input has resultList.signatures[" << std::string(it) << "]";} */
-auto listFindSignatureOfValue(const List &list, const typename List::value_type &x) {
+typeof listDefaultIterator<List> listFindSignatureOfValue(const List &list, const typename List::value_type &x) {
 	for(const auto &value : list) {
 #if PREFERENCE_IS_CSTR
 		auto result = memmem(&x[0], strlen(&x[0]), &value[0], strlen(&value[0]));
@@ -139,12 +142,12 @@ auto listFindSignatureOfValue(const List &list, const typename List::value_type 
 			return result;
 		}
 	}
-	return decltype(list.back().cend())();
+	return listDefaultIterator<List>;
 }
 template<class List>
 /* Usage: if(listHasSignatureOfValue(resultList.signatures, input)) {std::cout << "input has signature from ResultList.signatures";} */
 const bool listHasSignatureOfValue(const List &list, const typename List::value_type &x) {
-	return decltype(list.back().cend())() != listFindSignatureOfValue(list, x);
+	return listDefaultIterator<List> != listFindSignatureOfValue(list, x);
 }
 
 template<class S>
