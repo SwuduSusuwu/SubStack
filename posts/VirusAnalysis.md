@@ -674,14 +674,18 @@ const bool virusAnalysisTests() {
 			"newSW"
 		}
 	};
+	resultListProduceHashes(passOrNull);
+	resultListProduceHashes(abortOrNull);
 	produceAbortListSignatures(passOrNull, abortOrNull);
 	std::cout << "resultListDumpTo(.list = passOrNull, .os = std::cout, .whitespace = true, .pascalValues = false);" << std::endl;
 	resultListDumpTo(passOrNull, std::cout, true, false);
 	std::cout << "resultListDumpTo(.list = abortOrNull, .os = std::cout, .whitespace = false, .pascalValues = false);" << std::endl;
 	resultListDumpTo(abortOrNull, std::cout, false, false), std::cout << std::endl;
 	assert(4 == passOrNull.bytecodes.size());
+	assert(passOrNull.bytecodes.size() - 1 /* 2 instances of "SW", discount dup */ == passOrNull.hashes.size());
 	assert(0 == passOrNull.signatures.size());
 	assert(4 == abortOrNull.bytecodes.size());
+	assert(abortOrNull.bytecodes.size() == abortOrNull.hashes.size());
 	assert(abortOrNull.bytecodes.size() - 1 /* discount empty substr */ == abortOrNull.signatures.size());
 	produceAnalysisCns(passOrNull, abortOrNull, ResultList(), analysisCns);
 	produceVirusFixCns(passOrNull, abortOrNull, virusFixCns);
