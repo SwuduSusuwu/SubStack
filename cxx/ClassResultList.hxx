@@ -39,26 +39,29 @@ const size_t listMaxSize(const List &list) {
 }
 
 template<class List>
-void listDumpTo(const List &list, std::ostream &os, const bool whitespace, const bool pascalValues) {
-	size_t index = 0;
+void listDumpTo(const List &list, std::ostream &os, const bool index, const bool whitespace, const bool pascalValues) {
+	size_t index_ = 0;
 	os << '{';
 	for(const auto &value : list) {
-		if(0 != index) {
+		if(0 != index_) {
 			os << ',';
 		}
 		if(whitespace) {
 			os << std::endl << '\t';
 		}
-		os << index++;
+		if(index) {
+			os << index_;
+		}
 		if(pascalValues) {
 				os << value.size() << value;
 		} else {
-			os << "=>0x";
+			os << (index ? "=>0x" : "0x");
 			for(char ch : value) {
 				os << std::hex << static_cast<int>(ch);
 			}
 			os << std::dec;
 		}
+		++index_;
 	}
 	if(whitespace) {
 		os << "\n};" << std::endl;
@@ -67,13 +70,13 @@ void listDumpTo(const List &list, std::ostream &os, const bool whitespace, const
 	}
 }
 template<class List>
-void resultListDumpTo(const List &list, std::ostream &os, const bool whitespace, const bool pascalValues) {
+void resultListDumpTo(const List &list, std::ostream &os, const bool index, const bool whitespace, const bool pascalValues) {
 	os << "list.hashes" << (whitespace ? " = " : "=");
-	listDumpTo(list.hashes, os, whitespace, pascalValues);
+	listDumpTo(list.hashes, os, index, whitespace, pascalValues);
 	os << "list.signatures" << (whitespace ? " = " : "=");
-	listDumpTo(list.signatures, os, whitespace, pascalValues);
+	listDumpTo(list.signatures, os, index, whitespace, pascalValues);
 	os << "list.bytecodes" << (whitespace ? " = " : "=");
-	listDumpTo(list.bytecodes, os, whitespace, pascalValues);
+	listDumpTo(list.bytecodes, os, index, whitespace, pascalValues);
 }
 
 template<class List, class List2>
