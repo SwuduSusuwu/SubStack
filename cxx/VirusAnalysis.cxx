@@ -177,7 +177,9 @@ void produceAbortListSignatures(const ResultList &passList, ResultList &abortLis
 	abortList.signatures.reserve(abortList.bytecodes.size());
 	for(const auto &file : abortList.bytecodes) {
 		auto tuple = listProduceSignature(passList.bytecodes, file);
-		abortList.signatures.push_back(ResultListSignature(std::get<0>(tuple), std::get<1>(tuple)));
+		if(std::get<0>(tuple) < std::get<1>(tuple)) { /* require `(0 < ResultListSignature.size())` to prevent crashes */
+			abortList.signatures.push_back(ResultListSignature(std::get<0>(tuple), std::get<1>(tuple)));
+		}
 	} /* The most simple signature is a substring, but some analyses use regexes. */
 }
 
