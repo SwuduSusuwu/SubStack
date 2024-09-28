@@ -1,10 +1,10 @@
 /* Dual licenses: choose "Creative Commons" or "Apache 2" (allows all uses) */
 #ifndef INCLUDES_cxx_AssistantCns_cxx
 #define INCLUDES_cxx_AssistantCns_cxx
-#include "AssistantCns.hxx" /* assistantParseUrls assistantParseQuestion assistantParseResponses */
+#include "AssistantCns.hxx" /* assistantParseQuestion assistantParseResponses assistantParseUrls */
 #include "ClassCns.hxx" /* Cns CnsMode execvex */
-#include "ClassPortableExecutable.hxx" /* FilePath FileBytecode */
-#include "ClassResultList.hxx" /* ResultList listMaxSize listHasValue explodeToList ResultListBytecode */
+#include "ClassPortableExecutable.hxx" /* FileBytecode FilePath */
+#include "ClassResultList.hxx" /* explodeToList listMaxSize listHasValue ResultList ResultListBytecode resultListDumpTo resultListProduceHashes */
 #include "ClassSha2.hxx" /* sha2 */
 #include "ClassSys.hxx" /* execvex */
 #include <cassert> /* assert */
@@ -38,6 +38,16 @@ const bool assistantCnsTests() {
 			ResultListBytecode("How do you do?") + "<delimiterSeparatesMultiplePossibleResponses>" + "Fanuc produces autonomous robots"
 		}
 	};
+	resultListProduceHashes(questionsOrNull);
+	resultListProduceHashes(responsesOrNull);
+	assert(4 == questionsOrNull.bytecodes.size());
+	assert(responsesOrNull.bytecodes.size() == questionsOrNull.bytecodes.size());
+	assert(4 == questionsOrNull.hashes.size());
+	assert(3 == responsesOrNull.hashes.size());
+	std::cout << "questionsOrNull = ";
+	resultListDumpTo(questionsOrNull, std::cout, true, true, false);
+	std::cout << "responsesOrNull = ";
+	resultListDumpTo(responsesOrNull, std::cout, false, false, false);
 	questionsResponsesFromHosts(questionsOrNull, responsesOrNull);
 	produceAssistantCns(questionsOrNull, responsesOrNull, assistantCns);
 	return true;
@@ -127,23 +137,23 @@ void assistantCnsLoopProcess(const Cns &cns) {
 		std::vector<std::string> responses = explodeToList(cns.processToString(bytecode), "<delimiterSeparatesMultiplePossibleResponses>");
 		if(bytecode == previous && responses.size() > 1 + nthResponse) {
 			++nthResponse; /* Similar to "suggestions" for next questions, but just uses previous question to give new responses */
- 		} else {
+		} else {
 			nthResponse = 0;
-	 	}
- 		std::cout << responses.at(nthResponse);
- 		previous = bytecode;
- 		bytecode = ""; /* reset inputs */
+		}
+		std::cout << responses.at(nthResponse);
+		previous = bytecode;
+		bytecode = ""; /* reset inputs */
 #else
 		std::vector<std::string> responses = explodeToList(cns.processToString(bytecode), std::string("<delimiterSeparatesMultiplePossibleResponses>"));
 	 	if(bytecode == previous && responses.size() > 1 + nthResponse) {
 			++nthResponse; /* Similar to "suggestions" for next questions, but just uses previous question to give new responses */
- 		} else {
-  		nthResponse = 0;
-	 	}
+		} else {
+			nthResponse = 0;
+		}
 #endif /* IGNORE_PAST_MESSAGES */
- 		std::cout << responses.at(nthResponse);
- 		previous = bytecode;
- 		bytecode += '\n'; /* delimiter separates (and uses) multiple inputs */
+		std::cout << responses.at(nthResponse);
+		previous = bytecode;
+		bytecode += '\n'; /* delimiter separates (and uses) multiple inputs */
 	}
 }
 

@@ -1070,6 +1070,16 @@ const bool assistantCnsTests() {
 			ResultListBytecode("How do you do?") + "<delimiterSeparatesMultiplePossibleResponses>" + "Fanuc produces autonomous robots"
 		}
 	};
+	resultListProduceHashes(questionsOrNull);
+	resultListProduceHashes(responsesOrNull);
+	assert(4 == questionsOrNull.bytecodes.size());
+	assert(responsesOrNull.bytecodes.size() == questionsOrNull.bytecodes.size());
+	assert(4 == questionsOrNull.hashes.size());
+	assert(3 == responsesOrNull.hashes.size());
+	std::cout << "questionsOrNull = ";
+	resultListDumpTo(questionsOrNull, std::cout, true, true, false);
+	std::cout << "responsesOrNull = ";
+	resultListDumpTo(responsesOrNull, std::cout, false, false, false);
 	questionsResponsesFromHosts(questionsOrNull, responsesOrNull);
 	produceAssistantCns(questionsOrNull, responsesOrNull, assistantCns);
 	return true;
@@ -1091,39 +1101,39 @@ void produceAssistantCns(const ResultList &questionsOrNull, const ResultList &re
 }
 
 void questionsResponsesFromHosts(ResultList &questionsOrNull, ResultList &responsesOrNull, const std::vector<FilePath> &hosts) {
-	for(auto host : hosts) {
+	for(const auto &host : hosts) {
 		execvex("wget '" + host + "/robots.txt' -Orobots.txt");
 		execvex("wget '" + host + "' -Oindex.xhtml");
 		questionsOrNull.signatures.push_back(host);
 		questionsResponsesFromXhtml(questionsOrNull, responsesOrNull, "index.xhtml");
 	}
 }
-void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &responsesOrNull, const FilePath &xhtmlFile) {
-	auto noRobots = ParseUrls("robots.txt");
-	auto question = ParseQuestion(xhtmlFile);
-	if(question.size()) {
+void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &responsesOrNull, const FilePath &localXhtml) {
+	auto noRobots = assistantParseUrls("robots.txt");
+	auto question = assistantParseQuestion(localXhtml);
+	if(!question.empty()) {
 		auto questionSha2 = sha2(question);
 		if(!listHasValue(questionsOrNull.hashes, questionSha2)) {
 			questionsOrNull.hashes.insert(questionSha2);
-			auto responses = ParseResponses(xhtmlFile);
-			for(auto response : responses) {
+			auto responses = assistantParseResponses(localXhtml);
+			for(const auto &response : responses) {
 				auto questionSha2 = sha2(question);
 				auto responseSha2 = sha2(response);
 				if(!listHasValue(responsesOrNull.hashes, responseSha2)) {
 					questionsOrNull.hashes.insert(questionSha2);
 					responsesOrNull.hashes.insert(responseSha2);
 					questionsOrNull.bytecodes.push_back(question);
-					responsesOrNull.bytecodes.push_back(response);
+					responsesOrNull.bytecodes.push_back(response); 
 				}
 			}
 		}
 	}
-	auto urls = ParseUrls(xhtmlFile);
-	for(auto url : urls) {
+	auto urls = assistantParseUrls(localXhtml);
+	for(const auto &url : urls) {
 		if(!listHasValue(questionsOrNull.signatures, url) && !listHasValue(noRobots, url)) {
-			execvex("wget '" + url + "' -O" + xhtmlFile);
+			execvex("wget '" + url + "' -O" + localXhtml);
 			questionsOrNull.signatures.push_back(url);
-			questionsResponsesFromXhtml(questionsOrNull, responsesOrNull, xhtmlFile);
+			questionsResponsesFromXhtml(questionsOrNull, responsesOrNull, localXhtml);
 		}
 	}
 }
@@ -1131,11 +1141,11 @@ void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &respon
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #endif /* BOOST_VERSION */
-const std::vector<FilePath> ParseUrls(const FilePath &xhtmlFile) {
+const std::vector<FilePath> assistantParseUrls(const FilePath &localXhtml) {
 	const std::vector<FilePath> urls;
 #ifdef BOOST_VERSION
 	boost::property_tree::ptree pt;
-	read_xml(xhtmlFile, pt);
+	read_xml(localXhtml, pt);
 	BOOST_FOREACH(
 			boost::property_tree::ptree::value_type &v,
 			pt.get_child("html.a href"))
@@ -1144,8 +1154,8 @@ const std::vector<FilePath> ParseUrls(const FilePath &xhtmlFile) {
 #endif /* else !BOOST_VERSION */
 	return urls;
 }
-const FileBytecode ParseQuestion(const FilePath &xhtmlFile) {} /* TODO */
-const std::vector<FileBytecode> ParseResponses(const FilePath &xhtmlFile) {} /* TODO */
+const FileBytecode assistantParseQuestion(const FilePath &localXhtml) {} /* TODO */
+const std::vector<FileBytecode> assistantParseResponses(const FilePath &localXhtml) {} /* TODO */
 
 const std::string assistantCnsProcess(const Cns &cns, const FileBytecode &bytecode) {
 	return cns.processToString(bytecode);
@@ -1159,23 +1169,23 @@ void assistantCnsLoopProcess(const Cns &cns) {
 		std::vector<std::string> responses = explodeToList(cns.processToString(bytecode), "<delimiterSeparatesMultiplePossibleResponses>");
 		if(bytecode == previous && responses.size() > 1 + nthResponse) {
 			++nthResponse; /* Similar to "suggestions" for next questions, but just uses previous question to give new responses */
- 		} else {
+		} else {
 			nthResponse = 0;
-	 	}
- 		std::cout << responses.at(nthResponse);
- 		previous = bytecode;
- 		bytecode = ""; /* reset inputs */
+		}
+		std::cout << responses.at(nthResponse);
+		previous = bytecode;
+		bytecode = ""; /* reset inputs */
 #else
 		std::vector<std::string> responses = explodeToList(cns.processToString(bytecode), std::string("<delimiterSeparatesMultiplePossibleResponses>"));
-	 	if(bytecode == previous && responses.size() > 1 + nthResponse) {
+		if(bytecode == previous && responses.size() > 1 + nthResponse) {
 			++nthResponse; /* Similar to "suggestions" for next questions, but just uses previous question to give new responses */
- 		} else {
+		} else {
 			nthResponse = 0;
-	 	}
+		}
 #endif /* IGNORE_PAST_MESSAGES */
- 		std::cout << responses.at(nthResponse);
- 		previous = bytecode;
- 		bytecode += '\n'; /* delimiter separates (and uses) multiple inputs */
+		std::cout << responses.at(nthResponse);
+		previous = bytecode;
+		bytecode += '\n'; /* delimiter separates (and uses) multiple inputs */
 	}
 }
 ```
