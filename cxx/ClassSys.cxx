@@ -114,7 +114,7 @@ const bool setRoot(bool root) {
 			SUSUWU_CERR(WARNING, "setRoot(false) {(-1 == seteuid(sudo_uid)) /* stuck as root */}");
 		}
 	}
-/* #elif defined __WIN32__ *///TODO: https://stackoverflow.com/questions/6418791/requesting-administrator-privileges-at-run-time says you must spawn new processes to do this
+/* #elif defined __WIN32__ */ //TODO: https://stackoverflow.com/questions/6418791/requesting-administrator-privileges-at-run-time says you must spawn new processes to do this
 #else
 	SUSUWU_CERR(WARNING, "setRoot(bool) {#ifndef _POSIX_VERSION /* TODO */}");
 #endif /* _POSIX_VERSION */

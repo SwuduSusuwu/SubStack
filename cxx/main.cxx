@@ -11,7 +11,7 @@ namespace Susuwu {
 void noExcept() NOEXCEPT;
 NORETURN void noReturn();
 void noExcept() NOEXCEPT {std::cout << std::flush;}
-void noReturn()  {exit(0);}
+void noReturn() {exit(0);}
 int testHarnesses() EXPECTS(true) ENSURES(true) {
 	std::cout << "cxx/Macros.hxx: " << std::flush;
 	ASSUME(true);

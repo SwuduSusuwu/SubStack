@@ -536,7 +536,7 @@ const bool setRoot(bool root) {
 			SUSUWU_CERR(WARNING, "setRoot(false) {(-1 == seteuid(sudo_uid)) /* stuck as root */}");
 		}
 	}
-/* #elif defined __WIN32__ *///TODO: https://stackoverflow.com/questions/6418791/requesting-administrator-privileges-at-run-time says you must spawn new processes to do this
+/* #elif defined __WIN32__ */ //TODO: https://stackoverflow.com/questions/6418791/requesting-administrator-privileges-at-run-time says you must spawn new processes to do this
 #else
 	SUSUWU_CERR(WARNING, "setRoot(bool) {#ifndef _POSIX_VERSION /* TODO */}");
 #endif /* _POSIX_VERSION */
@@ -785,7 +785,8 @@ const VirusAnalysisResult virusAnalysis(const PortableExecutable &file) {
 				return virusAnalysisRequiresReview;
 			case virusAnalysisAbort:
 				return virusAnalysisAbort;
-			default: /* virusAnalysisContinue */
+			virusAnalysisContinue:
+				continue;
 		}
 	}
 	return virusAnalysisPass;
@@ -969,7 +970,7 @@ namespace Susuwu {
 void noExcept() NOEXCEPT;
 NORETURN void noReturn();
 void noExcept() NOEXCEPT {std::cout << std::flush;}
-void noReturn()  {exit(0);}
+void noReturn() {exit(0);}
 int testHarnesses() EXPECTS(true) ENSURES(true) {
 	std::cout << "cxx/Macros.hxx: " << std::flush;
 	ASSUME(true);
@@ -1189,7 +1190,7 @@ void assistantCnsLoopProcess(const Cns &cns) {
 	}
 }
 ```
-========
+=================================================
 
 **Hash resources:**
 Is just a checksum (such as sha-2) of all sample inputs, which maps to "this passes" (or "this does not pass".)
@@ -1261,13 +1262,14 @@ Simple to setup once you have access to databases.
 
 Alternative CNS:
 https://swudususuwu.substack.com/p/albatross-performs-lots-of-neural
-========
+=================================================
+This post was about general methods to produce virus analysis tools, does not require that local resources do all of this;
 
-This post was about general methods to produce virus analysis tools,
-does not require that local resources do all of this;
-For systems with lots of resources, could have local sandboxes/CNS;
-For systems with less resources, could just submit samples of unknown apps/SW to hosts to perform analysis;
-Could have small local sandboxes (that just run for a few seconds) and small CNS (just billions of neurons with hundreds of layers,
-versus the trillions of neurons with thousands of layers of cortices that antivirus hosts would use for this);
-Allows reuses of workflows which an existant analysis tool has -- can just add (small) local sandboxes, or just add artificial CNS to antivirus hosts for extra analysis.
+    For systems with lots of resources, could have local sandboxes/CNS.
+
+    For systems with less resources, could just submit samples of unknown apps/SW to hosts to perform analysis.
+
+    Could have small local sandboxes (that just run for a few seconds) and small CNS (just billions of neurons with hundreds of layers, versus the trillions of neurons with thousands of layers of cortices that antivirus hosts would use for this).
+
+    Allows reuses of workflows which an existant analysis tool has -- can just add (small) local sandboxes, or just add artificial CNS to antivirus hosts for extra analysis.
 

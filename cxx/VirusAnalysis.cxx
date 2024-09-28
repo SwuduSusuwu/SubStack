@@ -153,7 +153,8 @@ const VirusAnalysisResult virusAnalysis(const PortableExecutable &file) {
 				return virusAnalysisRequiresReview;
 			case virusAnalysisAbort:
 				return virusAnalysisAbort;
-			default: /* virusAnalysisContinue */
+			case virusAnalysisContinue:
+				continue;
 		}
 	}
 	return virusAnalysisPass;
