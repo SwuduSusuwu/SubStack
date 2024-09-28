@@ -2,6 +2,7 @@
 #pragma once
 #ifndef INCLUDES_cxx_ClassSys_hxx
 #define INCLUDES_cxx_ClassSys_hxx
+#include "Macros.hxx" /* ERROR SUSUWU_CERR */
 #include <exception> /* std::exception */
 #include <iostream> /* std::cerr std::endl */
 #include <string> /* std::string */
@@ -40,7 +41,7 @@ auto templateCatchAll(Func func, const std::string &funcName, Args... args) {
 	try {
 		return func(args...);
 	} catch (const std::exception &ex) {
-		std::cerr << "[Error: " << funcName << " {throw std::exception(\"" << ex.what() << "\");}]" << std::endl;
+		SUSUWU_CERR(ERROR, funcName + " {throw std::exception(\"" + ex.what() + "\");}");
 		return decltype(func(args...))(); /* `func(args...)`'s default return value; if `int func(args...)`, `return 0;`. If `bool func()`, `return false;` */
 	}
 }

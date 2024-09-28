@@ -6,6 +6,7 @@
 #include "ClassResultList.hxx" /* size_t listMaxSize listHasValue listProduceSignature listHasSignatureOfValue ResultList resultListDumpTo resultListProduceHashes */
 #include "ClassSha2.hxx" /* sha2 */
 #include "ClassSys.hxx" /* classSysArgc classSysArgs execvex hasRoot setRoot */
+#include "Macros.hxx" /* ERROR NOTICE SUSUWU_CERR SUSUWU_ERRSTR */
 #include "VirusAnalysis.hxx" /* passList abortList *AnalyisCaches */
 #include <algorithm> /* std::sort */
 #include <cassert> /* assert */
@@ -62,7 +63,7 @@ const bool virusAnalysisTests() {
 	if(0 < classSysArgc) {
 		PortableExecutableBytecode executable(classSysArgs[0]);
 		if(virusAnalysisAbort == virusAnalysis(executable)) {
-			throw std::runtime_error("`virusAnalysisAbort == virusAnalysis(args[0]);`. With such false positives, shouldn't hook kernel modules");
+			throw std::runtime_error(SUSUWU_ERRSTR(ERROR, "{virusAnalysisAbort == virusAnalysis(args[0]);} /* With such false positives, shouldn't hook kernel modules */"));
 		}
 	}
 	const bool originalRootStatus = hasRoot();

@@ -1,6 +1,7 @@
 /* Dual licenses: choose "Creative Commons" or "Apache 2" (allows all uses) */
 #ifndef INCLUDES_cxx_ClassSys_cxx
 #define INCLUDES_cxx_ClassSys_cxx
+#include "Macros.hxx" /* SUSUWU_CERR WARNING */
 #include "ClassSys.hxx" /* std::string std::vector */
 #include <cassert> /* assert */
 #include <cstdlib> /* atoi exit EXIT_FAILURE getenv */
@@ -70,7 +71,7 @@ const bool hasRoot() {
 #elif defined __WIN32__
 	return IsUserAnAdmin();
 #else
-	std::cerr << "[`hasRoot(bool)`: Warning: `#if !(defined _POSIX_VERSION || defined __WIN32__)`; TODO]" << std::endl;
+	SUSUWU_CERR(WARNING, "hasRoot(bool) {#if !(defined _POSIX_VERSION || defined __WIN32__) /* TODO */}");
 	return false;
 #endif /* def _POSIX_VERSION or def __WIN32__ */
 }
@@ -81,7 +82,7 @@ const bool setRoot(bool root) {
 #ifdef _POSIX_VERSION
 	if(root) {
 		if(-1 == seteuid(0)) {
-			std::cerr << "[Warning: `setRoot(true)`: `(-1 == seteuid(0))` (stuck as user, perhaps is not setuid executable)]" << std::endl;
+			SUSUWU_CERR(WARNING, "setRoot(true) {(-1 == seteuid(0)) /* stuck as user, perhaps is not setuid executable */}");
 		}
 #if 0
 # ifdef __APPLE__ //TODO: https://stackoverflow.com/questions/2483755/how-to-programmatically-gain-root-privileges/35316538#35316538 says you must execute new processes to do this
@@ -97,25 +98,25 @@ const bool setRoot(bool root) {
 		if(0 == sudo_uid) {
 			char *sudo_uid_str = getenv("SUDO_UID");
 			if(NULL == sudo_uid_str) {
-				std::cerr << "[Warning: `setRoot(false)`: `NULL == getenv(\"SUDO_UID\")` (stuck as root)]" << std::endl;
+				SUSUWU_CERR(WARNING, "setRoot(false) {(NULL == getenv(\"SUDO_UID\")) /* stuck as root */}");
 				return true;
 			} else {
 				sudo_uid = (uid_t)atoi(sudo_uid_str);
 				if(-1 == setuid(sudo_uid)) { /* prevent reescalation to root */
-					std::cerr << "[Warning: `setRoot(false)`: `(-1 == setuid(sudo_uid))` (can't prevent reescalation to root)]" << std::endl;
+					SUSUWU_CERR(WARNING, "setRoot(false) {(-1 == setuid(sudo_uid)) /* can't prevent reescalation to root */}");
 				}
 			}
 		}
 //# endif /* def LINUX */
 		if(0 == sudo_uid) {
-			std::cerr << "[Warning: `setRoot(false)`: `0 == sudo_uid` (stuck as root)]" << std::endl;
+			SUSUWU_CERR(WARNING, "setRoot(false) {(0 == sudo_uid) /*stuck as root */}");
 		} else if(-1 == seteuid(sudo_uid)) {
-			std::cerr << "[Warning: `setRoot(false)`: `(-1 == seteuid(sudo_uid))` (stuck as root)]" << std::endl;
+			SUSUWU_CERR(WARNING, "setRoot(false) {(-1 == seteuid(sudo_uid)) /* stuck as root */}");
 		}
 	}
 /* #elif defined __WIN32__ *///TODO: https://stackoverflow.com/questions/6418791/requesting-administrator-privileges-at-run-time says you must spawn new processes to do this
 #else
-	std::cerr << "[Warning: `setRoot(bool)`: `#ifndef _POSIX_VERSION`; TODO]" << std::endl;
+	SUSUWU_CERR(WARNING, "setRoot(bool) {#ifndef _POSIX_VERSION /* TODO */}");
 #endif /* _POSIX_VERSION */
 	return hasRoot();
 }
