@@ -2,11 +2,59 @@
 #ifndef INCLUDES_cxx_Macros_hxx
 #define INCLUDES_cxx_Macros_hxx
 /* Miscellaneous macros */
+#include <string> /* std::cerr std::endl */
 #include <cassert> /* assert static_assert */
 #include <cstdbool> /* false */
 #include <version> /* __cpp_lib_unreachable */ /* [https://en.cppreference.com/w/cpp/feature_test] */
 namespace Susuwu { /* namespaces do not affect macros. Is just standard practice to wrap all of a project's contents with namespaces. */
 #define GLUE(S, U) S##U /* concatanates 2 constants */
+
+#if SKIP_CONSOLE_COLORS /* `g++ -D SKIP_CONSOLE_COLORS=1` to turn colors off */
+# define SUSUWU_SH_BLACK ""
+# define SUSUWU_SH_DARK_GRAY ""
+# define SUSUWU_SH_RED ""
+# define SUSUWU_SH_LIGHT_RED ""
+# define SUSUWU_SH_GREEN ""
+# define SUSUWU_SH_LIGHT_GREEN ""
+# define SUSUWU_SH_BROWN ""
+# define SUSUWU_SH_YELLOW ""
+# define SUSUWU_SH_BLUE ""
+# define SUSUWU_SH_LIGHT_BLUE ""
+# define SUSUWU_SH_PURPLE ""
+# define SUSUWU_SH_LIGHT_PURPLE ""
+# define SUSUWU_SH_CYAN ""
+# define SUSUWU_SH_LIGHT_CYAN ""
+# define SUSUWU_SH_LIGHT_GRAY ""
+# define SUSUWU_SH_WHITE ""
+#else /* !SKIP_CONSOLE_COLORS */
+# define SUSUWU_SH_DEFAULT "\033[0m"
+# define SUSUWU_SH_BLACK "\033[0;30m"
+# define SUSUWU_SH_DARK_GRAY "\033[1;30m"
+# define SUSUWU_SH_RED "\033[0;31m"
+# define SUSUWU_SH_LIGHT_RED "\033[1;31m"
+# define SUSUWU_SH_GREEN "\033[0;32m"
+# define SUSUWU_SH_LIGHT_GREEN "\033[1;32m"
+# define SUSUWU_SH_BROWN "\033[0;33m"
+# define SUSUWU_SH_YELLOW "\033[1;33m"
+# define SUSUWU_SH_BLUE "\033[0;34m"
+# define SUSUWU_SH_LIGHT_BLUE "\033[1;34m"
+# define SUSUWU_SH_PURPLE "\033[0;35m"
+# define SUSUWU_SH_LIGHT_PURPLE "\033[1;35m"
+# define SUSUWU_SH_CYAN "\033[0;36m"
+# define SUSUWU_SH_LIGHT_CYAN "\033[1;36m"
+# define SUSUWU_SH_LIGHT_GRAY "\033[0;37m"
+# define SUSUWU_SH_WHITE "\033[1;37m"
+#endif /* !SKIP_CONSOLE_COLORS */
+#define SUSUWU_WARN_ERROR "[" SUSUWU_SH_RED "Error: " SUSUWU_SH_WHITE
+#define SUSUWU_WARN_WARNING "[" SUSUWU_SH_PURPLE "Warning: " SUSUWU_SH_WHITE
+#define SUSUWU_WARN_DIAGNOSTIC "[" SUSUWU_SH_GREEN "Diagnostic: " SUSUWU_SH_WHITE
+#define SUSUWU_WARN_NOTICE "[" SUSUWU_SH_BLUE "Notice: " SUSUWU_SH_WHITE
+#define SUSUWU_WARN_CLOSE_ SUSUWU_SH_LIGHT_GRAY "]"
+
+/* WARN_LEVEL = {ERROR, WARNING, DIAGNOSTIC, NOTICE} */
+#define SUSUWU_ERRSTR(WARN_LEVEL, x) std::string(GLUE(SUSUWU_WARN_, WARN_LEVEL)) + std::string(x) + std::string(SUSUWU_WARN_CLOSE_)
+#define SUSUWU_CERR(WARN_LEVEL, x) std::cerr << GLUE(SUSUWU_WARN_, WARN_LEVEL) << x << SUSUWU_WARN_CLOSE_ << std::endl
+#define SUSUWU_STDERR(WARN_LEVEL, x) fprintf(stderr, GLUE(SUSUWU_WARN_, WARN_LEVEL) "%s" SUSUWU_WARN_CLOSE_ "\n", x)
 
 #if (!defined __WIN32__) && (defined _WIN32 /* || defined __CYGWIN__ should use "#ifdef _POSIX_VERSION" path */ || __MSC_VER)
 # define __WIN32__ /* https://stackoverflow.com/questions/430424/are-there-any-macros-to-determine-if-my-code-is-being-compiled-to-windows/430435#430435 says that __WIN32__ is not always defined on Windows targets */
