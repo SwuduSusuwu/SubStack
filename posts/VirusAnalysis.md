@@ -725,10 +725,9 @@ const bool virusAnalysisTests() {
 	resultListProduceHashes(passOrNull);
 	resultListProduceHashes(abortOrNull);
 	produceAbortListSignatures(passOrNull, abortOrNull);
-	std::cout << "resultListDumpTo(.list = passOrNull, .os = std::cout, .index = true, .whitespace = true, .pascalValues = false);" << std::endl;
+	SUSUWU_NOTICE("resultListDumpTo(.list = passOrNull, .os = std::cout, .index = true, .whitespace = true, .pascalValues = false);");
 	resultListDumpTo(passOrNull, std::cout, true, true, false);
-	std::cout << "resultListDumpTo(.list = abortOrNull, .os = std::cout, .index = false, .whitespace = false, .pascalValues = false);" << std::endl;
-	resultListDumpTo(abortOrNull, std::cout, false, false, false), std::cout << std::endl;
+	SUSUWU_NOTICE_EXECUTE(resultListDumpTo(/*.list = */abortOrNull, /*.os = */std::cout, /*.index = */false, /*.whitespace = */false, /*.pascalValues = */false));
 	assert(4 == passOrNull.bytecodes.size());
 	assert(passOrNull.bytecodes.size() - 1 /* 2 instances of "SW", discount dup */ == passOrNull.hashes.size());
 	assert(0 == passOrNull.signatures.size());
