@@ -47,11 +47,13 @@ namespace Susuwu { /* namespaces do not affect macros. Is just standard practice
 #endif /* !SKIP_CONSOLE_COLORS */
 #define SUSUWU_WARN_ERROR "[" SUSUWU_SH_RED "Error: " SUSUWU_SH_WHITE
 #define SUSUWU_WARN_WARNING "[" SUSUWU_SH_PURPLE "Warning: " SUSUWU_SH_WHITE
-#define SUSUWU_WARN_DIAGNOSTIC "[" SUSUWU_SH_GREEN "Diagnostic: " SUSUWU_SH_WHITE
+#define SUSUWU_WARN_INFO "[" SUSUWU_SH_CYAN "Info: " SUSUWU_SH_WHITE
+#define SUSUWU_WARN_SUCCESS "[" SUSUWU_SH_GREEN "Success: " SUSUWU_SH_WHITE
 #define SUSUWU_WARN_NOTICE "[" SUSUWU_SH_BLUE "Notice: " SUSUWU_SH_WHITE
-#define SUSUWU_WARN_CLOSE_ SUSUWU_SH_LIGHT_GRAY "]"
+#define SUSUWU_WARN_DEBUG SUSUWU_WARN_NOTICE
+#define SUSUWU_WARN_CLOSE_ SUSUWU_SH_DEFAULT "]"
 
-/* WARN_LEVEL = {ERROR, WARNING, DIAGNOSTIC, NOTICE} */
+/* WARN_LEVEL = {ERROR, WARNING, INFO, SUCCESS, NOTICE, DEBUG} */
 #define SUSUWU_ERRSTR(WARN_LEVEL, x) std::string(GLUE(SUSUWU_WARN_, WARN_LEVEL)) + std::string(x) + std::string(SUSUWU_WARN_CLOSE_)
 #define SUSUWU_CERR(WARN_LEVEL, x) std::cerr << GLUE(SUSUWU_WARN_, WARN_LEVEL) << x << SUSUWU_WARN_CLOSE_ << std::endl
 #define SUSUWU_STDERR(WARN_LEVEL, x) fprintf(stderr, GLUE(SUSUWU_WARN_, WARN_LEVEL) "%s" SUSUWU_WARN_CLOSE_ "\n", x)
@@ -60,26 +62,31 @@ namespace Susuwu { /* namespaces do not affect macros. Is just standard practice
 #ifdef NDEBUG
 # define SUSUWU_CERR_NOTICE(x) (true)/* skip */
 # define SUSUWU_STDERR_NOTICE(x) (true)/* skip */
-# define SUSUWU_CERR_DIAGNOSTIC(x) (true)/* skip */
-# define SUSUWU_STDERR_DIAGNOSTIC(x) (true)/* skip */
+# define SUSUWU_CERR_DEBUG(x) (true)/* skip */
+# define SUSUWU_STDERR_DEBUG(x) (true)/* skip */
 #else /* !(defined NDEBUG) */
 # define SUSUWU_CERR_NOTICE(x) SUSUWU_CERR(NOTICE, x)
 # define SUSUWU_STDERR_NOTICE(x) SUSUWU_STDERR(NOTICE, x)
-# define SUSUWU_CERR_DIAGNOSTIC(x) SUSUWU_CERR(DIAGNOSTIC, x)
-# define SUSUWU_STDERR_DIAGNOSTIC(x) SUSUWU_STDERR(DIAGNOSTIC, x)
+# define SUSUWU_CERR_DEBUG(x) SUSUWU_CERR(DEBUG, x)
+# define SUSUWU_STDERR_DEBUG(x) SUSUWU_STDERR(DEBUG, x)
 #endif /* !(defined NDEBUG) */
 
+#define SUSUWU_CERR_INFO(x) SUSUWU_CERR(INFO, x)
+#define SUSUWU_STDERR_INFO(x) SUSUWU_STDERR(INFO, x)
 #ifdef __cplusplus
+# define SUSUWU_INFO(x) SUSUWU_CERR_INFO(x)
 # define SUSUWU_NOTICE(x) SUSUWU_CERR_NOTICE(x)
-# define SUSUWU_DIAGNOSTIC(x) SUSUWU_CERR_DIAGNOSTIC(x)
+# define SUSUWU_DEBUG(x) SUSUWU_CERR_DEBUG(x)
 #else /* !(defined __cplusplus */
+# define SUSUWU_INFO(x) SUSUWU_STDERR_INFO(x)
 # define SUSUWU_NOTICE(x) SUSUWU_STDERR_NOTICE(x)
-# define SUSUWU_DIAGNOSTIC(x) SUSUWU_DIAGNOSTIC_NOTICE(x)
+# define SUSUWU_DEBUG(x) SUSUWU_DEBUG_NOTICE(x)
 #endif /* !(defined __cplusplus */
 
 /* Use this to reduce print+execute into single statement */
+#define SUSUWU_INFO_EXECUTE(x) ((SUSUWU_INFO(#x)), (x))
 #define SUSUWU_NOTICE_EXECUTE(x) ((SUSUWU_NOTICE(#x)), (x))
-#define SUSUWU_DIAGNOSTIC_EXECUTE(x) ((SUSUWU_DIAGNOSTIC(#x)), (x))
+#define SUSUWU_DEBUG_EXECUTE(x) ((SUSUWU_DEBUG(#x)), (x))
 
 #if (!defined __WIN32__) && (defined _WIN32 /* || defined __CYGWIN__ should use "#ifdef _POSIX_VERSION" path */ || __MSC_VER)
 # define __WIN32__ /* https://stackoverflow.com/questions/430424/are-there-any-macros-to-determine-if-my-code-is-being-compiled-to-windows/430435#430435 says that __WIN32__ is not always defined on Windows targets */
