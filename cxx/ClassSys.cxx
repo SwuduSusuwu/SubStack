@@ -20,11 +20,14 @@ typedef int pid_t;
 namespace Susuwu {
 int classSysArgc = 0;
 const char **classSysArgs = {nullptr};
-void classSysInit(int argc, const char *args[]) {
+bool classSysInit(int argc, const char *args[]) {
 	if(0 < (classSysArgc = argc)) {
-		assert(nullptr != (classSysArgs = args));
+		classSysArgs = args;
+		assert(nullptr != args);
 		assert(nullptr != args[0]);
+		return true;
 	}
+	return false;
 }
 
 const pid_t execvesFork(const std::vector<const std::string> &argvS, const std::vector<const std::string> &envpS) {

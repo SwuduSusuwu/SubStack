@@ -20,7 +20,7 @@ extern const char **classSysArgs;
  * Much simpler to use path from args[0] (versus https://stackoverflow.com/questions/1528298/get-path-of-executable/34109000#34109000)
  * @pre @code (0 < argc && nullptr != args && nullptr != args[0]
  * @post @code (0 < classSysArgc && nullptr != classSysArgs && nullptr != classSysArgs[0] */
-void classSysInit(int argc, const char *args[]);
+bool classSysInit(int argc, const char *args[]);
 
 /* `argv = argvS + NULL; envp = envpS + NULL: pid_t pid = fork() || (envpS.empty() ? execv(argv[0], &argv[0]) : execve(argv[0], &argv[0], &envp[0])); return pid;`
  * @pre @code (-1 != access(argv[0], X_OK) @endcode */

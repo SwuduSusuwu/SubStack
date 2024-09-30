@@ -466,7 +466,7 @@ extern const char **classSysArgs;
  * Much simpler to use path from args[0] (versus https://stackoverflow.com/questions/1528298/get-path-of-executable/34109000#34109000)
  * @pre @code (0 < argc && nullptr != args && nullptr != args[0]
  * @post @code (0 < classSysArgc && nullptr != classSysArgs && nullptr != classSysArgs[0] */
-void classSysInit(int argc, const char *args[]);
+bool classSysInit(int argc, const char *args[]);
 
 /* `argv = argvS + NULL; envp = envpS + NULL: pid_t pid = fork() || (envpS.empty() ? execv(argv[0], &argv[0]) : execve(argv[0], &argv[0], &envp[0])); return pid;`
  * @pre @code (-1 != access(argv[0], X_OK) @endcode */
@@ -496,11 +496,14 @@ auto templateCatchAll(Func func, const std::string &funcName, Args... args) {
 ```
 int classSysArgc = 0;
 const char **classSysArgs = {nullptr};
-void classSysInit(int argc, const char *args[]) {
+bool classSysInit(int argc, const char *args[]) {
 	if(0 < (classSysArgc = argc)) {
-		assert(nullptr != (classSysArgs = args));
+		classSysArgs = args;
+		assert(nullptr != args);
 		assert(nullptr != args[0]);
+		return true;
 	}
+	return false;
 }
 
 const pid_t execvesFork(const std::vector<const std::string> &argvS, const std::vector<const std::string> &envpS) {
@@ -1049,7 +1052,8 @@ int testHarnesses() EXPECTS(true) ENSURES(true) {
 }
 }; /* namespace Susuwu */
 int main(int argc, const char **args) {
-	Susuwu::classSysInit(argc, args);
+	const bool classSysInitSuccess = Susuwu::classSysInit(argc, args);
+	assert(classSysInitSuccess);
 	return Susuwu::testHarnesses();
 }
 ```

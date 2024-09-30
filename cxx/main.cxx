@@ -37,7 +37,8 @@ int testHarnesses() EXPECTS(true) ENSURES(true) {
 }
 }; /* namespace Susuwu */
 int main(int argc, const char **args) {
-	Susuwu::classSysInit(argc, args);
+	const bool classSysInitSuccess = Susuwu::classSysInit(argc, args);
+	assert(classSysInitSuccess);
 	return Susuwu::testHarnesses();
 }
 #endif /* ndef INCLUDES_cxx_main_cxx */
