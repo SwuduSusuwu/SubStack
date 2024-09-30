@@ -103,6 +103,7 @@ public:
 typedef FileHash ResultListHash;
 typedef FileBytecode ResultListBytecode; /* Should have structure of FileBytecode, but is not just for files, can use for UTF8/webpages, so have a new type for this */
 typedef FilePath ResultListSignature; /* TODO: `typedef ResultListBytecode ResultListSignature; ResultListSignature("string literal");` */
+typedef ptrdiff_t BytecodeOffset; /* all tests of `ResultListBytecode` should return `{BytecodeOffset, X}` (with the most common `X` as `ResultListHash` or `ResultListSignature`). `offset = -1` if no match */
 typedef struct ResultList /* : Object */ { /* Lists of {metadata, executables (or pages)} */
 	const std::string getName() const {return "Susuwu::struct ResultList";}
 	std::unordered_set<ResultListHash> hashes; /* Checksums of executables (or pages); to avoid duplicates, plus to do constant ("O(1)") test for which executables (or pages) exists */
@@ -237,9 +238,14 @@ const std::tuple<typename List::value_type::const_iterator, typename List::value
 	} /* Incremental `for()` loops, is O(n^2 * m) complex formula to produce signatures; should use binary searches, or look for the Standard Template Lib (or Boost) function which optimizes this. */
 	return {itBegin, itEnd};
 }
+typedef struct ResultListSignatureMatch {
+	BytecodeOffset fileOffset;
+	ResultListSignature signature;
+} ResultListSignatureMatch;
+#include "Macros.hxx" /* SUSUWU_DEBUG */
 template<class List>
-/* Usage: `auto it = listFindSignatureOfValue(resultList.signatures, value)); if(it) {std::cout << "value has resultList.signatures[" << std::string(it) << "]";}` */
-typeof listDefaultIterator<List> listFindSignatureOfValue(const List &list, const typename List::value_type &value) {
+/* Usage: `auto it = listFindSignatureOfValue(resultList.signatures, value)); if(it) {std::cout << "value has resultList.signatures[" << tohex(match.signature) << "]";}` */
+ResultListSignatureMatch listFindSignatureOfValue(const List &list, const typename List::value_type &value) {
 	for(const auto &signature : list) {
 #if PREFERENCE_IS_CSTR
 		auto it = memmem(&value[0], strlen(&value[0]), &signature[0], strlen(&signature[0]));
@@ -248,15 +254,15 @@ typeof listDefaultIterator<List> listFindSignatureOfValue(const List &list, cons
 		auto it = std::search(value.cbegin(), value.cend(), signature.cbegin(), signature.cend(), [](char ch1, char ch2) { return ch1 == ch2; });
 		if(signature.cend() != it) {
 #endif /* !PREFERENCE_IS_CSTR */
-			return it;
+			return {it - value.cbegin(), signature};
 		}
 	}
-	return listDefaultIterator<List>;
+	return {-1, ""};
 }
 template<class List>
 /* Usage: `if(listHasSignatureOfValue(resultList.signatures, value)) {std::cout << "value has signature from ResultList.signatures";}` */
 const bool listHasSignatureOfValue(const List &list, const typename List::value_type &value) {
-	return listDefaultIterator<List> != listFindSignatureOfValue(list, value);
+	return -1 != listFindSignatureOfValue(list, value).fileOffset;
 }
 
 template<class S>
