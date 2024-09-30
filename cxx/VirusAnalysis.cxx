@@ -6,7 +6,7 @@
 #include "ClassResultList.hxx" /* size_t listMaxSize listHasValue listProduceSignature listHasSignatureOfValue ResultList resultListDumpTo resultListProduceHashes */
 #include "ClassSha2.hxx" /* sha2 */
 #include "ClassSys.hxx" /* classSysArgc classSysArgs execvex hasRoot setRoot */
-#include "Macros.hxx" /* ERROR NOTICE SUSUWU_NOTICE SUSUWU_NOTICE_EXECUTE SUSUWU_ERRSTR */
+#include "Macros.hxx" /* ERROR NOTICE SUSUWU_NOTICE SUSUWU_NOTICE_DEBUGEXECUTE SUSUWU_ERRSTR */
 #include "VirusAnalysis.hxx" /* passList abortList *AnalyisCaches */
 #include <algorithm> /* std::sort */
 #include <cassert> /* assert */
@@ -49,8 +49,8 @@ const bool virusAnalysisTests() {
 	resultListProduceHashes(abortOrNull);
 	produceAbortListSignatures(passOrNull, abortOrNull);
 	SUSUWU_NOTICE("resultListDumpTo(.list = passOrNull, .os = std::cout, .index = true, .whitespace = true, .pascalValues = false);");
-	resultListDumpTo(passOrNull, std::cout, true, true, false);
-	SUSUWU_NOTICE_EXECUTE(resultListDumpTo(/*.list = */abortOrNull, /*.os = */std::cout, /*.index = */false, /*.whitespace = */false, /*.pascalValues = */false));
+	SUSUWU_DEBUGEXECUTE(resultListDumpTo(passOrNull, std::cout, true, true, false));
+	SUSUWU_NOTICE_DEBUGEXECUTE((resultListDumpTo(/*.list = */abortOrNull, /*.os = */std::cout, /*.index = */false, /*.whitespace = */false, /*.pascalValues = */false), std::cout << std::endl));
 	assert(4 == passOrNull.bytecodes.size());
 	assert(passOrNull.bytecodes.size() - 1 /* 2 instances "SW", discount dup */ == passOrNull.hashes.size());
 	assert(0 == passOrNull.signatures.size());

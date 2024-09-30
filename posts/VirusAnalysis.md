@@ -735,8 +735,8 @@ const bool virusAnalysisTests() {
 	resultListProduceHashes(abortOrNull);
 	produceAbortListSignatures(passOrNull, abortOrNull);
 	SUSUWU_NOTICE("resultListDumpTo(.list = passOrNull, .os = std::cout, .index = true, .whitespace = true, .pascalValues = false);");
-	resultListDumpTo(passOrNull, std::cout, true, true, false);
-	SUSUWU_NOTICE_EXECUTE(resultListDumpTo(/*.list = */abortOrNull, /*.os = */std::cout, /*.index = */false, /*.whitespace = */false, /*.pascalValues = */false));
+	SUSUWU_DEBUGEXECUTE(resultListDumpTo(passOrNull, std::cout, true, true, false));
+	SUSUWU_NOTICE_DEBUGEXECUTE((resultListDumpTo(/*.list = */abortOrNull, /*.os = */std::cout, /*.index = */false, /*.whitespace = */false, /*.pascalValues = */false), std::cout << std::endl));
 	assert(4 == passOrNull.bytecodes.size());
 	assert(passOrNull.bytecodes.size() - 1 /* 2 instances of "SW", discount dup */ == passOrNull.hashes.size());
 	assert(0 == passOrNull.signatures.size());
@@ -1130,10 +1130,8 @@ const bool assistantCnsTests() {
 	assert(responsesOrNull.bytecodes.size() == questionsOrNull.bytecodes.size());
 	assert(4 == questionsOrNull.hashes.size());
 	assert(3 == responsesOrNull.hashes.size());
-	std::cout << "questionsOrNull = ";
-	resultListDumpTo(questionsOrNull, std::cout, true, true, false);
-	std::cout << "responsesOrNull = ";
-	resultListDumpTo(responsesOrNull, std::cout, false, false, false);
+	SUSUWU_NOTICE_DEBUGEXECUTE(resultListDumpTo(questionsOrNull, std::cout, true, true, false));
+	SUSUWU_NOTICE_DEBUG_EXECUTE((resultListDumpTo(responsesOrNull, std::cout, false, false, false), std::cout << endl));
 	questionsResponsesFromHosts(questionsOrNull, responsesOrNull);
 	produceAssistantCns(questionsOrNull, responsesOrNull, assistantCns);
 	return true;

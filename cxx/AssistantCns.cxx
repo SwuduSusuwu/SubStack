@@ -7,6 +7,7 @@
 #include "ClassResultList.hxx" /* explodeToList listMaxSize listHasValue ResultList ResultListBytecode resultListDumpTo resultListProduceHashes */
 #include "ClassSha2.hxx" /* sha2 */
 #include "ClassSys.hxx" /* execvex */
+#include "Macros.hxx" /* SUSUWU_NOTICE_DEBUGEXECUTE */
 #include <cassert> /* assert */
 #include <iostream> /* std::cin std::cout */
 #include <string> /* std::string */
@@ -44,10 +45,8 @@ const bool assistantCnsTests() {
 	assert(responsesOrNull.bytecodes.size() == questionsOrNull.bytecodes.size());
 	assert(4 == questionsOrNull.hashes.size());
 	assert(3 == responsesOrNull.hashes.size());
-	std::cout << "questionsOrNull = ";
-	resultListDumpTo(questionsOrNull, std::cout, true, true, false);
-	std::cout << "responsesOrNull = ";
-	resultListDumpTo(responsesOrNull, std::cout, false, false, false);
+	SUSUWU_NOTICE_DEBUGEXECUTE(resultListDumpTo(questionsOrNull, std::cout, true, true, false));
+	SUSUWU_NOTICE_DEBUGEXECUTE((resultListDumpTo(responsesOrNull, std::cout, false, false, false), std::cout << std::endl));
 	questionsResponsesFromHosts(questionsOrNull, responsesOrNull);
 	produceAssistantCns(questionsOrNull, responsesOrNull, assistantCns);
 	return true;
