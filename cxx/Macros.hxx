@@ -58,19 +58,22 @@ namespace Susuwu { /* namespaces do not affect macros. Is just standard practice
 #define SUSUWU_CERR(WARN_LEVEL, x) std::cerr << GLUE(SUSUWU_WARN_, WARN_LEVEL) << x << SUSUWU_WARN_CLOSE_ << std::endl
 #define SUSUWU_STDERR(WARN_LEVEL, x) fprintf(stderr, GLUE(SUSUWU_WARN_, WARN_LEVEL) "%s" SUSUWU_WARN_CLOSE_ "\n", x)
 
-/* Use this to hide notices/diagnostics from release builds */
+/* Use this to limit notices/diagnostics to release builds (+ do conditional execution) */
 #ifdef NDEBUG
 # define SUSUWU_CERR_NOTICE(x) (true)/* skip */
 # define SUSUWU_STDERR_NOTICE(x) (true)/* skip */
 # define SUSUWU_CERR_DEBUG(x) (true)/* skip */
 # define SUSUWU_STDERR_DEBUG(x) (true)/* skip */
+# define SUSUWU_DEBUGEXECUTE(x) (true)/*skip*/
 #else /* !(defined NDEBUG) */
 # define SUSUWU_CERR_NOTICE(x) SUSUWU_CERR(NOTICE, x)
 # define SUSUWU_STDERR_NOTICE(x) SUSUWU_STDERR(NOTICE, x)
 # define SUSUWU_CERR_DEBUG(x) SUSUWU_CERR(DEBUG, x)
 # define SUSUWU_STDERR_DEBUG(x) SUSUWU_STDERR(DEBUG, x)
+# define SUSUWU_DEBUGEXECUTE(x) x
 #endif /* !(defined NDEBUG) */
 
+/* Use this to do C versus C++ agnostic messages */
 #define SUSUWU_CERR_INFO(x) SUSUWU_CERR(INFO, x)
 #define SUSUWU_STDERR_INFO(x) SUSUWU_STDERR(INFO, x)
 #ifdef __cplusplus
@@ -83,10 +86,15 @@ namespace Susuwu { /* namespaces do not affect macros. Is just standard practice
 # define SUSUWU_DEBUG(x) SUSUWU_DEBUG_NOTICE(x)
 #endif /* !(defined __cplusplus */
 
-/* Use this to reduce print+execute into single statement */
+/* Use this to reduce (conditional) print + (unconditional) execute into single statement */
 #define SUSUWU_INFO_EXECUTE(x) ((SUSUWU_INFO(#x)), (x))
 #define SUSUWU_NOTICE_EXECUTE(x) ((SUSUWU_NOTICE(#x)), (x))
 #define SUSUWU_DEBUG_EXECUTE(x) ((SUSUWU_DEBUG(#x)), (x))
+
+/* Use this to reduce (conditional) print + (conditional) execute into single statement */
+#define SUSUWU_INFO_DEBUGEXECUTE(x) ((SUSUWU_INFO(#x)), SUSUWU_DEBUGEXECUTE(x))
+#define SUSUWU_NOTICE_DEBUGEXECUTE(x) ((SUSUWU_NOTICE(#x)), SUSUWU_DEBUGEXECUTE(x))
+#define SUSUWU_DEBUG_DEBUGEXECUTE(x) ((SUSUWU_DEBUG(#x)), SUSUWU_DEBUGEXECUTE(x))
 
 #if (!defined __WIN32__) && (defined _WIN32 /* || defined __CYGWIN__ should use "#ifdef _POSIX_VERSION" path */ || __MSC_VER)
 # define __WIN32__ /* https://stackoverflow.com/questions/430424/are-there-any-macros-to-determine-if-my-code-is-being-compiled-to-windows/430435#430435 says that __WIN32__ is not always defined on Windows targets */
