@@ -171,7 +171,7 @@ void listToHashes(const List &list /* ResultList::bytecodes or ResultList::hex*/
 		hashes.insert(sha2(value));
 	}
 }
-/* Usage: if ResultList was not produced with hashes */
+/* Usage: if `ResultList` was not produced with `.hashes` */
 static void resultListProduceHashes(ResultList &resultList) {
 	listToHashes(resultList.bytecodes, resultList.hashes);
 }
@@ -189,24 +189,24 @@ const bool listsIntersect(const List &list, const List &list2) {
 }
 
 template<class List>
-/* return list's const_iterator to first instance of x, or list.cend() (if not found) */
-auto listFindValue(const List &list, const typename List::value_type &x) {
-	return std::find(list.cbegin(), list.cend(), x);
+/* return `list`'s `const_iterator` to first instance of `value`, or `list.cend()` (if not found) */
+auto listFindValue(const List &list, const typename List::value_type &value) {
+	return std::find(list.cbegin(), list.cend(), value);
 }
 template<class List>
-const bool listHasValue(const List &list, const typename List::value_type &x) {
-	return list.cend() != listFindValue(list, x);
+const bool listHasValue(const List &list, const typename List::value_type &value) {
+	return list.cend() != listFindValue(list, value);
 }
 
 template<class List>
 const typename List::value_type::const_iterator listDefaultIterator = typename List::value_type::const_iterator(); /* Equates to "Not found" */
 template<class List>
-/* return list's const_iterator to first instance of Substr{s, x}, or default iterator (if not found)
- * @pre @code s < x @endcode */
-typeof listDefaultIterator<List> listFindSubstr(const List &list, typename List::value_type::const_iterator s, typename List::value_type::const_iterator x) {
+/* return `list`'s `const_iterator` to first instance of `std::string(itBegin, itEndSubstr)`, or default iterator (if not found)
+ * @pre @code itBegin < itEnd @endcode */
+typeof listDefaultIterator<List> listFindSubstr(const List &list, typename List::value_type::const_iterator itBegin, typename List::value_type::const_iterator itEnd) {
 #pragma unroll
 	for(const auto &value : list) {
-		auto result = std::search(value.cbegin(), value.cend(), s, x, [](char ch1, char ch2) { return ch1 == ch2; });
+		auto result = std::search(value.cbegin(), value.cend(), itBegin, itEnd, [](char chValue, char chIt) { return chValue == chIt; });
 		if(value.cend() != result) {
 			return result;
 		}
@@ -214,49 +214,49 @@ typeof listDefaultIterator<List> listFindSubstr(const List &list, typename List:
 	return listDefaultIterator<List>;
 }
 template<class List>
-/* @pre @code s < x @endcode */
-const bool listHasSubstr(const List &list, typename List::value_type::const_iterator s, typename List::value_type::const_iterator x) {
-	return listDefaultIterator<List> != listFindSubstr(list, s, x);
+/* @pre @code itBegin < itEnd @endcode */
+const bool listHasSubstr(const List &list, typename List::value_type::const_iterator itBegin, typename List::value_type::const_iterator itEnd) {
+	return listDefaultIterator<List> != listFindSubstr(list, itBegin, itEnd);
 }
 template<class List>
 /* Returns shortest substr from `value`, which is not found in `list`
- * Usage: resultList.signatures.push_back({listProduceSignature(resultList.bytecodes, bytecode)); */
+ * Usage: `resultList.signatures.push_back({listProduceSignature(resultList.bytecodes, bytecode));` */
 const std::tuple<typename List::value_type::const_iterator, typename List::value_type::const_iterator> listProduceSignature(const List &list, const typename List::value_type &value) {
 	size_t smallest = value.size();
-	auto retBegin = value.cbegin(), retEnd = value.cend();
-	for(auto s = retBegin; value.cend() != s; ++s) {
-		for(auto x = value.cend(); s != x; --x) {
-			if((x - s) < smallest) {
-				if(listHasSubstr(list, s, x)) {
+	auto itBegin = value.cbegin(), itEnd = value.cend();
+	for(auto first = itBegin; value.cend() != first; ++first) {
+		for(auto last = value.cend(); first != last; --last) {
+			if((last - first) < smallest) {
+				if(listHasSubstr(list, first, last)) {
 					break;
 				}
-				smallest = x - s;
-				retBegin = s, retEnd = x;
+				smallest = last - first;
+				itBegin = first, itEnd = last;
 			}
 		}
 	} /* Incremental `for()` loops, is O(n^2 * m) complex formula to produce signatures; should use binary searches, or look for the Standard Template Lib (or Boost) function which optimizes this. */
-	return {retBegin, retEnd};
+	return {itBegin, itEnd};
 }
 template<class List>
-/* Usage: auto it = listFindSignatureOfValue(resultList.signatures, input)); if(it) {std::cout << "input has resultList.signatures[" << std::string(it) << "]";} */
-typeof listDefaultIterator<List> listFindSignatureOfValue(const List &list, const typename List::value_type &x) {
-	for(const auto &value : list) {
+/* Usage: `auto it = listFindSignatureOfValue(resultList.signatures, value)); if(it) {std::cout << "value has resultList.signatures[" << std::string(it) << "]";}` */
+typeof listDefaultIterator<List> listFindSignatureOfValue(const List &list, const typename List::value_type &value) {
+	for(const auto &signature : list) {
 #if PREFERENCE_IS_CSTR
-		auto result = memmem(&x[0], strlen(&x[0]), &value[0], strlen(&value[0]));
-		if(NULL != result) {
+		auto it = memmem(&value[0], strlen(&value[0]), &signature[0], strlen(&signature[0]));
+		if(NULL != it) {
 #else /* !PREFERENCE_IS_CSTR */
-		auto result = std::search(x.cbegin(), x.cend(), value.cbegin(), value.cend(), [](char ch1, char ch2) { return ch1 == ch2; });
-		if(value.cend() != result) {
+		auto it = std::search(value.cbegin(), value.cend(), signature.cbegin(), signature.cend(), [](char ch1, char ch2) { return ch1 == ch2; });
+		if(signature.cend() != it) {
 #endif /* !PREFERENCE_IS_CSTR */
-			return result;
+			return it;
 		}
 	}
 	return listDefaultIterator<List>;
 }
 template<class List>
-/* Usage: if(listHasSignatureOfValue(resultList.signatures, input)) {std::cout << "input has signature from ResultList.signatures";} */
-const bool listHasSignatureOfValue(const List &list, const typename List::value_type &x) {
-	return listDefaultIterator<List> != listFindSignatureOfValue(list, x);
+/* Usage: `if(listHasSignatureOfValue(resultList.signatures, value)) {std::cout << "value has signature from ResultList.signatures";}` */
+const bool listHasSignatureOfValue(const List &list, const typename List::value_type &value) {
+	return listDefaultIterator<List> != listFindSignatureOfValue(list, value);
 }
 
 template<class S>
