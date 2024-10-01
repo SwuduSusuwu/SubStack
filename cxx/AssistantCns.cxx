@@ -118,11 +118,12 @@ const std::vector<FilePath> assistantParseUrls(const FilePath &localXhtml) {
 			pt.get_child("html.a href"))
 		urls.push_back(v.second.data());
 #else /* else !BOOST_VERSION */
+# pragma message("TODO: process XHTML without Boost")
 #endif /* else !BOOST_VERSION */
 	return urls;
 }
-const FileBytecode assistantParseQuestion(const FilePath &localXhtml) {} /* TODO */
-const std::vector<FileBytecode> assistantParseResponses(const FilePath &localXhtml) {} /* TODO */
+const FileBytecode assistantParseQuestion(const FilePath &localXhtml) {return "";} /* TODO */
+const std::vector<FileBytecode> assistantParseResponses(const FilePath &localXhtml) {return {};} /* TODO */
 
 const std::string assistantCnsProcess(const Cns &cns, const FileBytecode &bytecode) {
 	return cns.processToString(bytecode);
