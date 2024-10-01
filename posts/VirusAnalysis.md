@@ -1114,7 +1114,7 @@ Cns assistantCns;
 std::vector<FilePath> assistantDefaultHosts = {
 	"https://stackoverflow.com",
 	"https://superuser.com",
-	"https://quora.com"
+	"https://www.quora.com"
 };
 
 const bool assistantCnsTests() {
