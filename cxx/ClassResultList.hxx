@@ -11,7 +11,6 @@
 #if PREFERENCE_IS_CSTR
 #include <cstring> /* strlen memmem */
 #endif /* PREFERENCE_IS_CSTR */
-#include <ostream> /* std::ostream */
 #include <tuple> /* std::tuple std::get */
 #include <unordered_set> /* std::unordered_set */
 #include <vector> /* std::vector */
@@ -39,8 +38,8 @@ const size_t listMaxSize(const List &list) {
 #endif /* PREFERENCE_IS_CSTR else */
 }
 
-template<class List>
-void listDumpTo(const List &list, std::ostream &os, const bool index, const bool whitespace, const bool pascalValues) {
+template<class List, class Os>
+void listDumpTo(const List &list, Os &os, const bool index, const bool whitespace, const bool pascalValues) {
 	size_t index_ = 0;
 	os << '{';
 	for(const auto &value : list) {
@@ -67,8 +66,8 @@ void listDumpTo(const List &list, std::ostream &os, const bool index, const bool
 		os << "};";
 	}
 }
-template<class List>
-void resultListDumpTo(const List &list, std::ostream &os, const bool index, const bool whitespace, const bool pascalValues) {
+template<class List, class Os>
+void resultListDumpTo(const List &list, Os &os, const bool index, const bool whitespace, const bool pascalValues) {
 	os << "list.hashes" << (whitespace ? " = " : "=");
 	listDumpTo(list.hashes, os, index, whitespace, pascalValues);
 	os << "list.signatures" << (whitespace ? " = " : "=");
