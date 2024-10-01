@@ -15,17 +15,17 @@ less [cxx/Macros.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/Mac
 #define SUSUWU_SH_PURPLE "\033[0;35m"
 #define SUSUWU_SH_CYAN "\033[0;36m"
 #define SUSUWU_SH_WHITE "\033[1;37m"
-#define SUSUWU_WARN_ERROR "[" SUSUWU_SH_RED "Error: " SUSUWU_SH_WHITE
-#define SUSUWU_WARN_WARNING "[" SUSUWU_SH_PURPLE "Warning: " SUSUWU_SH_WHITE
-#define SUSUWU_WARN_INFO "[" SUSUWU_SH_CYAN "Info: " SUSUWU_SH_WHITE
-#define SUSUWU_WARN_SUCCESS "[" SUSUWU_SH_GREEN "Success: " SUSUWU_SH_WHITE
-#define SUSUWU_WARN_NOTICE "[" SUSUWU_SH_BLUE "Notice: " SUSUWU_SH_WHITE
-#define SUSUWU_WARN_DEBUG SUSUWU_WARN_NOTICE
-#define SUSUWU_WARN_CLOSE_ SUSUWU_SH_DEFAULT "]"
+#define SUSUWU_SH_ERROR "[" SUSUWU_SH_RED "Error: " SUSUWU_SH_WHITE
+#define SUSUWU_SH_WARNING "[" SUSUWU_SH_PURPLE "Warning: " SUSUWU_SH_WHITE
+#define SUSUWU_SH_INFO "[" SUSUWU_SH_CYAN "Info: " SUSUWU_SH_WHITE
+#define SUSUWU_SH_SUCCESS "[" SUSUWU_SH_GREEN "Success: " SUSUWU_SH_WHITE
+#define SUSUWU_SH_NOTICE "[" SUSUWU_SH_BLUE "Notice: " SUSUWU_SH_WHITE
+#define SUSUWU_SH_DEBUG "[" SUSUWU_SH_BLUE "Debug: " SUSUWU_SH_WHITE
+#define SUSUWU_SH_CLOSE_ SUSUWU_SH_DEFAULT "]"
 /* WARN_LEVEL = {ERROR, WARNING, INFO, SUCCESS, NOTICE, DEBUG} */
-#define SUSUWU_ERRSTR(WARN_LEVEL, x) std::string(GLUE(SUSUWU_WARN_, WARN_LEVEL)) + std::string(x) + std::string(SUSUWU_WARN_CLOSE_)
-#define SUSUWU_CERR(WARN_LEVEL, x) std::cerr << GLUE(SUSUWU_WARN_, WARN_LEVEL) << x << SUSUWU_WARN_CLOSE_ << std::endl
-#define SUSUWU_STDERR(WARN_LEVEL, x) fprintf(stderr, GLUE(SUSUWU_WARN_, WARN_LEVEL) "%s" SUSUWU_WARN_CLOSE_ "\n", x)
+#define SUSUWU_ERRSTR(WARN_LEVEL, x) std::string(GLUE(SUSUWU_SH_, WARN_LEVEL)) + std::string(x) + std::string(SUSUWU_SH_CLOSE_)
+#define SUSUWU_CERR(WARN_LEVEL, x) std::cerr << GLUE(SUSUWU_SH_, WARN_LEVEL) << x << SUSUWU_SH_CLOSE_ << std::endl
+#define SUSUWU_STDERR(WARN_LEVEL, x) fprintf(stderr, GLUE(SUSUWU_SH_, WARN_LEVEL) "%s" SUSUWU_SH_CLOSE_ "\n", x)
 /* Use this to limit notices/diagnostics to debug builds (+ do conditional execution) */
 #ifdef NDEBUG
 # define SUSUWU_CERR_NOTICE(x) (true)/* skip */
