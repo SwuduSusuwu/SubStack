@@ -141,10 +141,7 @@ void listDumpTo(const List &list, std::ostream &os, const bool index, const bool
 				os << value.size() << value;
 		} else {
 			os << (index ? "=>0x" : "0x");
-			for(char ch : value) {
-				os << std::hex << static_cast<int>(ch);
-			}
-			os << std::dec;
+			classSysHexOs(Os, value);
 		}
 		++index_;
 	}
@@ -488,13 +485,29 @@ const bool hasRoot();
  * Usage: setRoot(true); functionsWhichRequireRoot; setRoot(false); */
 const bool setRoot(bool root); /* root ? (seteuid(0) : (seteuid(getuid() || atoi(getenv("SUDO_UID"))), setuid(geteuid)); return hasRoot(); */
 
+template<class Os, class Str>
+inline Os &classSysHexOs(Os &os, const Str &value) {
+	os << std::hex;
+	for(char ch : value) {
+		os << static_cast<int>(ch);
+	}
+	os << std::dec;
+	return os;
+}
+template<class Str>
+inline Str classSysHexStr(const Str &value) {
+	std::stringstream os;
+	classSysHexOs(os, value);
+	return os.str();
+}
+
 template<typename Func, typename... Args>
 auto templateCatchAll(Func func, const std::string &funcName, Args... args) {
 	try {
 		return func(args...);
 	} catch (const std::exception &ex) {
 		SUSUWU_CERR(ERROR, funcName + " {throw std::exception(\"" + ex.what() + "\");}");
-		return decltype(func(args...))(); /* `func(args...)`'s default return value; if `int func(args...)`, `return 0;`. If `bool func()`, `return false;` */
+		return decltype(func(args...))(); /* `func(args...)`'s default return value; if `int func(args...)`, `return 0;`. If `bool func(args...)`, `return false;` */
 	}
 }
 ```
@@ -1027,7 +1040,7 @@ const FileBytecode cnsVirusFix(const PortableExecutable &file, const Cns &cns /*
 #include "Macros.hxx" /* ASSUME EXPECTS ENSURES NOEXCEPT NORETURN */
 #include "VirusAnalysis.hxx" /* virusAnalysisTestsNoexcept */
 #include <cstdlib> /* exit EXIT_SUCCESS */
-#include <iostream> /* cout flush endl */
+#include <iostream> /* std::cout std::flush std::endl */
 namespace Susuwu {
 void noExcept() NOEXCEPT;
 NORETURN void noReturn();

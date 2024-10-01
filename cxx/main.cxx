@@ -6,7 +6,7 @@
 #include "Macros.hxx" /* ASSUME EXPECTS ENSURES NOEXCEPT NORETURN */
 #include "VirusAnalysis.hxx" /* virusAnalysisTestsNoexcept */
 #include <cstdlib> /* exit EXIT_SUCCESS */
-#include <iostream> /* cout flush endl */
+#include <iostream> /* std::cout std::flush std::endl */
 namespace Susuwu {
 void noExcept() NOEXCEPT;
 NORETURN void noReturn();

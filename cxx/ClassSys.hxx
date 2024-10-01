@@ -4,7 +4,9 @@
 #define INCLUDES_cxx_ClassSys_hxx
 #include "Macros.hxx" /* ERROR SUSUWU_CERR */
 #include <exception> /* std::exception */
+#include <iomanip> /* std::dec std::hex */
 #include <iostream> /* std::cerr std::endl */
+#include <sstream> /* std::stringstream */
 #include <string> /* std::string */
 #ifdef _POSIX_VERSION
 #include <sys/types.h> /* pid_t */
@@ -36,13 +38,29 @@ const bool hasRoot();
  * Usage: setRoot(true); functionsWhichRequireRoot; setRoot(false); */
 const bool setRoot(bool root); /* root ? (seteuid(0) : (seteuid(getuid() || atoi(getenv("SUDO_UID"))), setuid(geteuid)); return hasRoot(); */
 
+template<class Os, class Str>
+inline Os &classSysHexOs(Os &os, const Str &value) {
+	os << std::hex;
+	for(char ch : value) {
+		os << static_cast<int>(ch);
+	}
+	os << std::dec;
+	return os;
+}
+template<class Str>
+inline Str classSysHexStr(const Str &value) {
+	std::stringstream os;
+	classSysHexOs(os, value);
+	return os.str();
+}
+
 template<typename Func, typename... Args>
 auto templateCatchAll(Func func, const std::string &funcName, Args... args) {
 	try {
 		return func(args...);
 	} catch (const std::exception &ex) {
 		SUSUWU_CERR(ERROR, funcName + " {throw std::exception(\"" + ex.what() + "\");}");
-		return decltype(func(args...))(); /* `func(args...)`'s default return value; if `int func(args...)`, `return 0;`. If `bool func()`, `return false;` */
+		return decltype(func(args...))(); /* `func(args...)`'s default return value; if `int func(args...)`, `return 0;`. If `bool func(args...)`, `return false;` */
 	}
 }
 }; /* namespace Susuwu */

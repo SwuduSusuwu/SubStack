@@ -5,12 +5,12 @@
 //#include "ClassObject.hxx" /* Object */ /* TODO: fix "Initialization of non-aggregate type" */
 #include "ClassPortableExecutable.hxx" /* FilePath FileBytecode FileHash */
 #include "ClassSha2.hxx" /* sha2 */
+#include "ClassSys.hxx" /* classSysHexOs */
 #include <algorithm> /* std::search std::find std::set_intersection */
 #include <cstddef> /* size_t */
 #if PREFERENCE_IS_CSTR
 #include <cstring> /* strlen memmem */
 #endif /* PREFERENCE_IS_CSTR */
-#include <iomanip> /* std::hex std::dec */
 #include <ostream> /* std::ostream */
 #include <tuple> /* std::tuple std::get */
 #include <unordered_set> /* std::unordered_set */
@@ -57,10 +57,7 @@ void listDumpTo(const List &list, std::ostream &os, const bool index, const bool
 				os << value.size() << value;
 		} else {
 			os << (index ? "=>0x" : "0x");
-			for(char ch : value) {
-				os << std::hex << static_cast<int>(ch);
-			}
-			os << std::dec;
+			classSysHexOs(os, value);
 		}
 		++index_;
 	}
