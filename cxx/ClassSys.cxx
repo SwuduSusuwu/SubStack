@@ -30,7 +30,7 @@ bool classSysInit(int argc, const char *args[]) {
 	return false;
 }
 
-const pid_t execvesFork(const std::vector<const std::string> &argvS, const std::vector<const std::string> &envpS) {
+const pid_t execvesFork(const std::vector<std::string> &argvS, const std::vector<std::string> &envpS) {
 #ifdef _POSIX_VERSION
 	const pid_t pid = fork();
 	if(0 != pid) {
@@ -59,7 +59,7 @@ const pid_t execvesFork(const std::vector<const std::string> &argvS, const std::
 	exit(EXIT_FAILURE); /* execv*() is NORETURN */
 #endif /* def _POSIX_VERSION */
 }
-const int execves(const std::vector<const std::string> &argvS, const std::vector<const std::string> &envpS) {
+const int execves(const std::vector<std::string> &argvS, const std::vector<std::string> &envpS) {
 #ifdef _POSIX_VERSION
 	const pid_t pid = execvesFork(argvS, envpS);
 	int status;

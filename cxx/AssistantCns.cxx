@@ -52,7 +52,7 @@ const bool assistantCnsTests() {
 	return true;
 }
 void produceAssistantCns(const ResultList &questionsOrNull, const ResultList &responsesOrNull, Cns &cns) {
-	std::vector<const std::tuple<const ResultListBytecode, const ResultListBytecode>> inputsToOutputs;
+	std::vector<std::tuple<ResultListBytecode, ResultListBytecode>> inputsToOutputs;
 	cns.setInputMode(cnsModeString);
 	cns.setOutputMode(cnsModeString);
 	cns.setInputNeurons(listMaxSize(questionsOrNull.bytecodes));

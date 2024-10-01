@@ -260,7 +260,7 @@ void produceAnalysisCns(const ResultList &pass, const ResultList &abort,
 const ResultList &unreviewed /* = ResultList(), WARNING! Possible danger to use unreviewed files */,
 Cns &cns /* = analysisCns */
 ) {
-	std::vector<const std::tuple<const FileBytecode, float>> inputsToOutputs;
+	std::vector<std::tuple<FileBytecode, float>> inputsToOutputs;
 	const size_t maxPassSize = listMaxSize(pass.bytecodes);
 	const size_t maxAbortSize = listMaxSize(abort.bytecodes);
 	cns.setInputMode(cnsModeString);
@@ -306,7 +306,7 @@ const VirusAnalysisResult cnsAnalysis(const PortableExecutable &file, const Resu
 }
 
 void produceVirusFixCns(const ResultList &passOrNull, const ResultList &abortOrNull, Cns &cns /* = virusFixCns */) {
-	std::vector<const std::tuple<const FileBytecode, const FileBytecode>> inputsToOutputs;
+	std::vector<std::tuple<FileBytecode, FileBytecode>> inputsToOutputs;
 	cns.setInputMode(cnsModeString);
 	cns.setOutputMode(cnsModeString);
 	cns.setInputNeurons(listMaxSize(passOrNull.bytecodes));
