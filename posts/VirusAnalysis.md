@@ -471,6 +471,11 @@ extern const char **classSysArgs;
  * @post @code (0 < classSysArgc && nullptr != classSysArgs && nullptr != classSysArgs[0] */
 bool classSysInit(int argc, const char *args[]);
 
+typedef long long ClassSysUSeconds;
+inline const ClassSysUSeconds classSysUSecondClock() {
+	return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
 /* `argv = argvS + NULL; envp = envpS + NULL: pid_t pid = fork() || (envpS.empty() ? execv(argv[0], &argv[0]) : execve(argv[0], &argv[0], &envp[0])); return pid;`
  * @pre @code (-1 != access(argv[0], X_OK) @endcode */
 const pid_t execvesFork(/* const std::string &pathname, -- `execve` requires `&pathname == &argv[0]` */ const std::vector<std::string> &argvS = {}, const std::vector<std::string> &envpS = {});

@@ -3,6 +3,7 @@
 #ifndef INCLUDES_cxx_ClassSys_hxx
 #define INCLUDES_cxx_ClassSys_hxx
 #include "Macros.hxx" /* ERROR SUSUWU_CERR */
+#include <chrono> /* std::chrono */
 #include <exception> /* std::exception */
 #include <iomanip> /* std::dec std::hex */
 #include <iostream> /* std::cerr std::endl */
@@ -23,6 +24,11 @@ extern const char **classSysArgs;
  * @pre @code (0 < argc && nullptr != args && nullptr != args[0]
  * @post @code (0 < classSysArgc && nullptr != classSysArgs && nullptr != classSysArgs[0] */
 bool classSysInit(int argc, const char *args[]);
+
+typedef long long ClassSysUSeconds;
+inline const ClassSysUSeconds classSysUSecondClock() {
+	return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+}
 
 /* `argv = argvS + NULL; envp = envpS + NULL: pid_t pid = fork() || (envpS.empty() ? execv(argv[0], &argv[0]) : execve(argv[0], &argv[0], &envp[0])); return pid;`
  * @pre @code (-1 != access(argv[0], X_OK) @endcode */
