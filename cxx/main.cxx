@@ -2,6 +2,7 @@
 #ifndef INCLUDES_cxx_main_cxx
 #define INCLUDES_cxx_main_cxx
 #include "AssistantCns.hxx" /* assistantCnsTestsNoexcept */
+#include "ClassSha2.hxx" /* classSha2Tests */
 #include "ClassSys.hxx" /* execves execvex templateCatchAll */
 #include "Macros.hxx" /* ASSUME EXPECTS ENSURES NOEXCEPT NORETURN */
 #include "VirusAnalysis.hxx" /* virusAnalysisTestsNoexcept */
@@ -21,6 +22,8 @@ int testHarnesses() EXPECTS(true) ENSURES(true) {
 	(EXIT_SUCCESS == execves({"/bin/echo", "pass"})) || std::cout << "error" << std::endl;
 	std::cout << "execvex(): " << std::flush;
 	(EXIT_SUCCESS == execvex("/bin/echo pass")) || std::cout << "error" << std::endl;
+	std::cout << "classSha2Tests(): " << std::flush;
+	std::cout << (classSha2Tests() ? "pass" : "error") << std::endl;
 	std::cout << "virusAnalysisTestsNoexcept(): " << std::flush;
 	if(virusAnalysisTestsNoexcept()) {
 		std::cout << "pass" << std::endl;

@@ -97,6 +97,32 @@ public:
 	SHA256Result(&context, const_cast<unsigned char *>(reinterpret_cast<const unsigned char *>(result.c_str())));
 	return result;
 }
+
+bool classSha2Tests() { /* is just to test glue code (which wraps rfc6234). Use `../c/rfc6234/shatest.c` to test rfc6234. */
+	const char nulls[65536 /* 65536 == 2^16 == 64kb */] = {0};
+	std::string nullStr(nulls, &nulls[65536]);
+	const ClassSysUSeconds tsDrift = classSysUSecondClock(), ts2Drift = classSysUSecondClock() - tsDrift, ts = classSysUSecondClock();
+	const FileHash hash = sha2(nullStr);
+	const ClassSysUSeconds ts2 = classSysUSecondClock() - ts2Drift;
+	const std::string hashStrCompute = "0x" + classSysHexStr(hash);
+	const std::string hashStrTrue = "0xde2f256064a0af797747c2b9755dcb9f3df0de4f489eac731c23ae9ca9cc31";
+	if(ts == ts2) {
+		SUSUWU_CERR(WARNING, "0 ms (0 μs) to compute `sha2(std::string(nulls, &nulls[65536])) == " + hashStrCompute + "` = inf mbps");
+	} else {
+		SUSUWU_INFO(std::to_string((ts2 - ts) / 1000) + " ms (" + std::to_string(ts2 - ts) + " μs) to compute `sha2(std::string(nulls, &nulls[65536])) == " + hashStrCompute + "` = " + std::to_string(float(65536) * CHAR_BIT /* to bits */ / (ts2 - ts) /* to bpμs */ * 1000000 /* to bps */ / (1 << 20) /* to mbps */) + "mbps");
+	}
+	SUSUWU_NOTICE("This `sha2()` is from `./build.sh --debug`: `./build.sh --release` has 4x this throughput");
+	if(0 == hash.size()) {
+		throw std::runtime_error(SUSUWU_ERRSTR(ERROR, "`0 == sha2(std::string()).size();"));
+	} else if(hashStrTrue.size() != hashStrCompute.size() && sha256 == sha2) {
+		throw std::runtime_error(SUSUWU_ERRSTR(ERROR, "`sha2 = sha256;`, but `(" + std::to_string(hash.size()) + " == sha2(std::string()).size())`"));
+	} else if(hashStrTrue.size() != hashStrCompute.size()) {
+		SUSUWU_INFO("`(sha256 != sha2)`, `(" + std::to_string(hash.size()) + " == sha2(std::string()).size())`");
+	} else if(hashStrTrue != hashStrCompute) {
+		throw std::runtime_error(SUSUWU_ERRSTR(ERROR, "sha2(char nulls[65535] = {0}) did not compute " + hashStrTrue));
+	}
+	return true;
+}
 ```
 `less` [cxx/ClassResultList.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ClassResultList.hxx)
 ```
@@ -1038,10 +1064,13 @@ const FileBytecode cnsVirusFix(const PortableExecutable &file, const Cns &cns /*
 	return cns.processToString(file.bytecode);
 }
 ```
-`less` [cxx/main.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/main.cxx)
+`less` [cxx/main.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/main.cxx) /* with boilerplate */
 ```
+#ifndef INCLUDES_cxx_main_cxx
+#define INCLUDES_cxx_main_cxx
 #include "AssistantCns.hxx" /* assistantCnsTestsNoexcept */
-#include "ClassSys.hxx" /* execves execvex */
+#include "ClassSha2.hxx" /* classSha2Tests */
+#include "ClassSys.hxx" /* execves execvex templateCatchAll */
 #include "Macros.hxx" /* ASSUME EXPECTS ENSURES NOEXCEPT NORETURN */
 #include "VirusAnalysis.hxx" /* virusAnalysisTestsNoexcept */
 #include <cstdlib> /* exit EXIT_SUCCESS */
@@ -1060,6 +1089,8 @@ int testHarnesses() EXPECTS(true) ENSURES(true) {
 	(EXIT_SUCCESS == execves({"/bin/echo", "pass"})) || std::cout << "error" << std::endl;
 	std::cout << "execvex(): " << std::flush;
 	(EXIT_SUCCESS == execvex("/bin/echo pass")) || std::cout << "error" << std::endl;
+	std::cout << "classSha2Tests(): " << std::flush;
+	std::cout << (classSha2Tests() ? "pass" : "error") << std::endl;
 	std::cout << "virusAnalysisTestsNoexcept(): " << std::flush;
 	if(virusAnalysisTestsNoexcept()) {
 		std::cout << "pass" << std::endl;
