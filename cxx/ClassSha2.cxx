@@ -13,6 +13,7 @@ extern "C" {
 #include "../c/rfc6234/sha.h" /* SHA256HashSize, SHA256Context, SHA256Reset, SHA256Input, SHA256Result, SHA1*, SHA512*  */
 }
 namespace Susuwu {
+Sha2 sha2 = sha256;
 /* const */ FileHash /* 128 bits, not null-terminated */ sha1(const FileBytecode &bytecode) {
 	FileHash result;
 	SHA1Context context;

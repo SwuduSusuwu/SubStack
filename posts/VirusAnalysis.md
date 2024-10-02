@@ -85,16 +85,46 @@ public:
 	std::ifstream input;
 } PortableExecutableBytecode;
 ```
+`less` [cxx/ClassSha2.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ClassSha2.hxx)
+```
+/* const */ FileHash /* 128 bits, not null-terminated */ sha1(const FileBytecode &bytecode);
+/* const */ FileHash /* 256 bits, not null-terminated */ sha256(const FileBytecode &bytecode);
+/* const */ FileHash /* 512 bits, not null-terminated */ sha512(const FileBytecode &bytecode);
+typedef FileHash (*Sha2)(const FileBytecode &bytecode);
+extern Sha2 sha2/* = sha256 */; /* To compress, apps can execute `sha2 = sha1;`. To double hash sizes, execute `sha2 = sha512;`. (Notice: this does not recompute hashes which exist) */
+bool classSha2Tests();
+```
 `less` [cxx/ClassSha2.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ClassSha2.cxx)
 ```
 /* Uses https://www.rfc-editor.org/rfc/rfc6234#section-8.2.2 */
-/* const */ FileHash /* 256 bits, not null-terminated */ sha2(const FileBytecode &bytecode) {
+Sha2 sha2 = sha256;
+/* const */ FileHash /* 128 bits, not null-terminated */ sha1(const FileBytecode &bytecode) {
+	FileHash result;
+	SHA1Context context;
+	result.resize(SHA1HashSize);
+	SHA1Reset(&context); /* If undefined, link sha1.o */
+	SHA1Input(&context, reinterpret_cast<const unsigned char *>(bytecode.c_str()), bytecode.size());
+	SHA1Result(&context, const_cast<unsigned char *>(reinterpret_cast<const unsigned char *>(result.c_str())));
+	return result;
+}
+
+/* const */ FileHash /* 256 bits, not null-terminated */ sha256(const FileBytecode &bytecode) {
 	FileHash result;
 	SHA256Context context;
 	result.resize(SHA256HashSize);
 	SHA256Reset(&context); /* If undefined, link sha224-256.o */
 	SHA256Input(&context, reinterpret_cast<const unsigned char *>(bytecode.c_str()), bytecode.size());
 	SHA256Result(&context, const_cast<unsigned char *>(reinterpret_cast<const unsigned char *>(result.c_str())));
+	return result;
+}
+
+/* const */ FileHash /* 512 bits, not null-terminated */ sha512(const FileBytecode &bytecode) {
+	FileHash result;
+	SHA512Context context;
+	result.resize(SHA512HashSize);
+	SHA512Reset(&context); /* If undefined, link sha384-512.o */
+	SHA512Input(&context, reinterpret_cast<const unsigned char *>(bytecode.c_str()), bytecode.size());
+	SHA512Result(&context, const_cast<unsigned char *>(reinterpret_cast<const unsigned char *>(result.c_str())));
 	return result;
 }
 
