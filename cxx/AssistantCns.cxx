@@ -16,12 +16,12 @@
 /* (Work-in-progress) assistant bots with artificial CNS. */
 namespace Susuwu {
 Cns assistantCns;
-std::vector<FilePath> assistantDefaultHosts = {
+std::vector<FilePath> assistantCnsDefaultHosts = {
 	"https://stackoverflow.com",
 	"https://superuser.com",
 	"https://www.quora.com"
 };
-std::string responseDelimiter = std::string("<delimiterSeparatesMultiplePossibleResponses>");
+std::string assistantCnsResponseDelimiter = std::string("<delimiterSeparatesMultiplePossibleResponses>");
 
 const bool assistantCnsTests() {
 	ResultList questionsOrNull {
@@ -34,10 +34,10 @@ const bool assistantCnsTests() {
 	};
 	ResultList responsesOrNull {
 		.bytecodes { /* UTF-8 */
-			ResultListBytecode("65536") + responseDelimiter + "65,536", /* `+` is `concat()` for C++ */
+			ResultListBytecode("65536") + assistantCnsResponseDelimiter + "65,536", /* `+` is `concat()` for C++ */
 			ResultListBytecode(""),
 			ResultListBytecode(""),
-			ResultListBytecode("How do you do?") + responseDelimiter + "Fanuc produces autonomous robots"
+			ResultListBytecode("How do you do?") + assistantCnsResponseDelimiter + "Fanuc produces autonomous robots"
 		}
 	};
 	resultListProduceHashes(questionsOrNull);
@@ -90,7 +90,7 @@ void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &respon
 				size_t responseCount = 0;
 				for(const auto &responseIt : responses) {
 					if(1 != ++responseCount) {
-						response += responseDelimiter;
+						response += assistantCnsResponseDelimiter;
 					}
 					response += responseIt;
 				}
@@ -140,7 +140,7 @@ void assistantCnsLoopProcess(const Cns &cns) {
 	int nthResponse = 0;
 	while(std::cin >> input) {
 		bytecode += input;
-		std::vector<std::string> responses = explodeToList(cns.processToString(bytecode), responseDelimiter);
+		std::vector<std::string> responses = explodeToList(cns.processToString(bytecode), assistantCnsResponseDelimiter);
 		if(input == previous && responses.size() > 1 + nthResponse) {
 			++nthResponse; /* Similar to "suggestions" for next questions, but just uses previous question to give new responses */
 		} else {

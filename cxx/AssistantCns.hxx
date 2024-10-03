@@ -12,7 +12,7 @@
 /* (Work-in-progress) assistant bots with artificial CNS ("HSOM" (the simple Python artificial CNS) is enough to do this), which should have results almost as complex as "ChatGPT 4.0" (or as "Claude-3 Opus"); */
 namespace Susuwu {
 extern Cns assistantCns;
-extern std::string responseDelimiter;
+extern std::string assistantCnsResponseDelimiter;
 
 /* if (with example inputs) these functions (`questionsResponsesFromHosts()` `produceAssistantCns()`) pass, `return true;`
  * @throw std::bad_alloc
@@ -25,14 +25,14 @@ static const bool assistantCnsTestsNoexcept() NOEXCEPT {return templateCatchAll(
  * Wikipedia is a special case; has compressed downloads of databases ( https://wikipedia.org/wiki/Wikipedia:Database_download )
  * Github is a special case; has compressed downloads of repositories ( https://docs.github.com/en/get-started/start-your-journey/downloading-files-from-github )
  */
-extern std::vector<FilePath> assistantDefaultHosts;
+extern std::vector<FilePath> assistantCnsDefaultHosts;
 
 /* @throw std::bad_alloc
  * @post If no question, `0 == questionsOrNull.bytecodes[x].size()` (new message synthesis).
  * If no responses, `0 == responsesOrNull.bytecodes[x].size()` (ignore).
  * `questionsOrNull.signatures[x] = Universal Resource Locator`
  * @code sha2(ResultList.bytecodes[x]) == ResultList.hashes[x] @endcode */
-void questionsResponsesFromHosts(ResultList &questionsOrNull, ResultList &responsesOrNull, const std::vector<FilePath> &hosts = assistantDefaultHosts);
+void questionsResponsesFromHosts(ResultList &questionsOrNull, ResultList &responsesOrNull, const std::vector<FilePath> &hosts = assistantCnsDefaultHosts);
 void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &responsesOrNull, const FilePath &localXhtml = "index.xhtml");
 const std::vector<FilePath> assistantParseUrls(const FilePath &localXhtml = "index.xhtml"); /* TODO: for XML/XHTML could just use [ https://www.boost.io/libraries/regex/ https://github.com/boostorg/regex ] or [ https://www.boost.org/doc/libs/1_85_0/doc/html/property_tree/parsers.html#property_tree.parsers.xml_parser https://github.com/boostorg/property_tree/blob/develop/doc/xml_parser.qbk ] */
 const FileBytecode assistantParseQuestion(const FilePath &localXhtml = "index.xhtml"); /* TODO: regex or XML parser */

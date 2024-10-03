@@ -1150,7 +1150,7 @@ For comparison; `produceVirusFixCns` is close to assistants (such as "ChatGPT 4.
 `less` [cxx/AssistantCns.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/AssistantCns.hxx)
 ```
 extern Cns assistantCns;
-extern std::string responseDelimiter;
+extern std::string assistantCnsResponseDelimiter;
 
 /* if (with example inputs) these functions (`questionsResponsesFromHosts()` `produceAssistantCns()`) pass, `return true;`
  * @throw std::bad_alloc
@@ -1163,14 +1163,14 @@ static const bool assistantCnsTestsNoexcept() NOEXCEPT {return templateCatchAll(
  * Wikipedia is a special case; has compressed downloads of databases ( https://wikipedia.org/wiki/Wikipedia:Database_download )
  * Github is a special case; has compressed downloads of repositories ( https://docs.github.com/en/get-started/start-your-journey/downloading-files-from-github )
  */
-extern std::vector<FilePath> assistantDefaultHosts;
+extern std::vector<FilePath> assistantCnsDefaultHosts;
 
 /* @throw std::bad_alloc
  * @post If no question, `0 == questionsOrNull.bytecodes[x].size()` (new  synthesis).
  * If no responses, `0 == responsesOrNull.bytecodes[x].size()` (ignore).
  * `questionsOrNull.signatures[x] = Universal Resource Locator`
  * @code sha2(ResultList.bytecodes[x]) == ResultList.hashes[x] @endcode */
-void questionsResponsesFromHosts(ResultList &questionsOrNull, ResultList &responsesOrNull, const std::vector<FilePath> &hosts = assistantDefaultHosts);
+void questionsResponsesFromHosts(ResultList &questionsOrNull, ResultList &responsesOrNull, const std::vector<FilePath> &hosts = assistantCnsDefaultHosts);
 void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &responsesOrNull, const FilePath &filepath = "index.xhtml");
 const std::vector<FilePath> ParseUrls(const FilePath &filepath = "index.xhtml"); /* TODO: for XML/XHTML could just use [ https://www.boost.io/libraries/regex/ https://github.com/boostorg/regex ] or [ https://www.boost.org/doc/libs/1_85_0/doc/html/property_tree/parsers.html#property_tree.parsers.xml_parser https://github.com/boostorg/property_tree/blob/develop/doc/xml_parser.qbk ] */
 const FileBytecode ParseQuestion(const FilePath &filepath = "index.xhtml"); /* TODO: regex or XML parser */
@@ -1193,12 +1193,12 @@ void assistantCnsLoopProcess(const Cns &cns);
 `less` [cxx/AssistantCns.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/AssistantCns.cxx)
 ```
 Cns assistantCns;
-std::vector<FilePath> assistantDefaultHosts = {
+std::vector<FilePath> assistantCnsDefaultHosts = {
 	"https://stackoverflow.com",
 	"https://superuser.com",
 	"https://www.quora.com"
 };
-std::string responseDelimiter = std::string("<delimiterSeparatesMultiplePossibleResponses>");
+std::string assistantCnsResponseDelimiter = std::string("<delimiterSeparatesMultiplePossibleResponses>");
 
 const bool assistantCnsTests() {
 	ResultList questionsOrNull {
@@ -1211,10 +1211,10 @@ const bool assistantCnsTests() {
 	};
 	ResultList responsesOrNull {
 		.bytecodes { /* UTF-8 */
-			ResultListBytecode("65536") + responseDelimiter + "65,536", /* `+` is `concat()` for C++ */
+			ResultListBytecode("65536") + assistantCnsResponseDelimiter + "65,536", /* `+` is `concat()` for C++ */
 			ResultListBytecode(""),
 			ResultListBytecode(""),
-			ResultListBytecode("How do you do?") + responseDelimiter + "Fanuc produces autonomous robots"
+			ResultListBytecode("How do you do?") + assistantCnsResponseDelimiter + "Fanuc produces autonomous robots"
 		}
 	};
 	resultListProduceHashes(questionsOrNull);
@@ -1267,7 +1267,7 @@ void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &respon
 				size_t responseCount = 0;
 				for(const auto &responseIt : responses) {
 					if(1 != ++responseCount) {
-						response += responseDelimiter;
+						response += assistantCnsResponseDelimiter;
 					}
 					response += responseIt;
 				}
@@ -1317,7 +1317,7 @@ void assistantCnsLoopProcess(const Cns &cns) {
 	int nthResponse = 0;
 	while(std::cin >> input) {
 		bytecode += input;
-		std::vector<std::string> responses = explodeToList(cns.processToString(bytecode), responseDelimiter);
+		std::vector<std::string> responses = explodeToList(cns.processToString(bytecode), assistantCnsResponseDelimiter);
 		if(input == previous && responses.size() > 1 + nthResponse) {
 			++nthResponse; /* Similar to "suggestions" for next questions, but just uses previous question to give new responses */
 		} else {

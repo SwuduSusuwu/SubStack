@@ -34,7 +34,7 @@ Conventions = Mozilla Org (ergo Firefox) style:
 
         }
 
-    Variables, objects: const bool camelCase = true;
+    Variables, objects: const bool `camelCase = true`; Global variables/objects: `extern classPrefixCamelCase;`
 
     `git add NewFile`: "+NewFile", `git rm Exists`: "-Exists", `touch Exists && git add Exists`: "@Exists"
 
