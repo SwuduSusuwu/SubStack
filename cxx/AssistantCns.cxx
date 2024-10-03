@@ -128,32 +128,25 @@ const std::vector<FileBytecode> assistantParseResponses(const FilePath &localXht
 const std::string assistantCnsProcess(const Cns &cns, const FileBytecode &bytecode) {
 	return cns.processToString(bytecode);
 }
-
 void assistantCnsLoopProcess(const Cns &cns) {
-	std::string bytecode, previous;
+	std::string input, previous, bytecode, response;
 	int nthResponse = 0;
-	while(std::cin >> bytecode) {
-#ifdef IGNORE_PAST_MESSAGES
-		std::vector<std::string> responses = explodeToList(cns.processToString(bytecode), "<delimiterSeparatesMultiplePossibleResponses>");
-		if(bytecode == previous && responses.size() > 1 + nthResponse) {
-			++nthResponse; /* Similar to "suggestions" for next questions, but just uses previous question to give new responses */
-		} else {
-			nthResponse = 0;
-		}
-		std::cout << responses.at(nthResponse);
-		previous = bytecode;
-		bytecode = ""; /* reset inputs */
-#else
+	while(std::cin >> input) {
+		bytecode += input;
 		std::vector<std::string> responses = explodeToList(cns.processToString(bytecode), std::string("<delimiterSeparatesMultiplePossibleResponses>"));
-	 	if(bytecode == previous && responses.size() > 1 + nthResponse) {
+		if(input == previous && responses.size() > 1 + nthResponse) {
 			++nthResponse; /* Similar to "suggestions" for next questions, but just uses previous question to give new responses */
 		} else {
 			nthResponse = 0;
+			previous = input;
 		}
-#endif /* IGNORE_PAST_MESSAGES */
+#ifdef IGNORE_PAST_MESSAGES
+		bytecode = ""; /* reset past messages */
+#else /* !def IGNORE_PAST_MESSAGES */
+		bytecode += "\n<response>" + responses.at(nthResponse) + "</response>\n";
+#endif /* !def IGNORE_PAST_MESSAGES */
 		std::cout << responses.at(nthResponse);
-		previous = bytecode;
-		bytecode += '\n'; /* delimiter separates (and uses) multiple inputs */
+		input = "";
 	}
 }
 
