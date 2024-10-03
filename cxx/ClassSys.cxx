@@ -1,7 +1,7 @@
 /* Dual licenses: choose "Creative Commons" or "Apache 2" (allows all uses) */
 #ifndef INCLUDES_cxx_ClassSys_cxx
 #define INCLUDES_cxx_ClassSys_cxx
-#include "Macros.hxx" /* SUSUWU_CERR WARNING */
+#include "Macros.hxx" /* ERROR SUSUWU_CERR SUSUWU_ERRSTR WARNING */
 #include "ClassSys.hxx" /* std::string std::vector */
 #include <cassert> /* assert */
 #include <cstdlib> /* atoi exit EXIT_FAILURE getenv */
@@ -34,8 +34,9 @@ const pid_t execvesFork(const std::vector<std::string> &argvS, const std::vector
 #ifdef _POSIX_VERSION
 	const pid_t pid = fork();
 	if(0 != pid) {
-		int status;
-		assert(-1 != pid);
+		if(-1 == pid) {
+			throw std::runtime_error(SUSUWU_ERRSTR(ERROR, "execvesFork: {-1 == pid}"));
+		}
 		return pid;
 	} /* if 0, is fork */
 	const std::vector<std::string> argvSmutable = {argvS.cbegin(), argvS.cend()};
