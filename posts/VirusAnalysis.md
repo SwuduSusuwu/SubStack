@@ -1148,6 +1148,7 @@ For comparison; `produceVirusFixCns` is close to assistants (such as "ChatGPT 4.
 `less` [cxx/AssistantCns.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/AssistantCns.hxx)
 ```
 extern Cns assistantCns;
+extern std::string responseDelimiter;
 
 /* if (with example inputs) these functions (`questionsResponsesFromHosts()` `produceAssistantCns()`) pass, `return true;`
  * @throw std::bad_alloc
@@ -1195,6 +1196,7 @@ std::vector<FilePath> assistantDefaultHosts = {
 	"https://superuser.com",
 	"https://www.quora.com"
 };
+std::string responseDelimiter = std::string("<delimiterSeparatesMultiplePossibleResponses>");
 
 const bool assistantCnsTests() {
 	ResultList questionsOrNull {
@@ -1207,10 +1209,10 @@ const bool assistantCnsTests() {
 	};
 	ResultList responsesOrNull {
 		.bytecodes { /* UTF-8 */
-			ResultListBytecode("65536") + "<delimiterSeparatesMultiplePossibleResponses>" + "65,536", /* `+` is `concat()` for C++ */
+			ResultListBytecode("65536") + responseDelimiter + "65,536", /* `+` is `concat()` for C++ */
 			ResultListBytecode(""),
 			ResultListBytecode(""),
-			ResultListBytecode("How do you do?") + "<delimiterSeparatesMultiplePossibleResponses>" + "Fanuc produces autonomous robots"
+			ResultListBytecode("How do you do?") + responseDelimiter + "Fanuc produces autonomous robots"
 		}
 	};
 	resultListProduceHashes(questionsOrNull);
@@ -1220,7 +1222,7 @@ const bool assistantCnsTests() {
 	assert(4 == questionsOrNull.hashes.size());
 	assert(3 == responsesOrNull.hashes.size());
 	SUSUWU_NOTICE_DEBUGEXECUTE(resultListDumpTo(questionsOrNull, std::cout, true, true, false));
-	SUSUWU_NOTICE_DEBUG_EXECUTE((resultListDumpTo(responsesOrNull, std::cout, false, false, false), std::cout << endl));
+	SUSUWU_NOTICE_DEBUGEXECUTE((resultListDumpTo(responsesOrNull, std::cout, false, false, false), std::cout << std::endl));
 	questionsResponsesFromHosts(questionsOrNull, responsesOrNull);
 	produceAssistantCns(questionsOrNull, responsesOrNull, assistantCns);
 	return true;
@@ -1292,7 +1294,7 @@ const std::vector<FilePath> assistantParseUrls(const FilePath &localXhtml) {
 			pt.get_child("html.a href"))
 		urls.push_back(v.second.data());
 #else /* else !BOOST_VERSION */
-# pragma message("TODO: Process XHTML without Boost")
+# pragma message("TODO: process XHTML without Boost")
 #endif /* else !BOOST_VERSION */
 	return urls;
 }
@@ -1307,7 +1309,7 @@ void assistantCnsLoopProcess(const Cns &cns) {
 	int nthResponse = 0;
 	while(std::cin >> input) {
 		bytecode += input;
-		std::vector<std::string> responses = explodeToList(cns.processToString(bytecode), std::string("<delimiterSeparatesMultiplePossibleResponses>"));
+		std::vector<std::string> responses = explodeToList(cns.processToString(bytecode), responseDelimiter);
 		if(input == previous && responses.size() > 1 + nthResponse) {
 			++nthResponse; /* Similar to "suggestions" for next questions, but just uses previous question to give new responses */
 		} else {

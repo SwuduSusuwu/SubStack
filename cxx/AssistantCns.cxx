@@ -21,6 +21,7 @@ std::vector<FilePath> assistantDefaultHosts = {
 	"https://superuser.com",
 	"https://www.quora.com"
 };
+std::string responseDelimiter = std::string("<delimiterSeparatesMultiplePossibleResponses>");
 
 const bool assistantCnsTests() {
 	ResultList questionsOrNull {
@@ -33,10 +34,10 @@ const bool assistantCnsTests() {
 	};
 	ResultList responsesOrNull {
 		.bytecodes { /* UTF-8 */
-			ResultListBytecode("65536") + "<delimiterSeparatesMultiplePossibleResponses>" + "65,536", /* `+` is `concat()` for C++ */
+			ResultListBytecode("65536") + responseDelimiter + "65,536", /* `+` is `concat()` for C++ */
 			ResultListBytecode(""),
 			ResultListBytecode(""),
-			ResultListBytecode("How do you do?") + "<delimiterSeparatesMultiplePossibleResponses>" + "Fanuc produces autonomous robots"
+			ResultListBytecode("How do you do?") + responseDelimiter + "Fanuc produces autonomous robots"
 		}
 	};
 	resultListProduceHashes(questionsOrNull);
@@ -133,7 +134,7 @@ void assistantCnsLoopProcess(const Cns &cns) {
 	int nthResponse = 0;
 	while(std::cin >> input) {
 		bytecode += input;
-		std::vector<std::string> responses = explodeToList(cns.processToString(bytecode), std::string("<delimiterSeparatesMultiplePossibleResponses>"));
+		std::vector<std::string> responses = explodeToList(cns.processToString(bytecode), responseDelimiter);
 		if(input == previous && responses.size() > 1 + nthResponse) {
 			++nthResponse; /* Similar to "suggestions" for next questions, but just uses previous question to give new responses */
 		} else {
