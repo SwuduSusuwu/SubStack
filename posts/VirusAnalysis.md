@@ -1014,8 +1014,8 @@ const VirusAnalysisResult sandboxAnalysis(const PortableExecutable &file, const 
 const VirusAnalysisResult straceOutputsAnalysis(const FilePath &straceOutput) {
 		auto straceDump = std::ifstream(straceOutput);
 		std::vector<std::string> straceOutputs /*= explodeToList(straceDump, "\n")*/;
-		for(std::string straceOutput; std::getline(straceDump, straceOutput); ) {
-			straceOutputs.push_back(straceOutput);
+		for(std::string straceOutputIt; std::getline(straceDump, straceOutputIt); ) {
+			straceOutputs.push_back(straceOutputIt);
 		}
 		std::sort(stracePotentialDangers.begin(), stracePotentialDangers.end());
 		std::sort(straceOutputs.begin(), straceOutputs.end());
