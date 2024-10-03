@@ -81,16 +81,22 @@ void questionsResponsesFromXhtml(ResultList &questionsOrNull, ResultList &respon
 	auto question = assistantParseQuestion(localXhtml);
 	if(!question.empty()) {
 		auto questionSha2 = sha2(question);
-		if(!listHasValue(questionsOrNull.hashes, questionSha2)) {
-			questionsOrNull.hashes.insert(questionSha2);
+		if(listHasValue(questionsOrNull.hashes, questionSha2)) { /* TODO */ } else {
+			typeof question response = "";
 			auto responses = assistantParseResponses(localXhtml);
-			for(const auto &response : responses) {
-				auto questionSha2 = sha2(question);
+			if(!responses.empty()) {
+				questionsOrNull.hashes.insert(questionSha2);
+				questionsOrNull.bytecodes.push_back(question);
+				size_t responseCount = 0;
+				for(const auto &responseIt : responses) {
+					if(1 != ++responseCount) {
+						response += responseDelimiter;
+					}
+					response += responseIt;
+				}
 				auto responseSha2 = sha2(response);
-				if(!listHasValue(responsesOrNull.hashes, responseSha2)) {
-					questionsOrNull.hashes.insert(questionSha2);
+				if(listHasValue(responsesOrNull.hashes, responseSha2)) { /* TODO */ } else {
 					responsesOrNull.hashes.insert(responseSha2);
-					questionsOrNull.bytecodes.push_back(question);
 					responsesOrNull.bytecodes.push_back(response); 
 				}
 			}
