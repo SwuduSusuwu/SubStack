@@ -5,6 +5,7 @@
 #include <cassert> /* assert */
 #include <iostream> /* operator+() */
 #include <string> /* std::string */
+#include <string.h> /* memcmp */
 #include <vector> /* std::vector */
 namespace Susuwu {
 typedef enum ObjectCloneAs {
@@ -16,13 +17,17 @@ typedef enum ObjectCloneAs {
 } ObjectCloneAs;
 typedef class Class {
 public:
+#if 202000 /* TODO? `clang++` support this at 201703, but emits `-Wc++20-extensions`*/ <= __cplusplus
 	virtual /* const requires C++26 */ bool operator==(const Class &obj) const = default;
+#else /* !C++20 */
+	virtual /* const requires C++26 */ bool operator==(const Class &obj) const { return (sizeof(*this) == sizeof(obj) && 0 == memcmp(reinterpret_cast<const void *>(this), reinterpret_cast<const void *>(&obj), sizeof(*this))); } /* warning: first operand of this 'memcmp' call is a pointer to dynamic class 'Object'; vtable pointer will be compared [-Wdynamic-class-memaccess] */
+#endif /* !(C++20 */
 	virtual const std::string getName() const { return "Susuwu::class Class"; } /* Does not return reference because https://poe.com/s/cfdFBY4gUqBaeFKLJ8uP */
 } Class;
 typedef class Object : Class { /* `Java` superclass based-on https://docs.oracle.com/javase%2Ftutorial%2F/java/IandI/objectclass.html https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html , to assist future `Java` ports from C++ */
 public:
 	virtual ~Object() = default; /* release resources */
-	virtual /* const -- requires C++26 */ bool operator==(const Object &obj) const = default;
+	virtual /* const -- requires C++26 */ bool operator==(const Object &obj) const { return Class::operator==(obj); } /* [-Wdynamic-class-memaccess] too; Identical objects will `return false` if vtables (member signatures) differ. */
 	virtual const std::string getName() const { return "Susuwu::class Object"; }
 	virtual const bool hasImplementation() const { return typeid(Object) != typeid(this); }
 	virtual const bool isInitialized() const {return true;} /* override this if the constructor is not enough to produce usable subclass */
