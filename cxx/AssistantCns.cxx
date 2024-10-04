@@ -63,7 +63,7 @@ void produceAssistantCns(const ResultList &questionsOrNull, const ResultList &re
 	cns.setNeuronsPerLayer(26666);
 	assert(questionsOrNull.bytecodes.size() == questionsOrNull.bytecodes.size());
 	inputsToOutputs.reserve(questionsOrNull.bytecodes.size());
-	for(int x = 0; questionsOrNull.bytecodes.size() > x; ++x) {
+	for(size_t x = 0; questionsOrNull.bytecodes.size() > x; ++x) {
 		inputsToOutputs.push_back({questionsOrNull.bytecodes[x], responsesOrNull.bytecodes[x]});
 	}
 	cns.setupSynapses(inputsToOutputs);

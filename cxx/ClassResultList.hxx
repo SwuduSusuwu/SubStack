@@ -135,7 +135,7 @@ template<class List>
 /* Returns shortest substr from `value`, which is not found in `list`
  * Usage: `resultList.signatures.push_back({listProduceSignature(resultList.bytecodes, bytecode));` */
 const std::tuple<typename List::value_type::const_iterator, typename List::value_type::const_iterator> listProduceSignature(const List &list, const typename List::value_type &value) {
-	size_t smallest = value.size();
+	ptrdiff_t smallest = value.size();
 	auto itBegin = value.cbegin(), itEnd = value.cend();
 	for(auto first = itBegin; value.cend() != first; ++first) {
 		for(auto last = value.cend(); first != last; --last) {

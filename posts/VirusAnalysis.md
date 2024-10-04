@@ -276,7 +276,7 @@ template<class List>
 /* Returns shortest substr from `value`, which is not found in `list`
  * Usage: `resultList.signatures.push_back({listProduceSignature(resultList.bytecodes, bytecode));` */
 const std::tuple<typename List::value_type::const_iterator, typename List::value_type::const_iterator> listProduceSignature(const List &list, const typename List::value_type &value) {
-	size_t smallest = value.size();
+	ptrdiff_t smallest = value.size();
 	auto itBegin = value.cbegin(), itEnd = value.cend();
 	for(auto first = itBegin; value.cend() != first; ++first) {
 		for(auto last = value.cend(); first != last; --last) {
@@ -1086,7 +1086,7 @@ void produceVirusFixCns(const ResultList &passOrNull, const ResultList &abortOrN
 	cns.setNeuronsPerLayer(26666);
 	assert(passOrNull.bytecodes.size() == abortOrNull.bytecodes.size());
 	inputsToOutputs.reserve(passOrNull.bytecodes.size());
-	for(int x = 0; passOrNull.bytecodes.size() > x; ++x) {
+	for(size_t x = 0; passOrNull.bytecodes.size() > x; ++x) {
 		inputsToOutputs.push_back({abortOrNull.bytecodes[x], passOrNull.bytecodes[x]});
 	}
 	cns.setupSynapses(inputsToOutputs);
@@ -1239,7 +1239,7 @@ void produceAssistantCns(const ResultList &questionsOrNull, const ResultList &re
 	cns.setNeuronsPerLayer(26666);
 	assert(questionsOrNull.bytecodes.size() == questionsOrNull.bytecodes.size());
 	inputsToOutputs.reserve(questionsOrNull.bytecodes.size());
-	for(int x = 0; questionsOrNull.bytecodes.size() > x; ++x) {
+	for(size_t x = 0; questionsOrNull.bytecodes.size() > x; ++x) {
 		inputsToOutputs.push_back({questionsOrNull.bytecodes[x], responsesOrNull.bytecodes[x]});
 	}
 	cns.setupSynapses(inputsToOutputs);

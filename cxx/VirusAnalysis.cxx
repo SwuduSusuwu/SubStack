@@ -315,7 +315,7 @@ void produceVirusFixCns(const ResultList &passOrNull, const ResultList &abortOrN
 	cns.setNeuronsPerLayer(26666);
 	assert(passOrNull.bytecodes.size() == abortOrNull.bytecodes.size());
 	inputsToOutputs.reserve(passOrNull.bytecodes.size());
-	for(int x = 0; passOrNull.bytecodes.size() > x; ++x) {
+	for(size_t x = 0; passOrNull.bytecodes.size() > x; ++x) {
 		inputsToOutputs.push_back({abortOrNull.bytecodes[x], passOrNull.bytecodes[x]});
 	}
 	cns.setupSynapses(inputsToOutputs);
