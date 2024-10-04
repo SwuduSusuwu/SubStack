@@ -1188,7 +1188,7 @@ void produceAssistantCns(const ResultList &questionsOrNull, const ResultList &re
 const std::string assistantCnsProcess(const Cns &cns, const std::string &bytecode);
 /* `while(std::cin >> questions) { std::cout << assistantCnsProcess(questions); }` but more complex
  * @pre @code cns.isInitialized() @encode */
-void assistantCnsLoopProcess(const Cns &cns);
+void assistantCnsLoopProcess(const Cns &cns, std::ostream &os = std::cout);
 ```
 `less` [cxx/AssistantCns.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/AssistantCns.cxx)
 ```
@@ -1312,7 +1312,7 @@ const std::vector<FileBytecode> assistantParseResponses(const FilePath &localXht
 const std::string assistantCnsProcess(const Cns &cns, const FileBytecode &bytecode) {
 	return cns.processToString(bytecode);
 }
-void assistantCnsLoopProcess(const Cns &cns) {
+void assistantCnsLoopProcess(const Cns &cns, std::ostream &os /* = std::cout */) {
 	std::string input, previous, bytecode, response;
 	int nthResponse = 0;
 	while(std::cin >> input) {
@@ -1329,7 +1329,7 @@ void assistantCnsLoopProcess(const Cns &cns) {
 #else /* !def IGNORE_PAST_MESSAGES */
 		bytecode += "\n<response>" + responses.at(nthResponse) + "</response>\n";
 #endif /* !def IGNORE_PAST_MESSAGES */
-		std::cout << responses.at(nthResponse);
+		os << responses.at(nthResponse);
 		input = "";
 	}
 }

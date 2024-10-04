@@ -7,6 +7,8 @@
 #include "ClassPortableExecutable.hxx" /* FilePath FileBytecode */
 #include "ClassResultList.hxx" /* ResultList */
 #include "Macros.hxx" /* NOEXCEPT */
+#include <iostream> /* std::cout */
+#include <ostream> /* std::ostream */
 #include <string> /* std::string */
 #include <vector> /* std::vector */
 /* (Work-in-progress) assistant bots with artificial CNS ("HSOM" (the simple Python artificial CNS) is enough to do this), which should have results almost as complex as "ChatGPT 4.0" (or as "Claude-3 Opus"); */
@@ -50,7 +52,7 @@ void produceAssistantCns(const ResultList &questionsOrNull, const ResultList &re
 const std::string assistantCnsProcess(const Cns &cns, const std::string &bytecode);
 /* `while(std::cin >> questions) { std::cout << assistantCnsProcess(questions); }` but more complex
  * @pre @code cns.isInitialized() @encode */
-void assistantCnsLoopProcess(const Cns &cns);
+void assistantCnsLoopProcess(const Cns &cns, std::ostream &os = std::cout);
 
 
 /* Related to this:

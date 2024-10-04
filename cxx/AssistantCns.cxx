@@ -10,6 +10,7 @@
 #include "Macros.hxx" /* SUSUWU_NOTICE_DEBUGEXECUTE */
 #include <cassert> /* assert */
 #include <iostream> /* std::cin std::cout */
+#include <ostream> /* std::ostream */
 #include <string> /* std::string */
 #include <tuple> /* std::tuple */
 #include <vector> /* std::vector */
@@ -135,7 +136,7 @@ const std::vector<FileBytecode> assistantParseResponses(const FilePath &localXht
 const std::string assistantCnsProcess(const Cns &cns, const FileBytecode &bytecode) {
 	return cns.processToString(bytecode);
 }
-void assistantCnsLoopProcess(const Cns &cns) {
+void assistantCnsLoopProcess(const Cns &cns, std::ostream &os /* = std::cout */) {
 	std::string input, previous, bytecode, response;
 	int nthResponse = 0;
 	while(std::cin >> input) {
@@ -152,7 +153,7 @@ void assistantCnsLoopProcess(const Cns &cns) {
 #else /* !def IGNORE_PAST_MESSAGES */
 		bytecode += "\n<response>" + responses.at(nthResponse) + "</response>\n";
 #endif /* !def IGNORE_PAST_MESSAGES */
-		std::cout << responses.at(nthResponse);
+		os << responses.at(nthResponse);
 		input = "";
 	}
 }
