@@ -4,8 +4,9 @@ echo '# /* Dual licenses: choose "Creative Commons" or "Apache 2" (allows all us
 sSRC="./cxx/"
 #INCLUDES="${sSRC}"
 #export CXX_FLAGS="-I${INCLUDES}"
-CXX_FLAGS_RELEASE="-fomit-frame-pointer -DNDEBUG -O2"
-CXX_FLAGS_DEBUG="-fsanitize=address -fno-sanitize-recover=all -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -fno-sanitize=null -fno-sanitize=alignment" #/* supports `g++`/`clang++`: https://developers.redhat.com/blog/2021/05/05/memory-error-checking-in-c-and-c-comparing-sanitizers-and-valgrind#tldr */
+CXX_FLAGS_ANALYSIS="-Wall -Wno-unused -Wno-unused-function -Wextra -Wno-unused-parameter -Wno-ignored-qualifiers" #TODO: `-Werror` without `-Wno-*`
+CXX_FLAGS_RELEASE="${CXX_FLAGS_ANALYSIS} -fomit-frame-pointer -DNDEBUG -O2"
+CXX_FLAGS_DEBUG="${CXX_FLAGS_ANALYSIS} -fsanitize=address -fno-sanitize-recover=all -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -fno-sanitize=null -fno-sanitize=alignment" #/* supports `g++`/`clang++`: https://developers.redhat.com/blog/2021/05/05/memory-error-checking-in-c-and-c-comparing-sanitizers-and-valgrind#tldr */
 CXX_FLAGS_DEBUG="${CXX_FLAGS_DEBUG} -fno-omit-frame-pointer" #/* thus optimization won't remove stacktraces: https://stackoverflow.com/questions/48234575/g-will-fno-omit-frame-pointer-be-effective-if-specified-before-o2-or-o3 https://clang.llvm.org/docs/MemorySanitizer.html */
 CXX_FLAGS_DEBUG="${CXX_FLAGS_DEBUG} -g" #/* extra symbols (line numbers + arguments) to stacktraces */
 #CXX_FLAGS_DEBUG="${CXX_FLAGS_DEBUG} -fno-optimize-sibling-calls" #/* Don't inline functions. Does extra stacktraces. */
@@ -31,6 +32,7 @@ else
 fi
 CXX="${CXX} ${CXX_FLAGS}"
 rm *.o
+test -f a.out && rm a.out
 set -x
 $CXX -x c -c ${sSRC}/../c/rfc6234/sha1.c
 $CXX -x c -c ${sSRC}/../c/rfc6234/sha224-256.c
