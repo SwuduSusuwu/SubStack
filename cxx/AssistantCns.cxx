@@ -137,24 +137,29 @@ const std::string assistantCnsProcess(const Cns &cns, const FileBytecode &byteco
 	return cns.processToString(bytecode);
 }
 void assistantCnsLoopProcess(const Cns &cns, std::ostream &os /* = std::cout */) {
-	std::string input, previous, bytecode, response;
-	int nthResponse = 0;
+	std::string input;
 	while(std::cin >> input) {
-		bytecode += input;
-		std::vector<std::string> responses = explodeToList(cns.processToString(bytecode), assistantCnsResponseDelimiter);
-		if(input == previous && responses.size() > 1 + nthResponse) {
-			++nthResponse; /* Similar to "suggestions" for next questions, but just uses previous question to give new responses */
-		} else {
-			nthResponse = 0;
-			previous = input;
-		}
+		std::vector<std::string> responses = explodeToList(cns.processToString(input), assistantCnsResponseDelimiter);
+		std::string response;
+		if(responses.size() > 1) {
+			int responseNumber = 1;
+			for(const auto &it : responses) {
 #ifdef IGNORE_PAST_MESSAGES
-		bytecode = ""; /* reset past messages */
+				os << "Response #" << std::to_string(responseNumber++) << ": " << it << std::endl;
+			}
+		} else {
+			os << responses.at(0) << std::endl;
+		}
+		input = ""; /* reset past messages */
 #else /* !def IGNORE_PAST_MESSAGES */
-		bytecode += "\n<response>" + responses.at(nthResponse) + "</response>\n";
+				response += "Response #" + std::to_string(responseNumber++) + ": " + it + '\n';
+			}
+		} else {
+			response = responses.at(0);
+		}
+		input += "\n<response>" + response + "</response>\n";
+		os << response;
 #endif /* !def IGNORE_PAST_MESSAGES */
-		os << responses.at(nthResponse);
-		input = "";
 	}
 }
 
