@@ -92,7 +92,8 @@ public:
 /* const */ FileHash /* 512 bits, not null-terminated */ sha512(const FileBytecode &bytecode);
 typedef FileHash (*Sha2)(const FileBytecode &bytecode);
 extern Sha2 sha2/* = sha256 */; /* To compress, apps can execute `sha2 = sha1;`. To double hash sizes, execute `sha2 = sha512;`. (Notice: this does not recompute hashes which exist) */
-bool classSha2Tests();
+const bool classSha2Tests();
+const bool classSha2TestsNoexcept() NOEXCEPT;
 ```
 `less` [cxx/ClassSha2.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ClassSha2.cxx)
 ```
@@ -128,7 +129,7 @@ Sha2 sha2 = sha256;
 	return result;
 }
 
-bool classSha2Tests() { /* is just to test glue code (which wraps rfc6234). Use `../c/rfc6234/shatest.c` to test rfc6234. */
+const bool classSha2Tests() { /* is just to test glue code (which wraps rfc6234). Use `../c/rfc6234/shatest.c` to test rfc6234. */
 	const char nulls[65536 /* 65536 == 2^16 == 64kb */] = {0};
 	std::string nullStr(nulls, &nulls[65536]);
 	const ClassSysUSeconds tsDrift = classSysUSecondClock(), ts2Drift = classSysUSecondClock() - tsDrift, ts = classSysUSecondClock();
@@ -153,6 +154,7 @@ bool classSha2Tests() { /* is just to test glue code (which wraps rfc6234). Use 
 	}
 	return true;
 }
+const bool classSha2TestsNoexcept() NOEXCEPT {return templateCatchAll(classSha2Tests, "classSha2Tests()");}
 ```
 `less` [cxx/ClassResultList.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ClassResultList.hxx)
 ```
@@ -1101,7 +1103,7 @@ const FileBytecode cnsVirusFix(const PortableExecutable &file, const Cns &cns /*
 #ifndef INCLUDES_cxx_main_cxx
 #define INCLUDES_cxx_main_cxx
 #include "AssistantCns.hxx" /* assistantCnsTestsNoexcept */
-#include "ClassSha2.hxx" /* classSha2Tests */
+#include "ClassSha2.hxx" /* classSha2TestsNoexcept */
 #include "ClassSys.hxx" /* execves execvex templateCatchAll */
 #include "Macros.hxx" /* ASSUME EXPECTS ENSURES NOEXCEPT NORETURN */
 #include "VirusAnalysis.hxx" /* virusAnalysisTestsNoexcept */
@@ -1121,8 +1123,8 @@ int testHarnesses() EXPECTS(true) ENSURES(true) {
 	(EXIT_SUCCESS == execves({"/bin/echo", "pass"})) || std::cout << "error" << std::endl;
 	std::cout << "execvex(): " << std::flush;
 	(EXIT_SUCCESS == execvex("/bin/echo pass")) || std::cout << "error" << std::endl;
-	std::cout << "classSha2Tests(): " << std::flush;
-	std::cout << (classSha2Tests() ? "pass" : "error") << std::endl;
+	std::cout << "classSha2TestsNoexcept(): " << std::flush;
+	std::cout << (classSha2TestsNoexcept() ? "pass" : "error") << std::endl;
 	std::cout << "virusAnalysisTestsNoexcept(): " << std::flush;
 	if(virusAnalysisTestsNoexcept()) {
 		std::cout << "pass" << std::endl;
@@ -1143,6 +1145,7 @@ int main(int argc, const char **args) {
 	assert(classSysInitSuccess);
 	return Susuwu::testHarnesses();
 }
+#endif /* ndef INCLUDES_cxx_main_cxx */
 ```
 To run most of this fast (lag less,) use `CXXFLAGS` which auto-vectorizes/auto-parallelizes, and to setup CNS synapses (`Cns::setupSynapses()`) fast, use _TensorFlow_'s `MapReduce`. Resources: [How to have computers process fast](https://swudususuwu.substack.com/p/howto-run-devices-phones-laptops).
 
