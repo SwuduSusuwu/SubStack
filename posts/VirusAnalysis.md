@@ -85,6 +85,171 @@ public:
 	std::ifstream input;
 } PortableExecutableBytecode;
 ```
+`less` [cxx/ClassSys.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ClassSys.hxx)
+```
+extern int classSysArgc;
+extern const char **classSysArgs;
+/* Called from main(), stores {argc, args} into {classSysArgc, classSysArgs}
+ * Much simpler to use path from args[0] (versus https://stackoverflow.com/questions/1528298/get-path-of-executable/34109000#34109000)
+ * @pre @code (0 < argc && nullptr != args && nullptr != args[0]
+ * @post @code (0 < classSysArgc && nullptr != classSysArgs && nullptr != classSysArgs[0] */
+bool classSysInit(int argc, const char *args[]);
+
+typedef long long ClassSysUSeconds;
+inline const ClassSysUSeconds classSysUSecondClock() {
+	return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
+/* `argv = argvS + NULL; envp = envpS + NULL: pid_t pid = fork() || (envpS.empty() ? execv(argv[0], &argv[0]) : execve(argv[0], &argv[0], &envp[0])); return pid;`
+ * @throw std::runtime_error("execvesFork(): {-1 == pid()}")
+ * @pre @code (-1 != access(argv[0], X_OK) @endcode */
+const pid_t execvesFork(/* const std::string &pathname, -- `execve` requires `&pathname == &argv[0]` */ const std::vector<std::string> &argvS = {}, const std::vector<std::string> &envpS = {});
+static const pid_t execvexFork(const std::string &toSh) {return execvesFork({"/bin/sh", "-c", toSh});}
+/* `pid_t pid = execvesFork(argvS, envpS); int status; waitpid(pid, &status, 0); return status;}` */
+const int execves(const std::vector<std::string> &argvS = {}, const std::vector<std::string> &envpS = {});
+static const int execvex(const std::string &toSh) {return execves({"/bin/sh", "-c", toSh});}
+
+/* #if _POSIX_VERSION, `return (0 == geteuid());` #elif __WIN32__ `return IsUserAnAdmin();` #endif `return false;` */
+const bool hasRoot();
+/* #if _POSIX_VERSION, `root ? (seteuid(0) : (seteuid(getuid() || getenv("SUDO_UID")), setuid(geteuid)); return hasRoot();` #endif
+ * Usage: setRoot(true); functionsWhichRequireRoot; setRoot(false); */
+const bool setRoot(bool root); /* root ? (seteuid(0) : (seteuid(getuid() || atoi(getenv("SUDO_UID"))), setuid(geteuid)); return hasRoot(); */
+
+template<class Os, class Str>
+inline Os &classSysHexOs(Os &os, const Str &value) {
+	os << std::hex;
+	for(char ch : value) {
+		os << static_cast<int>(ch);
+	}
+	os << std::dec;
+	return os;
+}
+template<class Str>
+inline Str classSysHexStr(const Str &value) {
+	std::stringstream os;
+	classSysHexOs(os, value);
+	return os.str();
+}
+
+template<typename Func, typename... Args>
+auto templateCatchAll(Func func, const std::string &funcName, Args... args) {
+	try {
+		return func(args...);
+	} catch (const std::exception &ex) {
+		SUSUWU_CERR(ERROR, funcName + " {throw std::exception(\"" + ex.what() + "\");}");
+		return decltype(func(args...))(); /* `func(args...)`'s default return value; if `int func(args...)`, `return 0;`. If `bool func(args...)`, `return false;` */
+	}
+}
+```
+`less` [cxx/ClassSys.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ClassSys.cxx)
+```
+int classSysArgc = 0;
+const char **classSysArgs = {nullptr};
+bool classSysInit(int argc, const char *args[]) {
+	if(0 < (classSysArgc = argc)) {
+		classSysArgs = args;
+		assert(nullptr != args);
+		assert(nullptr != args[0]);
+		return true;
+	}
+	return false;
+}
+
+const pid_t execvesFork(const std::vector<std::string> &argvS, const std::vector<std::string> &envpS) {
+#ifdef _POSIX_VERSION
+	const pid_t pid = fork();
+	if(0 != pid) {
+		if(-1 == pid) {
+			throw std::runtime_error(SUSUWU_ERRSTR(ERROR, "execvesFork: {-1 == pid}"));
+		}
+		return pid;
+	} /* if 0, is fork */
+	const std::vector<std::string> argvSmutable = {argvS.cbegin(), argvS.cend()};
+	std::vector<char *> argv;
+	//for(auto x : argvSmutable) { /* with `fsanitize=address` this triggers "stack-use-after-scope" */
+	for(auto x = argvSmutable.begin(); argvSmutable.end() != x; ++x) {
+		argv.push_back(const_cast<char *>(x->c_str()));
+	}
+	argv.push_back(NULL);
+	if(envpS.empty()) { /* Reuse LD_PRELOAD to fix https://github.com/termux-play-store/termux-issues/issues/24 */
+		execv(argv[0], &argv[0]); /* NORETURN */
+	} else {
+		std::vector<std::string> envpSmutable = {envpS.cbegin(), envpS.cend()};
+		std::vector<char *> envp;
+		for(auto x = envpSmutable.begin(); envpSmutable.end() != x; ++x) {
+			envp.push_back(const_cast<char *>(x->c_str()));
+		}
+		envp.push_back(NULL);
+		execve(argv[0], &argv[0], &envp[0]); /* NORETURN */
+	}
+	exit(EXIT_FAILURE); /* execv*() is NORETURN */
+#endif /* def _POSIX_VERSION */
+}
+const int execves(const std::vector<std::string> &argvS, const std::vector<std::string> &envpS) {
+#ifdef _POSIX_VERSION
+	const pid_t pid = execvesFork(argvS, envpS);
+	int status;
+	waitpid(pid, &status, 0);
+	return status;
+#endif /* _POSIX_VERSION */
+}
+
+const bool hasRoot() {
+#ifdef _POSIX_VERSION
+	return (0 == geteuid());
+#elif defined __WIN32__
+	return IsUserAnAdmin();
+#else
+	SUSUWU_CERR(WARNING, "hasRoot(bool) {#if !(defined _POSIX_VERSION || defined __WIN32__) /* TODO */}");
+	return false;
+#endif /* def _POSIX_VERSION or def __WIN32__ */
+}
+const bool setRoot(bool root) {
+	if(hasRoot() == root) {
+		return root;
+	}
+#ifdef _POSIX_VERSION
+	if(root) {
+		if(-1 == seteuid(0)) {
+			SUSUWU_CERR(WARNING, "setRoot(true) {(-1 == seteuid(0)) /* stuck as user, perhaps is not setuid executable */}");
+		}
+#if 0
+# ifdef __APPLE__ //TODO: https://stackoverflow.com/questions/2483755/how-to-programmatically-gain-root-privileges/35316538#35316538 says you must execute new processes to do this
+# else //TODO: https://stackoverflow.com/questions/34723861/calling-a-c-function-with-root-privileges-without-executing-the-whole-program/70149223#70149223 https://stackoverflow.com/questions/70615937/how-to-run-a-command-as-root-with-c-or-c-with-no-pam-in-linux-with-password-au https://stackoverflow.com/questions/2483755/how-to-programmatically-gain-root-privileges/2483789#2483789 says you must spawn new processes to do this
+		/* TODO: polkit? Until this is finished, you must use chmod (to give setuid to executable), or execute new processes (with `sudo`/`su`) if you wish to use firewall/antivirus (which require root) */
+# endif /* __APPLE__ else */
+#endif /* 0 */
+	} else {
+/* # ifdef LINUX // TODO: pam_loginuid.so(8) // https://stackoverflow.com/questions/10272784/how-do-i-get-the-users-real-uid-if-the-program-is-run-with-sudo/10272881#10272881
+		uid_t sudo_uid = audit_getloginuid();
+# else */
+		uid_t sudo_uid = getuid();
+		if(0 == sudo_uid) {
+			char *sudo_uid_str = getenv("SUDO_UID");
+			if(NULL == sudo_uid_str) {
+				SUSUWU_CERR(WARNING, "setRoot(false) {(NULL == getenv(\"SUDO_UID\")) /* stuck as root */}");
+				return true;
+			} else {
+				sudo_uid = (uid_t)atoi(sudo_uid_str);
+				if(-1 == setuid(sudo_uid)) { /* prevent reescalation to root */
+					SUSUWU_CERR(WARNING, "setRoot(false) {(-1 == setuid(sudo_uid)) /* can't prevent reescalation to root */}");
+				}
+			}
+		}
+//# endif /* def LINUX */
+		if(0 == sudo_uid) {
+			SUSUWU_CERR(WARNING, "setRoot(false) {(0 == sudo_uid) /*stuck as root */}");
+		} else if(-1 == seteuid(sudo_uid)) {
+			SUSUWU_CERR(WARNING, "setRoot(false) {(-1 == seteuid(sudo_uid)) /* stuck as root */}");
+		}
+	}
+/* #elif defined __WIN32__ */ //TODO: https://stackoverflow.com/questions/6418791/requesting-administrator-privileges-at-run-time says you must spawn new processes to do this
+#else
+	SUSUWU_CERR(WARNING, "setRoot(bool) {#ifndef _POSIX_VERSION /* TODO */}");
+#endif /* _POSIX_VERSION */
+	return hasRoot();
+}
+```
 `less` [cxx/ClassSha2.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ClassSha2.hxx)
 ```
 /* const */ FileHash /* 128 bits, not null-terminated */ sha1(const FileBytecode &bytecode);
@@ -518,171 +683,6 @@ typedef class ApxrCns : Cns {
  */
 } ApxrCns;
 #endif /* USE_APXR_CNS */
-```
-`less` [cxx/ClassSys.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ClassSys.hxx)
-```
-extern int classSysArgc;
-extern const char **classSysArgs;
-/* Called from main(), stores {argc, args} into {classSysArgc, classSysArgs}
- * Much simpler to use path from args[0] (versus https://stackoverflow.com/questions/1528298/get-path-of-executable/34109000#34109000)
- * @pre @code (0 < argc && nullptr != args && nullptr != args[0]
- * @post @code (0 < classSysArgc && nullptr != classSysArgs && nullptr != classSysArgs[0] */
-bool classSysInit(int argc, const char *args[]);
-
-typedef long long ClassSysUSeconds;
-inline const ClassSysUSeconds classSysUSecondClock() {
-	return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-}
-
-/* `argv = argvS + NULL; envp = envpS + NULL: pid_t pid = fork() || (envpS.empty() ? execv(argv[0], &argv[0]) : execve(argv[0], &argv[0], &envp[0])); return pid;`
- * @throw std::runtime_error("execvesFork(): {-1 == pid()}")
- * @pre @code (-1 != access(argv[0], X_OK) @endcode */
-const pid_t execvesFork(/* const std::string &pathname, -- `execve` requires `&pathname == &argv[0]` */ const std::vector<std::string> &argvS = {}, const std::vector<std::string> &envpS = {});
-static const pid_t execvexFork(const std::string &toSh) {return execvesFork({"/bin/sh", "-c", toSh});}
-/* `pid_t pid = execvesFork(argvS, envpS); int status; waitpid(pid, &status, 0); return status;}` */
-const int execves(const std::vector<std::string> &argvS = {}, const std::vector<std::string> &envpS = {});
-static const int execvex(const std::string &toSh) {return execves({"/bin/sh", "-c", toSh});}
-
-/* #if _POSIX_VERSION, `return (0 == geteuid());` #elif __WIN32__ `return IsUserAnAdmin();` #endif `return false;` */
-const bool hasRoot();
-/* #if _POSIX_VERSION, `root ? (seteuid(0) : (seteuid(getuid() || getenv("SUDO_UID")), setuid(geteuid)); return hasRoot();` #endif
- * Usage: setRoot(true); functionsWhichRequireRoot; setRoot(false); */
-const bool setRoot(bool root); /* root ? (seteuid(0) : (seteuid(getuid() || atoi(getenv("SUDO_UID"))), setuid(geteuid)); return hasRoot(); */
-
-template<class Os, class Str>
-inline Os &classSysHexOs(Os &os, const Str &value) {
-	os << std::hex;
-	for(char ch : value) {
-		os << static_cast<int>(ch);
-	}
-	os << std::dec;
-	return os;
-}
-template<class Str>
-inline Str classSysHexStr(const Str &value) {
-	std::stringstream os;
-	classSysHexOs(os, value);
-	return os.str();
-}
-
-template<typename Func, typename... Args>
-auto templateCatchAll(Func func, const std::string &funcName, Args... args) {
-	try {
-		return func(args...);
-	} catch (const std::exception &ex) {
-		SUSUWU_CERR(ERROR, funcName + " {throw std::exception(\"" + ex.what() + "\");}");
-		return decltype(func(args...))(); /* `func(args...)`'s default return value; if `int func(args...)`, `return 0;`. If `bool func(args...)`, `return false;` */
-	}
-}
-```
-`less` [cxx/ClassSys.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ClassSys.cxx)
-```
-int classSysArgc = 0;
-const char **classSysArgs = {nullptr};
-bool classSysInit(int argc, const char *args[]) {
-	if(0 < (classSysArgc = argc)) {
-		classSysArgs = args;
-		assert(nullptr != args);
-		assert(nullptr != args[0]);
-		return true;
-	}
-	return false;
-}
-
-const pid_t execvesFork(const std::vector<std::string> &argvS, const std::vector<std::string> &envpS) {
-#ifdef _POSIX_VERSION
-	const pid_t pid = fork();
-	if(0 != pid) {
-		if(-1 == pid) {
-			throw std::runtime_error(SUSUWU_ERRSTR(ERROR, "execvesFork: {-1 == pid}"));
-		}
-		return pid;
-	} /* if 0, is fork */
-	const std::vector<std::string> argvSmutable = {argvS.cbegin(), argvS.cend()};
-	std::vector<char *> argv;
-	//for(auto x : argvSmutable) { /* with `fsanitize=address` this triggers "stack-use-after-scope" */
-	for(auto x = argvSmutable.begin(); argvSmutable.end() != x; ++x) {
-		argv.push_back(const_cast<char *>(x->c_str()));
-	}
-	argv.push_back(NULL);
-	if(envpS.empty()) { /* Reuse LD_PRELOAD to fix https://github.com/termux-play-store/termux-issues/issues/24 */
-		execv(argv[0], &argv[0]); /* NORETURN */
-	} else {
-		std::vector<std::string> envpSmutable = {envpS.cbegin(), envpS.cend()};
-		std::vector<char *> envp;
-		for(auto x = envpSmutable.begin(); envpSmutable.end() != x; ++x) {
-			envp.push_back(const_cast<char *>(x->c_str()));
-		}
-		envp.push_back(NULL);
-		execve(argv[0], &argv[0], &envp[0]); /* NORETURN */
-	}
-	exit(EXIT_FAILURE); /* execv*() is NORETURN */
-#endif /* def _POSIX_VERSION */
-}
-const int execves(const std::vector<std::string> &argvS, const std::vector<std::string> &envpS) {
-#ifdef _POSIX_VERSION
-	const pid_t pid = execvesFork(argvS, envpS);
-	int status;
-	waitpid(pid, &status, 0);
-	return status;
-#endif /* _POSIX_VERSION */
-}
-
-const bool hasRoot() {
-#ifdef _POSIX_VERSION
-	return (0 == geteuid());
-#elif defined __WIN32__
-	return IsUserAnAdmin();
-#else
-	SUSUWU_CERR(WARNING, "hasRoot(bool) {#if !(defined _POSIX_VERSION || defined __WIN32__) /* TODO */}");
-	return false;
-#endif /* def _POSIX_VERSION or def __WIN32__ */
-}
-const bool setRoot(bool root) {
-	if(hasRoot() == root) {
-		return root;
-	}
-#ifdef _POSIX_VERSION
-	if(root) {
-		if(-1 == seteuid(0)) {
-			SUSUWU_CERR(WARNING, "setRoot(true) {(-1 == seteuid(0)) /* stuck as user, perhaps is not setuid executable */}");
-		}
-#if 0
-# ifdef __APPLE__ //TODO: https://stackoverflow.com/questions/2483755/how-to-programmatically-gain-root-privileges/35316538#35316538 says you must execute new processes to do this
-# else //TODO: https://stackoverflow.com/questions/34723861/calling-a-c-function-with-root-privileges-without-executing-the-whole-program/70149223#70149223 https://stackoverflow.com/questions/70615937/how-to-run-a-command-as-root-with-c-or-c-with-no-pam-in-linux-with-password-au https://stackoverflow.com/questions/2483755/how-to-programmatically-gain-root-privileges/2483789#2483789 says you must spawn new processes to do this
-		/* TODO: polkit? Until this is finished, you must use chmod (to give setuid to executable), or execute new processes (with `sudo`/`su`) if you wish to use firewall/antivirus (which require root) */
-# endif /* __APPLE__ else */
-#endif /* 0 */
-	} else {
-/* # ifdef LINUX // TODO: pam_loginuid.so(8) // https://stackoverflow.com/questions/10272784/how-do-i-get-the-users-real-uid-if-the-program-is-run-with-sudo/10272881#10272881
-		uid_t sudo_uid = audit_getloginuid();
-# else */
-		uid_t sudo_uid = getuid();
-		if(0 == sudo_uid) {
-			char *sudo_uid_str = getenv("SUDO_UID");
-			if(NULL == sudo_uid_str) {
-				SUSUWU_CERR(WARNING, "setRoot(false) {(NULL == getenv(\"SUDO_UID\")) /* stuck as root */}");
-				return true;
-			} else {
-				sudo_uid = (uid_t)atoi(sudo_uid_str);
-				if(-1 == setuid(sudo_uid)) { /* prevent reescalation to root */
-					SUSUWU_CERR(WARNING, "setRoot(false) {(-1 == setuid(sudo_uid)) /* can't prevent reescalation to root */}");
-				}
-			}
-		}
-//# endif /* def LINUX */
-		if(0 == sudo_uid) {
-			SUSUWU_CERR(WARNING, "setRoot(false) {(0 == sudo_uid) /*stuck as root */}");
-		} else if(-1 == seteuid(sudo_uid)) {
-			SUSUWU_CERR(WARNING, "setRoot(false) {(-1 == seteuid(sudo_uid)) /* stuck as root */}");
-		}
-	}
-/* #elif defined __WIN32__ */ //TODO: https://stackoverflow.com/questions/6418791/requesting-administrator-privileges-at-run-time says you must spawn new processes to do this
-#else
-	SUSUWU_CERR(WARNING, "setRoot(bool) {#ifndef _POSIX_VERSION /* TODO */}");
-#endif /* _POSIX_VERSION */
-	return hasRoot();
-}
 ```
 `less` [cxx/VirusAnalysis.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/VirusAnalysis.hxx)
 ```
