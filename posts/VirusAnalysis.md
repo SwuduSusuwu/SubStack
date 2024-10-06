@@ -225,13 +225,13 @@ const bool setRoot(bool root) {
 # else */
 		uid_t sudo_uid = getuid();
 		if(0 == sudo_uid) {
-			char *sudo_uid_str = getenv("SUDO_UID");
+			char *sudo_uid_str = getenv("SUDO_UID"), *sudo_uid_str_it;
 			if(NULL == sudo_uid_str) {
 				SUSUWU_CERR(WARNING, "setRoot(false) {(NULL == getenv(\"SUDO_UID\")) /* stuck as root */}");
 				return true;
 			} else {
-				sudo_uid = (uid_t)atoi(sudo_uid_str);
-				if(-1 == setuid(sudo_uid)) { /* prevent reescalation to root */
+				sudo_uid = (uid_t)strtol(sudo_uid_str, &sudo_uid_str_it, 10);
+				if(sudo_uid_str == sudo_uidr_str_it || -1 == setuid(sudo_uid)) { /* prevent reescalation to root */
 					SUSUWU_CERR(WARNING, "setRoot(false) {(-1 == setuid(sudo_uid)) /* can't prevent reescalation to root */}");
 				}
 			}
