@@ -69,24 +69,24 @@ const int execves(const std::vector<std::string> &argvS, const std::vector<std::
 #endif /* _POSIX_VERSION */
 }
 
-const bool hasRoot() {
+const bool classSysHasRoot() {
 #ifdef _POSIX_VERSION
 	return (0 == geteuid());
 #elif defined __WIN32__
 	return IsUserAnAdmin();
 #else
-	SUSUWU_CERR(WARNING, "hasRoot(bool) {#if !(defined _POSIX_VERSION || defined __WIN32__) /* TODO */}");
+	SUSUWU_CERR(WARNING, "classSysHasRoot(bool) {#if !(defined _POSIX_VERSION || defined __WIN32__) /* TODO */}");
 	return false;
 #endif /* def _POSIX_VERSION or def __WIN32__ */
 }
-const bool setRoot(bool root) {
-	if(hasRoot() == root) {
+const bool classSysSetRoot(bool root) {
+	if(classSysHasRoot() == root) {
 		return root;
 	}
 #ifdef _POSIX_VERSION
 	if(root) {
 		if(-1 == seteuid(0)) {
-			SUSUWU_CERR(WARNING, "setRoot(true) {(-1 == seteuid(0)) /* stuck as user, perhaps is not setuid executable */}");
+			SUSUWU_CERR(WARNING, "classSysSetRoot(true) {(-1 == seteuid(0)) /* stuck as user, perhaps is not setuid executable */}");
 		}
 #if 0
 # ifdef __APPLE__ //TODO: https://stackoverflow.com/questions/2483755/how-to-programmatically-gain-root-privileges/35316538#35316538 says you must execute new processes to do this
@@ -95,34 +95,34 @@ const bool setRoot(bool root) {
 # endif /* __APPLE__ else */
 #endif /* 0 */
 	} else {
-/* # ifdef LINUX // TODO: pam_loginuid.so(8) // https://stackoverflow.com/questions/10272784/how-do-i-get-the-users-real-uid-if-the-program-is-run-with-sudo/10272881#10272881
+# if 0 && defined LINUX // TODO: pam_loginuid.so(8) // https://stackoverflow.com/questions/10272784/how-do-i-get-the-users-real-uid-if-the-program-is-run-with-sudo/10272881#10272881
 		uid_t sudo_uid = audit_getloginuid();
-# else */
+# else /* !def linux */
 		uid_t sudo_uid = getuid();
 		if(0 == sudo_uid) {
 			char *sudo_uid_str = getenv("SUDO_UID"), *sudo_uid_str_it;
 			if(NULL == sudo_uid_str) {
-				SUSUWU_CERR(WARNING, "setRoot(false) {(NULL == getenv(\"SUDO_UID\")) /* stuck as root */}");
+				SUSUWU_CERR(WARNING, "classSysSetRoot(false) {(NULL == getenv(\"SUDO_UID\")) /* stuck as root */}");
 				return true;
 			} else {
 				sudo_uid = (uid_t)strtol(sudo_uid_str, &sudo_uid_str_it, 10);
 				if(sudo_uid_str == sudo_uid_str_it || -1 == setuid(sudo_uid)) { /* prevent reescalation to root */
-					SUSUWU_CERR(WARNING, "setRoot(false) {(-1 == setuid(sudo_uid)) /* can't prevent reescalation to root */}");
+					SUSUWU_CERR(WARNING, "classSysSetRoot(false) {(-1 == setuid(sudo_uid)) /* can't prevent reescalation to root */}");
 				}
 			}
 		}
-//# endif /* def LINUX */
+# endif /* !def LINUX */
 		if(0 == sudo_uid) {
-			SUSUWU_CERR(WARNING, "setRoot(false) {(0 == sudo_uid) /*stuck as root */}");
+			SUSUWU_CERR(WARNING, "classSysSetRoot(false) {(0 == sudo_uid) /* stuck as root */}");
 		} else if(-1 == seteuid(sudo_uid)) {
-			SUSUWU_CERR(WARNING, "setRoot(false) {(-1 == seteuid(sudo_uid)) /* stuck as root */}");
+			SUSUWU_CERR(WARNING, "classSysSetRoot(false) {(-1 == seteuid(sudo_uid)) /* stuck as root */}");
 		}
 	}
 /* #elif defined __WIN32__ */ //TODO: https://stackoverflow.com/questions/6418791/requesting-administrator-privileges-at-run-time says you must spawn new processes to do this
 #else
-	SUSUWU_CERR(WARNING, "setRoot(bool) {#ifndef _POSIX_VERSION /* TODO */}");
+	SUSUWU_CERR(WARNING, "classSysSetRoot(bool) {#ifndef _POSIX_VERSION /* TODO */}");
 #endif /* _POSIX_VERSION */
-	return hasRoot();
+	return classSysHasRoot();
 }
 
 }; /* namespace Susuwu */

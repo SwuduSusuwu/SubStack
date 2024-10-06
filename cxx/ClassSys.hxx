@@ -40,10 +40,10 @@ const int execves(const std::vector<std::string> &argvS = {}, const std::vector<
 static const int execvex(const std::string &toSh) {return execves({"/bin/sh", "-c", toSh});}
 
 /* #if _POSIX_VERSION, `return (0 == geteuid());` #elif __WIN32__ `return IsUserAnAdmin();` #endif `return false;` */
-const bool hasRoot();
-/* #if _POSIX_VERSION, `root ? (seteuid(0) : (seteuid(getuid() || getenv("SUDO_UID")), setuid(geteuid)); return hasRoot();` #endif
- * Usage: setRoot(true); functionsWhichRequireRoot; setRoot(false); */
-const bool setRoot(bool root); /* root ? (seteuid(0) : (seteuid(getuid() || atoi(getenv("SUDO_UID"))), setuid(geteuid)); return hasRoot(); */
+const bool classSysHasRoot();
+/* #if _POSIX_VERSION, `root ? (seteuid(0) : (seteuid(getuid() || getenv("SUDO_UID")), setuid(geteuid)); return classSysHasRoot();` #endif
+ * Usage: classSysSetRoot(true); functionsWhichRequireRoot; classSysSetRoot(false); */
+const bool classSysSetRoot(bool root); /* root ? (seteuid(0) : (seteuid(getuid() || atoi(getenv("SUDO_UID"))), setuid(geteuid)); return classSysHasRoot(); */
 
 template<class Os, class Str>
 inline Os &classSysHexOs(Os &os, const Str &value) {
