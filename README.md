@@ -6,7 +6,7 @@ Purposes: `/cxx/` C++ implementations ( based off of ideas/pseudocodes from http
 
 Targets: Windows/Linux/Android/OSX/iOS; all C++ compilers, requires some extensions (such as `for(auto x : s) {}`)
 
-Usage: `./build.sh` produces `*.o` static libraries (for distribution to others,) plus `a.out` to do unit tests (test harnesses).
+Usage: `./build.sh` produces `*.o` static libraries (for distribution to others,) plus `a.out` to do unit tests (test harnesses). Allowed flags; `--debug` (default; includes frame-pointers/debug symbols (`-g`), includes `valgrind`-replacement tools (such as `-fsanitize=address`), `--release` (excludes `--debug`, strips frame-pointers/symbols, optimizes with `-O2`), `--mingw` (if on _Linux_, can use with `--release` or `--debug`, produces _Portable Executable_ for _Windows_. If on _Windows_, the default is to produce _Portable Executable_'s for _Windows_)
 
 Conventions = Mozilla Org (ergo Firefox) style:
 

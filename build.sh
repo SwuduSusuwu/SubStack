@@ -14,7 +14,16 @@ CXX_FLAGS_DEBUG="${CXX_FLAGS_DEBUG} -g" #/* extra symbols (line numbers + argume
 if command -v ctags > /dev/null; then
 	ctags -R
 fi
-if command -v clang++ > /dev/null; then
+if [ "--mingw" = "$1" ] || [ "--mingw" = "$2" ]; then
+	if command -v x86_64-w64-mingw32-clang++ > /dev/null; then
+		CXX="x86_64-w64-mingw32-clang++"
+	elif command -v x86_64-w64-mingw32-g++ > /dev/null; then
+		CXX="x86_64-w64-mingw32-g++"
+	else
+		echo "Error: no x86_64-w64-mingw32-clang++, no x86_64-w64-mingw32-g++. `apt install llvm-mingw-w64` or `apt install mingw-w64`"
+		exit 1
+	fi
+elif command -v clang++ > /dev/null; then
 	CXX="clang++"
 elif command -v g++ > /dev/mull; then
 	CXX="g++"
@@ -22,11 +31,13 @@ else
 	echo "Error: no clang++, no g++. `apt install clang` or `apt install gcc`"
 	exit 1
 fi
-if [ "--release" = "$1" ]; then
+if [ "--release" = "$1" ] || [ "--release" = "$2" ]; then
 	echo "# /* \`$0 --release\` does not support profilers/debuggers (use \`$0 --debug\` for this) */"
 	CXX_FLAGS="${CXX_FLAGS} ${CXX_FLAGS_RELEASE}"
 else
-	echo "# /* \`$0\` defaults to \`$0 --debug\`. Use \`$0 --release\` if you want fast executables */"
+	if [ "--debug" != "$1" ] && [ "--debug" != "$2" ]; then
+		echo "# /* \`$0\` defaults to \`$0 --debug\`. Use \`$0 --release\` if you want fast executables */"
+	fi
 	CXX_FLAGS="${CXX_FLAGS} ${CXX_FLAGS_DEBUG}"
 	export ASAN_OPTIONS=abort_on_error=1:fast_unwind_on_malloc=0:detect_leaks=0 UBSAN_OPTIONS=print_stacktrace=1 #/* "For LLDB/GDB and to prevent very short stack traces and usually false leaks detection" */
 fi
@@ -47,5 +58,4 @@ $CXX -c ${sSRC}/main.cxx
 $CXX sha1.o sha224-256.o sha384-512.o ClassSha2.o ClassResultList.o ClassSys.o ClassCns.o VirusAnalysis.o AssistantCns.o main.o
 STATUS=$?
 set +x
-return ${STATUS}
-
+return $STATUS
