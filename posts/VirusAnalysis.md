@@ -8,6 +8,7 @@ For the most new sources (+ static libs), use apps such as [iSH](https://apps.ap
 `git clone https://github.com/SwuduSusuwu/SubStack.git && cd ./Substack/ && ./build`
 `less` [cxx/Macros.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/Macros.hxx)
 ```
+#define SUSUWU_GLUE(S, U) S##U /* concatanates 2 constants */
 #define SUSUWU_SH_DEFAULT "\033[0m"
 #define SUSUWU_SH_RED "\033[0;31m"
 #define SUSUWU_SH_GREEN "\033[0;32m"
@@ -23,9 +24,9 @@ For the most new sources (+ static libs), use apps such as [iSH](https://apps.ap
 #define SUSUWU_SH_DEBUG "[" SUSUWU_SH_BLUE "Debug: " SUSUWU_SH_WHITE
 #define SUSUWU_SH_CLOSE_ SUSUWU_SH_DEFAULT "]"
 /* WARN_LEVEL = {ERROR, WARNING, INFO, SUCCESS, NOTICE, DEBUG} */
-#define SUSUWU_ERRSTR(WARN_LEVEL, x) std::string(GLUE(SUSUWU_SH_, WARN_LEVEL)) + std::string(x) + std::string(SUSUWU_SH_CLOSE_)
-#define SUSUWU_CERR(WARN_LEVEL, x) std::cerr << GLUE(SUSUWU_SH_, WARN_LEVEL) << x << SUSUWU_SH_CLOSE_ << std::endl
-#define SUSUWU_STDERR(WARN_LEVEL, x) fprintf(stderr, GLUE(SUSUWU_SH_, WARN_LEVEL) "%s" SUSUWU_SH_CLOSE_ "\n", x)
+#define SUSUWU_ERRSTR(WARN_LEVEL, x) std::string(SUSUWU_GLUE(SUSUWU_SH_, WARN_LEVEL)) + std::string(x) + std::string(SUSUWU_SH_CLOSE_)
+#define SUSUWU_CERR(WARN_LEVEL, x) std::cerr << SUSUWU_GLUE(SUSUWU_SH_, WARN_LEVEL) << x << SUSUWU_SH_CLOSE_ << std::endl
+#define SUSUWU_STDERR(WARN_LEVEL, x) fprintf(stderr, SUSUWU_GLUE(SUSUWU_SH_, WARN_LEVEL) "%s" SUSUWU_SH_CLOSE_ "\n", x)
 /* Use this to limit notices/diagnostics to debug builds (+ do conditional execution) */
 #ifdef NDEBUG
 # define SUSUWU_CERR_NOTICE(x) (true)/* skip */
