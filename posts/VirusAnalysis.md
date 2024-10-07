@@ -183,7 +183,9 @@ const pid_t execvesFork(const std::vector<std::string> &argvS, const std::vector
 		execve(argv[0], &argv[0], &envp[0]); /* NORETURN */
 	}
 	exit(EXIT_FAILURE); /* execv*() is NORETURN */
-#endif /* def _POSIX_VERSION */
+#else /* ndef _POSIX_VERSION */
+	throw std::runtime_error(SUSUWU_ERRSTR(ERROR, "execvesFork: {#ifndef _POSIX_VERSION /* TODO: convert to win32 */}"));
+#endif /* ndef _POSIX_VERSION */
 }
 const int execves(const std::vector<std::string> &argvS, const std::vector<std::string> &envpS) {
 #ifdef _POSIX_VERSION
@@ -191,7 +193,9 @@ const int execves(const std::vector<std::string> &argvS, const std::vector<std::
 	int status;
 	waitpid(pid, &status, 0);
 	return status;
-#endif /* _POSIX_VERSION */
+#else /* ndef _POSIX_VERSION */
+	throw std::runtime_error(SUSUWU_ERRSTR(ERROR, "execves: {#ifndef _POSIX_VERSION /* TODO: convert to win32 */}"));
+#endif /* ndef _POSIX_VERSION */
 }
 
 const bool classSysHasRoot() {
