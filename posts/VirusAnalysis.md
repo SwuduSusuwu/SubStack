@@ -184,6 +184,7 @@ const pid_t execvesFork(const std::vector<std::string> &argvS, const std::vector
 	}
 	exit(EXIT_FAILURE); /* execv*() is NORETURN */
 #else /* ndef _POSIX_VERSION */
+# undef ERROR /* undo `shlobj.h`'s `#define ERROR 0` */
 	throw std::runtime_error(SUSUWU_ERRSTR(ERROR, "execvesFork: {#ifndef _POSIX_VERSION /* TODO: convert to win32 */}"));
 #endif /* ndef _POSIX_VERSION */
 }
@@ -195,15 +196,13 @@ const int execves(const std::vector<std::string> &argvS, const std::vector<std::
 	return status;
 #else /* ndef _POSIX_VERSION */
 	throw std::runtime_error(SUSUWU_ERRSTR(ERROR, "execves: {#ifndef _POSIX_VERSION /* TODO: convert to win32 */}"));
+# define ERROR 0 /* redo `shlobj.h`'s `#define ERROR 0` */
 #endif /* ndef _POSIX_VERSION */
 }
 
 const bool classSysHasRoot() {
 #ifdef _POSIX_VERSION
 	return (0 == geteuid());
-#elif defined __MINGW32__
-	SUSUWU_CERR(WARNING, "classSysHasRoot(bool) {#if defined __MINGW32__ /* TODO */}");
-	return false;
 #elif defined __WIN32__
 	return IsUserAnAdmin();
 #else
