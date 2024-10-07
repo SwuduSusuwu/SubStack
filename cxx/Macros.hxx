@@ -7,7 +7,8 @@
 #include <cstdbool> /* false */
 #include <version> /* __cpp_lib_unreachable */ /* [https://en.cppreference.com/w/cpp/feature_test] */
 namespace Susuwu { /* namespaces do not affect macros. Is just standard practice to wrap all of a project's contents with namespaces. */
-#define SUSUWU_GLUE(S, U) S##U /* concatanates 2 constants */
+#define SUSUWU_GLUE2(S, U) S##U /* concatanates 2 macro constants */
+#define SUSUWU_GLUE(S, U) SUSUWU_GLUE2(S, U) /* concatanates 2 macro functions or constants */
 
 #if SKIP_CONSOLE_COLORS /* `g++ -D SKIP_CONSOLE_COLORS=1` to turn colors off */
 # define SUSUWU_SH_BLACK ""
@@ -54,9 +55,9 @@ namespace Susuwu { /* namespaces do not affect macros. Is just standard practice
 #define SUSUWU_SH_CLOSE_ SUSUWU_SH_DEFAULT "]"
 
 /* WARN_LEVEL = {ERROR, WARNING, INFO, SUCCESS, NOTICE, DEBUG} */
-#define SUSUWU_ERRSTR(WARN_LEVEL, x) std::string(SUSUWU_GLUE(SUSUWU_SH_, WARN_LEVEL)) + std::string(x) + std::string(SUSUWU_SH_CLOSE_)
-#define SUSUWU_CERR(WARN_LEVEL, x) std::cerr << SUSUWU_GLUE(SUSUWU_SH_, WARN_LEVEL) << x << SUSUWU_SH_CLOSE_ << std::endl
-#define SUSUWU_STDERR(WARN_LEVEL, x) fprintf(stderr, SUSUWU_GLUE(SUSUWU_SH_, WARN_LEVEL) "%s" SUSUWU_SH_CLOSE_ "\n", x)
+#define SUSUWU_ERRSTR(WARN_LEVEL, x) std::string(SUSUWU_GLUE2(SUSUWU_SH_, WARN_LEVEL)) + std::string(x) + std::string(SUSUWU_SH_CLOSE_)
+#define SUSUWU_CERR(WARN_LEVEL, x) std::cerr << SUSUWU_GLUE2(SUSUWU_SH_, WARN_LEVEL) << x << SUSUWU_SH_CLOSE_ << std::endl
+#define SUSUWU_STDERR(WARN_LEVEL, x) fprintf(stderr, SUSUWU_GLUE2(SUSUWU_SH_, WARN_LEVEL) "%s" SUSUWU_SH_CLOSE_ "\n", x)
 
 /* Use this to limit notices/diagnostics to release builds (+ do conditional execution) */
 #ifdef NDEBUG
