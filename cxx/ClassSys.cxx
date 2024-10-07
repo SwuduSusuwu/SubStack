@@ -12,9 +12,9 @@
 #include <sys/wait.h> /* waitpid */
 #include <unistd.h> /* execve execv fork geteuid getuid setuid */
 #else
-# ifdef __WIN32__
+# if defined __WIN32__ && !defined __MINGW32__
 # include <shlobj_core.h> /* IsUserAnAdmin */
-# endif /* def __WIN32__ */
+# endif /* defined __WIN32__ && !defined __MINGW32__ */
 typedef int pid_t;
 #endif /* def _POSIX_VERSION */
 namespace Susuwu {
@@ -76,6 +76,9 @@ const int execves(const std::vector<std::string> &argvS, const std::vector<std::
 const bool classSysHasRoot() {
 #ifdef _POSIX_VERSION
 	return (0 == geteuid());
+#elif defined __MINGW32__
+	SUSUWU_CERR(WARNING, "classSysHasRoot(bool) {#if defined __MINGW32__ /* TODO */}");
+	return false;
 #elif defined __WIN32__
 	return IsUserAnAdmin();
 #else

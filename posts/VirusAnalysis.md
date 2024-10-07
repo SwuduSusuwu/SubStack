@@ -201,6 +201,9 @@ const int execves(const std::vector<std::string> &argvS, const std::vector<std::
 const bool classSysHasRoot() {
 #ifdef _POSIX_VERSION
 	return (0 == geteuid());
+#elif defined __MINGW32__
+	SUSUWU_CERR(WARNING, "classSysHasRoot(bool) {#if defined __MINGW32__ /* TODO */}");
+	return false;
 #elif defined __WIN32__
 	return IsUserAnAdmin();
 #else
