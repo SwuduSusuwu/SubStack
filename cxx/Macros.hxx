@@ -7,10 +7,19 @@
 #include <cstdbool> /* false */
 #include <version> /* __cpp_lib_unreachable */ /* [https://en.cppreference.com/w/cpp/feature_test] */
 namespace Susuwu { /* namespaces do not affect macros. Is just standard practice to wrap all of a project's contents with namespaces. */
+/* To printout default preprocessor definitions:
+ * for X={clang, clang++, gcc, g++, hipcc, icc}: `$X -dM -E -x c++ /dev/null`
+ * replace `/dev/null` with a file (such as `cxx/Macros.hxx`) to printout actual preprocessor definitions
+ * for MSVC: `git clone --depth 1 https://github.com/MicrosoftDocs/cpp-docs.git && vim cpp-docs/blob/main/docs/preprocessor/predefined-macros.md` or browse to https://learn.microsoft.com/en-us/cpp/preprocessor/predefined-macros 
+ * for others: `git clone https://github.com/cpredef/predef.git && vim predef/Compilers.md`
+ */ /* To pass new preprocessor definitions (example is `#define USE_CONTRACTS true`):
+ * to `clang`/`clang++`/`gcc`/`g++`/Intel(`icc`): `-DUSE_CONTRACTS=true`
+ * to MSVC(`cl`): `\DUSE_CONTRACTS=true`
+ */
 #define SUSUWU_GLUE2(S, U) S##U /* concatanates 2 macro constants */
 #define SUSUWU_GLUE(S, U) SUSUWU_GLUE2(S, U) /* concatanates 2 macro functions or constants */
 
-#if SKIP_CONSOLE_COLORS /* `g++ -D SKIP_CONSOLE_COLORS=1` to turn colors off */
+#if SKIP_CONSOLE_COLORS /* `g++ -DSKIP_CONSOLE_COLORS=1` to turn colors off */
 # define SUSUWU_SH_BLACK ""
 # define SUSUWU_SH_DARK_GRAY ""
 # define SUSUWU_SH_RED ""
@@ -118,7 +127,7 @@ namespace Susuwu { /* namespaces do not affect macros. Is just standard practice
 #	define UNREACHABLE /* No-op */
 #endif /* __cpp_lib_unreachable elif IS_GCC ...*/
 
-#ifdef USE_CONTRACTS /* Pass `-D USE_CONTRACTS` once compiler has C++26 (Contracts) */
+#ifdef USE_CONTRACTS /* Pass `-DUSE_CONTRACTS` once compiler has C++26 (Contracts) */
 /* `EXPECTS(X)` is close to `@pre @code X @endcode` or `ASSUME(X)` but is for headers; https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2022/p2521r2.html */
 /* Promises `(true == (X))`, for static analysis, or for compiler which optimizes this. Warning: `if(!(X)) {UB (undefined behaviour)}` */
 #	define EXPECTS(X) [[expects: X]] /* Usage: `void pushf(std::deque<float> &x, float f) EXPECTS(!x.full());` */
@@ -133,7 +142,7 @@ namespace Susuwu { /* namespaces do not affect macros. Is just standard practice
 #ifndef NDEBUG
 /* Debug: Promises `(true == (X))`, for static analysis */
 #	define ASSUME(X) assert(X)
-#elif (!defined USE_ASSUME) || USE_ASSUME /* Default: if(!NDEBUG) USE_ASSUME=true; pass `-D USE_ASSUME=false` to disable this */ 
+#elif (!defined USE_ASSUME) || USE_ASSUME /* Default: if(!NDEBUG) USE_ASSUME=true; pass `-DUSE_ASSUME=false` to disable this */ 
 /* Release: Promises `(true == (X))`, for compiler which optimizes this. Warning: `if(!(X)) {UB (undefined behaviour)}` */
 #	ifdef IS_MSVC
 #		define ASSUME(X) __assume(X)
