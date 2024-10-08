@@ -45,8 +45,6 @@ else
 	export ASAN_OPTIONS=abort_on_error=1:fast_unwind_on_malloc=0:detect_leaks=0 UBSAN_OPTIONS=print_stacktrace=1 #/* "For LLDB/GDB and to prevent very short stack traces and usually false leaks detection" */
 fi
 CXX="${CXX} ${CXX_FLAGS}"
-rm *.o
-test -f a.out && rm a.out
 set -x
 $CXX -x c -c ${sSRC}/../c/rfc6234/sha1.c
 $CXX -x c -c ${sSRC}/../c/rfc6234/sha224-256.c
