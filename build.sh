@@ -1,5 +1,5 @@
 #!/bin/sh
-echo '# /* Dual licenses: choose "Creative Commons" or "Apache 2" (allows all uses) */'
+echo '[Notice: Dual licenses: choose "Creative Commons" or "Apache 2" (allows all uses)]'
 #cd build
 sSRC="./cxx/"
 #INCLUDES="${sSRC}"
@@ -14,13 +14,15 @@ CXX_FLAGS_DEBUG="${CXX_FLAGS_DEBUG} -g" #/* extra symbols (line numbers + argume
 if command -v ctags > /dev/null; then
 	ctags -R
 fi
+CROSS_COMP=""
 if [ "--mingw" = "$1" ] || [ "--mingw" = "$2" ]; then
+	CROSS_COMP=" --mingw"
 	if command -v x86_64-w64-mingw32-clang++ > /dev/null; then
 		CXX="x86_64-w64-mingw32-clang++"
 	elif command -v x86_64-w64-mingw32-g++ > /dev/null; then
 		CXX="x86_64-w64-mingw32-g++"
 	else
-		echo "Error: no x86_64-w64-mingw32-clang++, no x86_64-w64-mingw32-g++. `apt install llvm-mingw-w64` or `apt install mingw-w64`"
+		echo "[Error: \`x86_64-w64-mingw32-clang++ not found\`, \`x86_64-w64-mingw32-g++ not found\`. Do \`apt install llvm-mingw-w64\` or \`apt install mingw-w64\`]"
 		exit 1
 	fi
 elif command -v clang++ > /dev/null; then
@@ -28,16 +30,17 @@ elif command -v clang++ > /dev/null; then
 elif command -v g++ > /dev/mull; then
 	CXX="g++"
 else
-	echo "Error: no clang++, no g++. `apt install clang` or `apt install gcc`"
+	echo "[Error: \`clang++ not found\`, \`g++ not found\`. Do \`apt install clang\` or \`apt install gcc\`]"
 	exit 1
 fi
 if [ "--release" = "$1" ] || [ "--release" = "$2" ]; then
-	echo "# /* \`$0 --release\` does not support profilers/debuggers (use \`$0 --debug\` for this) */"
+	echo "[Notice: \`${0}${CROSS_COMP} --release\` does not support profilers/debuggers (use \`$0${CROSS_COMP} --debug\` for this)]"
 	CXX_FLAGS="${CXX_FLAGS} ${CXX_FLAGS_RELEASE}"
 else
 	if [ "--debug" != "$1" ] && [ "--debug" != "$2" ]; then
-		echo "# /* \`$0\` defaults to \`$0 --debug\`. Use \`$0 --release\` if you want fast executables */"
+		echo -n "[Notice: \`${0}${CROSS_COMP}\` defaults to \`${0}${CROSS_COMP} --debug\`.] "
 	fi
+	echo "[Notice: Use \`${0}${CROSS_COMP} --release\` to improve how fast this executes]"
 	CXX_FLAGS="${CXX_FLAGS} ${CXX_FLAGS_DEBUG}"
 	export ASAN_OPTIONS=abort_on_error=1:fast_unwind_on_malloc=0:detect_leaks=0 UBSAN_OPTIONS=print_stacktrace=1 #/* "For LLDB/GDB and to prevent very short stack traces and usually false leaks detection" */
 fi
@@ -59,3 +62,4 @@ $CXX sha1.o sha224-256.o sha384-512.o ClassSha2.o ClassResultList.o ClassSys.o C
 STATUS=$?
 set +x
 return $STATUS
+
