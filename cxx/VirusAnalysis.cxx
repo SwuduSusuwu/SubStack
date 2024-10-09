@@ -30,7 +30,7 @@ std::vector<typeof(VirusAnalysisFun)> virusAnalyses = {hashAnalysis, signatureAn
 
 const bool virusAnalysisTests() {
 	ResultList abortOrNull {
-		.bytecodes {  /* Produce from an antivirus vendor's (such as VirusTotal.com's) infection databases */
+		.hashes {}, .signatures {}, .bytecodes {  /* Produce from an antivirus vendor's (such as VirusTotal.com's) infection databases */
 			"infection",
 			"infectedSW",
 			"corruptedSW",
@@ -38,7 +38,7 @@ const bool virusAnalysisTests() {
 		}
 	};
 	ResultList passOrNull {
-		.bytecodes {  /* Produce from an antivirus vendor's (such as VirusTotal.com's) fresh-files databases */
+		.hashes {}, .signatures {}, .bytecodes {  /* Produce from an antivirus vendor's (such as VirusTotal.com's) fresh-files databases */
 			"",
 			"SW",
 			"SW",

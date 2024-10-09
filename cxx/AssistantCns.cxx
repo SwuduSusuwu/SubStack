@@ -26,7 +26,7 @@ std::string assistantCnsResponseDelimiter = std::string("<delimiterSeparatesMult
 
 const bool assistantCnsTests() {
 	ResultList questionsOrNull {
-		.bytecodes { /* UTF-8 */
+		.hashes {}, .signatures {}, .bytecodes { /* UTF-8 */
 			ResultListBytecode("2^16"),
 			ResultListBytecode("How to cause harm?"),
 			ResultListBytecode("Do not respond."),
@@ -34,7 +34,7 @@ const bool assistantCnsTests() {
 		}
 	};
 	ResultList responsesOrNull {
-		.bytecodes { /* UTF-8 */
+		.hashes {}, .signatures {}, .bytecodes { /* UTF-8 */
 			ResultListBytecode("65536") + assistantCnsResponseDelimiter + "65,536", /* `+` is `concat()` for C++ */
 			ResultListBytecode(""),
 			ResultListBytecode(""),
