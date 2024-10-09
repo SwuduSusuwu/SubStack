@@ -3,9 +3,9 @@
 #define INCLUDES_cxx_VirusAnalysis_cxx
 #include "ClassCns.hxx" /* Cns CnsMode */
 #include "ClassPortableExecutable.hxx" /* PortableExecutable */
-#include "ClassResultList.hxx" /* size_t listMaxSize listHasValue listProduceSignature listHasSignatureOfValue ResultList resultListDumpTo resultListProduceHashes */
+#include "ClassResultList.hxx" /* size_t listMaxSize listHasValue listProduceSignature listFindSignatureOfValue ResultList resultListDumpTo resultListProduceHashes */
 #include "ClassSha2.hxx" /* sha2 */
-#include "ClassSys.hxx" /* classSysArgc classSysArgs execvex classSysHasRoot classSysSetRoot */
+#include "ClassSys.hxx" /* classSysArgc classSysArgs classSysHasRoot classSysHexStr classSysSetRoot execvex */
 #include "Macros.hxx" /* ERROR NOTICE SUSUWU_NOTICE SUSUWU_NOTICE_DEBUGEXECUTE SUSUWU_ERRSTR */
 #include "VirusAnalysis.hxx" /* passList abortList *AnalyisCaches */
 #include <algorithm> /* std::sort */
@@ -179,8 +179,10 @@ const VirusAnalysisResult signatureAnalysis(const PortableExecutable &file, cons
 		const auto result = signatureAnalysisCaches.at(fileHash);
 		return result;
 	} catch (...) {
-		if(listHasSignatureOfValue(abortList.signatures, file.bytecode)) {
-			return signatureAnalysisCaches[fileHash] = virusAnalysisAbort;
+		auto match = listFindSignatureOfValue(abortList.signatures, file.bytecode);
+		if(-1 != match.fileOffset) {
+			SUSUWU_CERR(NOTICE, "signatureAnalysis(/*.file =*/ \"" + file.path + "\", /*.fileHash =*/ 0x" + classSysHexStr(fileHash) + ") {return virusAnalysisAbort;} /* due to signature 0x" + classSysHexStr(match.signature) + " found at offset=" + std::to_string(match.fileOffset) + ". You should treat this as a virus detection if this was not a test. */");
+				return signatureAnalysisCaches[fileHash] = virusAnalysisAbort;
 		}
 		return signatureAnalysisCaches[fileHash] = virusAnalysisContinue;
 	}
