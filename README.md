@@ -10,17 +10,17 @@ Usage: `./build.sh` produces `*.o` static libraries (for distribution to others,
 
 Conventions = Mozilla Org (ergo Firefox) style:
 
-    Files: #import "PascalCase.hxx"
+    Files: `#import "PascalCase.hxx"`
 
-    Structs, enums, classe: typedef struct PascalCase {} PascalCase; typedef enum PascalCase {} PascalCase; typedef class PascalCase {} PascalCase;
+    Structs, enums, classe: `typedef struct PascalCase {} PascalCase;`, `typedef enum PascalCase {} PascalCase;`, `typedef class PascalCase {} PascalCase;`
 
-    Macros: #define CONSTANT_CASE(snake_case) assert("Normal");
+    Macros: `#define NAMESPACE_CONSTANT_CASE(snake_case_param) assert(snake_case_param);`
 
-    Indentation = tabs; as much tabs as braces
+    Indentation = tabs ('^I'); as much tabs as braces ('{', '}').
 
     Braces, functions:
-
-        bool camelCase(bool s, bool x) {
+```
+        bool classPrefixCamelCase(bool s, bool x) {
 
             if(s && x) {
 
@@ -33,12 +33,14 @@ Conventions = Mozilla Org (ergo Firefox) style:
             }
 
         }
+```
+    Local variables, objects: `const bool camelCase = true`; Global variables/objects: `extern const bool classPrefixCamelCase;`
+        Functions/globals can omit "classPrefix" if the file has `namespace` used to avoid collisions, or has `class` used to mask member `typedef`s/functions.
+        [The project as a whole should have `namespace`, but you can nest `namespace`s.]
 
-    Variables, objects: const bool `camelCase = true`; Global variables/objects: `extern classPrefixCamelCase;`
+    `git commit` message format/syntax: `git add NewFile` = "+`NewFile`", `git rm Exists` = "-`Exists`", `touch Exists && git add Exists` = "@`Exists`" or "?`Exists`" = `echo "int newFunction() >> Exists && git add Exists` = "@`Exists`:+`NewFunction`. Do not include the quote marks (""). Commit titles can omit backticks if not enough room.
 
-    `git add NewFile`: "+NewFile", `git rm Exists`: "-Exists", `touch Exists && git add Exists`: "@Exists"
-
-    Simple wildcards/regex for multiple files: "@ChangedPath/.* -> NewPath/.*" or `%s/oldFunction/newFunction/`
+    Simple wildcards/regex for multiple files: "OldPath/.* -> NewPath/.*" or `%s/oldFunction/newFunction/`
 
     Include guards:
 
