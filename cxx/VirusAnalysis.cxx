@@ -200,7 +200,7 @@ const VirusAnalysisResult signatureAnalysis(const PortableExecutable &file, cons
 	} catch (...) {
 		auto match = listFindSignatureOfValue(abortList.signatures, file.bytecode);
 		if(-1 != match.fileOffset) {
-			SUSUWU_CERR(NOTICE, "signatureAnalysis(/*.file =*/ \"" + file.path + "\", /*.fileHash =*/ 0x" + classSysHexStr(fileHash) + ") {return virusAnalysisAbort;} /* due to signature 0x" + classSysHexStr(match.signature) + " found at offset=" + std::to_string(match.fileOffset) + ". You should treat this as a virus detection if this was not a test. */");
+			SUSUWU_PRINT(NOTICE, "signatureAnalysis(/*.file =*/ \"" + file.path + "\", /*.fileHash =*/ 0x" + classSysHexStr(fileHash) + ") {return virusAnalysisAbort;} /* due to signature 0x" + classSysHexStr(match.signature) + " found at offset=" + std::to_string(match.fileOffset) + ". You should treat this as a virus detection if this was not a test. */");
 				return signatureAnalysisCaches[fileHash] = virusAnalysisAbort;
 		}
 		return signatureAnalysisCaches[fileHash] = virusAnalysisContinue;

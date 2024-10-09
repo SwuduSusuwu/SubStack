@@ -4,7 +4,7 @@
 #include "ClassPortableExecutable.hxx" /* FileBytecode FileHash */
 #include "ClassSha2.hxx"
 #include "ClassSys.hxx" /* classSysHexStr classSysUSecondClock templateCatchAll */
-#include "Macros.hxx" /* NOEXCEPT SUSUWU_NOTICE_EXECUTE SUSUWU_CERR SUSUWU_INFO SUSUWU_NOTICE */
+#include "Macros.hxx" /* NOEXCEPT SUSUWU_NOTICE_EXECUTE SUSUWU_PRINT SUSUWU_INFO SUSUWU_NOTICE */
 #include <climits> /* CHAR_BIT */
 #include <stdexcept> /* std::runtime_error */
 #include <string> /* std::to_string */
@@ -53,7 +53,7 @@ const bool classSha2Tests() { /* is just to test glue code (which wraps rfc6234)
 	const std::string hashStrCompute = "0x" + classSysHexStr(hash);
 	const std::string hashStrTrue = "0xde2f256064a0af797747c2b9755dcb9f3df0de4f489eac731c23ae9ca9cc31";
 	if(ts == ts2) {
-		SUSUWU_CERR(WARNING, "0 ms (0 μs) to compute `sha2(std::string(nulls, &nulls[65536])) == " + hashStrCompute + "` = inf mbps");
+		SUSUWU_PRINT(WARNING, "0 ms (0 μs) to compute `sha2(std::string(nulls, &nulls[65536])) == " + hashStrCompute + "` = inf mbps");
 	} else {
 		SUSUWU_INFO(std::to_string((ts2 - ts) / 1000) + " ms (" + std::to_string(ts2 - ts) + " μs) to compute `sha2(std::string(nulls, &nulls[65536])) == " + hashStrCompute + "` = " + std::to_string(float(65536) * CHAR_BIT /* to bits */ / (ts2 - ts) /* to bpμs */ * 1000000 /* to bps */ / (1 << 20) /* to mbps */) + "mbps");
 	}

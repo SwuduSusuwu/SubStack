@@ -68,33 +68,27 @@ namespace Susuwu { /* namespaces do not affect macros. Is just standard practice
 #define SUSUWU_CERR(WARN_LEVEL, x) std::cerr << SUSUWU_GLUE2(SUSUWU_SH_, WARN_LEVEL) << x << SUSUWU_SH_CLOSE_ << std::endl
 #define SUSUWU_STDERR(WARN_LEVEL, x) fprintf(stderr, SUSUWU_GLUE2(SUSUWU_SH_, WARN_LEVEL) "%s" SUSUWU_SH_CLOSE_ "\n", x)
 
+/* Use this to do C versus C++ agnostic messages */
+#ifdef __cplusplus
+# define SUSUWU_PRINT(LEVEL, x) SUSUWU_CERR(LEVEL, x)
+#else /* !(defined __cplusplus */
+# define SUSUWU_PRINT(LEVEL, x) SUSUWU_STDERR(LEVEL, x)
+#endif /* !(defined __cplusplus */
+#define SUSUWU_ERROR(x) SUSUWU_PRINT(ERROR, x)
+#define SUSUWU_WARNING(x) SUSUWU_PRINT(WARNING, x)
+#define SUSUWU_INFO(x) SUSUWU_PRINT(INFO, x)
+#define SUSUWU_SUCCESS(x) SUSUWU_PRINT(SUCESS, x)
+
 /* Use this to limit notices/diagnostics to release builds (+ do conditional execution) */
 #ifdef NDEBUG
-# define SUSUWU_CERR_NOTICE(x) (true)/* skip */
-# define SUSUWU_STDERR_NOTICE(x) (true)/* skip */
-# define SUSUWU_CERR_DEBUG(x) (true)/* skip */
-# define SUSUWU_STDERR_DEBUG(x) (true)/* skip */
+# define SUSUWU_NOTICE(x) (true)/* skip */
+# define SUSUWU_DEBUG(x) (true)/* skip */
 # define SUSUWU_DEBUGEXECUTE(x) (true)/*skip*/
 #else /* !(defined NDEBUG) */
-# define SUSUWU_CERR_NOTICE(x) SUSUWU_CERR(NOTICE, x)
-# define SUSUWU_STDERR_NOTICE(x) SUSUWU_STDERR(NOTICE, x)
-# define SUSUWU_CERR_DEBUG(x) SUSUWU_CERR(DEBUG, x)
-# define SUSUWU_STDERR_DEBUG(x) SUSUWU_STDERR(DEBUG, x)
+# define SUSUWU_NOTICE(x) SUSUWU_PRINT(NOTICE, x)
+# define SUSUWU_DEBUG(x) SUSUWU_PRINT(DEBUG, x)
 # define SUSUWU_DEBUGEXECUTE(x) x
 #endif /* !(defined NDEBUG) */
-
-/* Use this to do C versus C++ agnostic messages */
-#define SUSUWU_CERR_INFO(x) SUSUWU_CERR(INFO, x)
-#define SUSUWU_STDERR_INFO(x) SUSUWU_STDERR(INFO, x)
-#ifdef __cplusplus
-# define SUSUWU_INFO(x) SUSUWU_CERR_INFO(x)
-# define SUSUWU_NOTICE(x) SUSUWU_CERR_NOTICE(x)
-# define SUSUWU_DEBUG(x) SUSUWU_CERR_DEBUG(x)
-#else /* !(defined __cplusplus */
-# define SUSUWU_INFO(x) SUSUWU_STDERR_INFO(x)
-# define SUSUWU_NOTICE(x) SUSUWU_STDERR_NOTICE(x)
-# define SUSUWU_DEBUG(x) SUSUWU_DEBUG_NOTICE(x)
-#endif /* !(defined __cplusplus */
 
 /* Use this to reduce (conditional) print + (unconditional) execute into single statement */
 #define SUSUWU_INFO_EXECUTE(x) ((SUSUWU_INFO(#x)), (x))

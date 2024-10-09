@@ -1,7 +1,7 @@
 /* Dual licenses: choose "Creative Commons" or "Apache 2" (allows all uses) */
 #ifndef INCLUDES_cxx_ClassSys_cxx
 #define INCLUDES_cxx_ClassSys_cxx
-#include "Macros.hxx" /* ERROR SUSUWU_CERR SUSUWU_ERRSTR WARNING */
+#include "Macros.hxx" /* ERROR SUSUWU_PRINT SUSUWU_ERRSTR WARNING */
 #include "ClassSys.hxx" /* std::string std::vector */
 #include <cassert> /* assert */
 #include <cstdlib> /* exit EXIT_FAILURE getenv strtol */
@@ -81,7 +81,7 @@ const bool classSysHasRoot() {
 #elif defined __WIN32__
 	return IsUserAnAdmin();
 #else
-	SUSUWU_CERR(WARNING, "classSysHasRoot(bool) {#if !(defined _POSIX_VERSION || defined __WIN32__) /* TODO */}");
+	SUSUWU_PRINT(WARNING, "classSysHasRoot(bool) {#if !(defined _POSIX_VERSION || defined __WIN32__) /* TODO */}");
 	return false;
 #endif /* def _POSIX_VERSION or def __WIN32__ */
 }
@@ -92,7 +92,7 @@ const bool classSysSetRoot(bool root) {
 #ifdef _POSIX_VERSION
 	if(root) {
 		if(-1 == seteuid(0)) {
-			SUSUWU_CERR(WARNING, "classSysSetRoot(true) {(-1 == seteuid(0)) /* stuck as user, perhaps is not setuid executable */}");
+			SUSUWU_PRINT(WARNING, "classSysSetRoot(true) {(-1 == seteuid(0)) /* stuck as user, perhaps is not setuid executable */}");
 		}
 #if 0
 # ifdef __APPLE__ //TODO: https://stackoverflow.com/questions/2483755/how-to-programmatically-gain-root-privileges/35316538#35316538 says you must execute new processes to do this
@@ -108,25 +108,25 @@ const bool classSysSetRoot(bool root) {
 		if(0 == sudo_uid) {
 			char *sudo_uid_str = getenv("SUDO_UID"), *sudo_uid_str_it;
 			if(NULL == sudo_uid_str) {
-				SUSUWU_CERR(WARNING, "classSysSetRoot(false) {(NULL == getenv(\"SUDO_UID\")) /* stuck as root */}");
+				SUSUWU_PRINT(WARNING, "classSysSetRoot(false) {(NULL == getenv(\"SUDO_UID\")) /* stuck as root */}");
 				return true;
 			} else {
 				sudo_uid = (uid_t)strtol(sudo_uid_str, &sudo_uid_str_it, 10);
 				if(sudo_uid_str == sudo_uid_str_it || -1 == setuid(sudo_uid)) { /* prevent reescalation to root */
-					SUSUWU_CERR(WARNING, "classSysSetRoot(false) {(-1 == setuid(sudo_uid)) /* can't prevent reescalation to root */}");
+					SUSUWU_PRINT(WARNING, "classSysSetRoot(false) {(-1 == setuid(sudo_uid)) /* can't prevent reescalation to root */}");
 				}
 			}
 		}
 # endif /* !def LINUX */
 		if(0 == sudo_uid) {
-			SUSUWU_CERR(WARNING, "classSysSetRoot(false) {(0 == sudo_uid) /* stuck as root */}");
+			SUSUWU_PRINT(WARNING, "classSysSetRoot(false) {(0 == sudo_uid) /* stuck as root */}");
 		} else if(-1 == seteuid(sudo_uid)) {
-			SUSUWU_CERR(WARNING, "classSysSetRoot(false) {(-1 == seteuid(sudo_uid)) /* stuck as root */}");
+			SUSUWU_PRINT(WARNING, "classSysSetRoot(false) {(-1 == seteuid(sudo_uid)) /* stuck as root */}");
 		}
 	}
 /* #elif defined __WIN32__ */ //TODO: https://stackoverflow.com/questions/6418791/requesting-administrator-privileges-at-run-time says you must spawn new processes to do this
 #else
-	SUSUWU_CERR(WARNING, "classSysSetRoot(bool) {#ifndef _POSIX_VERSION /* TODO */}");
+	SUSUWU_PRINT(WARNING, "classSysSetRoot(bool) {#ifndef _POSIX_VERSION /* TODO */}");
 #endif /* _POSIX_VERSION */
 	return classSysHasRoot();
 }

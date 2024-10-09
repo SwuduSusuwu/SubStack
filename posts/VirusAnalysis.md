@@ -28,32 +28,26 @@ For the most new sources (+ static libs), use apps such as [iSH](https://apps.ap
 #define SUSUWU_ERRSTR(WARN_LEVEL, x) std::string(SUSUWU_GLUE2(SUSUWU_SH_, WARN_LEVEL)) + std::string(x) + std::string(SUSUWU_SH_CLOSE_)
 #define SUSUWU_CERR(WARN_LEVEL, x) std::cerr << SUSUWU_GLUE2(SUSUWU_SH_, WARN_LEVEL) << x << SUSUWU_SH_CLOSE_ << std::endl
 #define SUSUWU_STDERR(WARN_LEVEL, x) fprintf(stderr, SUSUWU_GLUE2(SUSUWU_SH_, WARN_LEVEL) "%s" SUSUWU_SH_CLOSE_ "\n", x)
-/* Use this to limit notices/diagnostics to debug builds (+ do conditional execution) */
+/* Use this to do C versus C++ agnostic messages */
+#ifdef __cplusplus
+# define SUSUWU_PRINT(LEVEL, x) SUSUWU_CERR(LEVEL, x)
+#else /* !(defined __cplusplus */
+# define SUSUWU_PRINT(LEVEL, x) SUSUWU_STDERR(LEVEL, x)
+#endif /* !(defined __cplusplus */
+#define SUSUWU_ERROR(x) SUSUWU_PRINT(ERROR, x)
+#define SUSUWU_WARNING(x) SUSUWU_PRINT(WARNING, x)
+#define SUSUWU_INFO(x) SUSUWU_PRINT(INFO, x)
+#define SUSUWU_SUCCESS(x) SUSUWU_PRINT(SUCESS, x)
+/* Use this to limit notices/diagnostics to release builds (+ do conditional execution) */
 #ifdef NDEBUG
-# define SUSUWU_CERR_NOTICE(x) (true)/* skip */
-# define SUSUWU_STDERR_NOTICE(x) (true)/* skip */
-# define SUSUWU_CERR_DEBUG(x) (true)/* skip */
-# define SUSUWU_STDERR_DEBUG(x) (true)/* skip */
+# define SUSUWU_NOTICE(x) (true)/* skip */
+# define SUSUWU_DEBUG(x) (true)/* skip */
 # define SUSUWU_DEBUGEXECUTE(x) (true)/*skip*/
 #else /* !(defined NDEBUG) */
-# define SUSUWU_CERR_NOTICE(x) SUSUWU_CERR(NOTICE, x)
-# define SUSUWU_STDERR_NOTICE(x) SUSUWU_STDERR(NOTICE, x)
-# define SUSUWU_CERR_DEBUG(x) SUSUWU_CERR(DEBUG, x)
-# define SUSUWU_STDERR_DEBUG(x) SUSUWU_STDERR(DEBUG, x)
+# define SUSUWU_NOTICE(x) SUSUWU_PRINT(NOTICE, x)
+# define SUSUWU_DEBUG(x) SUSUWU_PRINT(DEBUG, x)
 # define SUSUWU_DEBUGEXECUTE(x) x
 #endif /* !(defined NDEBUG) */
-/* Use this to do C versus C++ agnostic messages */
-#define SUSUWU_CERR_INFO(x) SUSUWU_CERR(INFO, x)
-#define SUSUWU_STDERR_INFO(x) SUSUWU_STDERR(INFO, x)
-#ifdef __cplusplus
-# define SUSUWU_INFO(x) SUSUWU_CERR_INFO(x)
-# define SUSUWU_NOTICE(x) SUSUWU_CERR_NOTICE(x)
-# define SUSUWU_DEBUG(x) SUSUWU_CERR_DEBUG(x)
-#else /* !(defined __cplusplus */
-# define SUSUWU_INFO(x) SUSUWU_STDERR_INFO(x)
-# define SUSUWU_NOTICE(x) SUSUWU_STDERR_NOTICE(x)
-# define SUSUWU_DEBUG(x) SUSUWU_DEBUG_NOTICE(x)
-#endif /* !(defined __cplusplus */
 /* Use this to reduce (conditional) print + (unconditional) execute into single statement */
 #define SUSUWU_INFO_EXECUTE(x) ((SUSUWU_INFO(#x)), (x))
 #define SUSUWU_NOTICE_EXECUTE(x) ((SUSUWU_NOTICE(#x)), (x))
@@ -138,7 +132,7 @@ auto templateCatchAll(Func func, const std::string &funcName, Args... args) {
 	try {
 		return func(args...);
 	} catch (const std::exception &ex) {
-		SUSUWU_CERR(ERROR, funcName + " {throw std::exception(\"" + ex.what() + "\");}");
+		SUSUWU_PRINT(ERROR, funcName + " {throw std::exception(\"" + ex.what() + "\");}");
 		return decltype(func(args...))(); /* `func(args...)`'s default return value; if `int func(args...)`, `return 0;`. If `bool func(args...)`, `return false;` */
 	}
 }
@@ -208,7 +202,7 @@ const bool classSysHasRoot() {
 #elif defined __WIN32__
 	return IsUserAnAdmin();
 #else
-	SUSUWU_CERR(WARNING, "classSysHasRoot(bool) {#if !(defined _POSIX_VERSION || defined __WIN32__) /* TODO */}");
+	SUSUWU_PRINT(WARNING, "classSysHasRoot(bool) {#if !(defined _POSIX_VERSION || defined __WIN32__) /* TODO */}");
 	return false;
 #endif /* def _POSIX_VERSION or def __WIN32__ */
 }
@@ -219,7 +213,7 @@ const bool classSysSetRoot(bool root) {
 #ifdef _POSIX_VERSION
 	if(root) {
 		if(-1 == seteuid(0)) {
-			SUSUWU_CERR(WARNING, "classSysSetRoot(true) {(-1 == seteuid(0)) /* stuck as user, perhaps is not setuid executable */}");
+			SUSUWU_PRINT(WARNING, "classSysSetRoot(true) {(-1 == seteuid(0)) /* stuck as user, perhaps is not setuid executable */}");
 		}
 #if 0
 # ifdef __APPLE__ //TODO: https://stackoverflow.com/questions/2483755/how-to-programmatically-gain-root-privileges/35316538#35316538 says you must execute new processes to do this
@@ -235,25 +229,25 @@ const bool classSysSetRoot(bool root) {
 		if(0 == sudo_uid) {
 			char *sudo_uid_str = getenv("SUDO_UID"), *sudo_uid_str_it;
 			if(NULL == sudo_uid_str) {
-				SUSUWU_CERR(WARNING, "classSysSetRoot(false) {(NULL == getenv(\"SUDO_UID\")) /* stuck as root */}");
+				SUSUWU_PRINT(WARNING, "classSysSetRoot(false) {(NULL == getenv(\"SUDO_UID\")) /* stuck as root */}");
 				return true;
 			} else {
 				sudo_uid = (uid_t)strtol(sudo_uid_str, &sudo_uid_str_it, 10);
 				if(sudo_uid_str == sudo_uidr_str_it || -1 == setuid(sudo_uid)) { /* prevent reescalation to root */
-					SUSUWU_CERR(WARNING, "classSysSetRoot(false) {(-1 == setuid(sudo_uid)) /* can't prevent reescalation to root */}");
+					SUSUWU_PRINT(WARNING, "classSysSetRoot(false) {(-1 == setuid(sudo_uid)) /* can't prevent reescalation to root */}");
 				}
 			}
 		}
 # endif /* !ifdef LINUX */
 		if(0 == sudo_uid) {
-			SUSUWU_CERR(WARNING, "classSysSetRoot(false) {(0 == sudo_uid) /* stuck as root */}");
+			SUSUWU_PRINT(WARNING, "classSysSetRoot(false) {(0 == sudo_uid) /* stuck as root */}");
 		} else if(-1 == seteuid(sudo_uid)) {
-			SUSUWU_CERR(WARNING, "classSysSetRoot(false) {(-1 == seteuid(sudo_uid)) /* stuck as root */}");
+			SUSUWU_PRINT(WARNING, "classSysSetRoot(false) {(-1 == seteuid(sudo_uid)) /* stuck as root */}");
 		}
 	}
 /* #elif defined __WIN32__ */ //TODO: https://stackoverflow.com/questions/6418791/requesting-administrator-privileges-at-run-time says you must spawn new processes to do this
 #else
-	SUSUWU_CERR(WARNING, "classSysSetRoot(bool) {#ifndef _POSIX_VERSION /* TODO */}");
+	SUSUWU_PRINT(WARNING, "classSysSetRoot(bool) {#ifndef _POSIX_VERSION /* TODO */}");
 #endif /* _POSIX_VERSION */
 	return classSysHasRoot();
 }
@@ -311,7 +305,7 @@ const bool classSha2Tests() { /* is just to test glue code (which wraps rfc6234)
 	const std::string hashStrCompute = "0x" + classSysHexStr(hash);
 	const std::string hashStrTrue = "0xde2f256064a0af797747c2b9755dcb9f3df0de4f489eac731c23ae9ca9cc31";
 	if(ts == ts2) {
-		SUSUWU_CERR(WARNING, "0 ms (0 μs) to compute `sha2(std::string(nulls, &nulls[65536])) == " + hashStrCompute + "` = inf mbps");
+		SUSUWU_PRINT(WARNING, "0 ms (0 μs) to compute `sha2(std::string(nulls, &nulls[65536])) == " + hashStrCompute + "` = inf mbps");
 	} else {
 		SUSUWU_INFO(std::to_string((ts2 - ts) / 1000) + " ms (" + std::to_string(ts2 - ts) + " μs) to compute `sha2(std::string(nulls, &nulls[65536])) == " + hashStrCompute + "` = " + std::to_string(float(65536) * CHAR_BIT /* to bits */ / (ts2 - ts) /* to bpμs */ * 1000000 /* to bps */ / (1 << 20) /* to mbps */) + "mbps");
 	}
@@ -990,7 +984,7 @@ const VirusAnalysisResult signatureAnalysis(const PortableExecutable &file, cons
 	} catch (...) {
 		auto match = listFindSignatureOfValue(abortList.signatures, file.bytecode);
 		if(-1 != match.fileOffset) {
-			SUSUWU_CERR(NOTICE, "signatureAnalysis(/*.file =*/ \"" + file.path + "\", /*.fileHash =*/ 0x" + classSysHexStr(fileHash) + ") {return virusAnalysisAbort;} /* due to signature 0x" + classSysHexStr(match.signature) + " found at offset=" + std::to_string(match.fileOffset) + ". You should treat this as a virus detection if this was not a test. */");
+			SUSUWU_PRINT(NOTICE, "signatureAnalysis(/*.file =*/ \"" + file.path + "\", /*.fileHash =*/ 0x" + classSysHexStr(fileHash) + ") {return virusAnalysisAbort;} /* due to signature 0x" + classSysHexStr(match.signature) + " found at offset=" + std::to_string(match.fileOffset) + ". You should treat this as a virus detection if this was not a test. */");
 				return signatureAnalysisCaches[fileHash] = virusAnalysisAbort;
 		}
 		return signatureAnalysisCaches[fileHash] = virusAnalysisContinue;
