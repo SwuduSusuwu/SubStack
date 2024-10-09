@@ -60,10 +60,22 @@ const bool virusAnalysisTests() {
 	produceAnalysisCns(passOrNull, abortOrNull, ResultList(), analysisCns);
 	produceVirusFixCns(passOrNull, abortOrNull, virusFixCns);
 	if(0 < classSysArgc) {
-		PortableExecutableBytecode executable(classSysArgs[0]);
+		const PortableExecutableBytecode executable(classSysArgs[0]);
 		if(virusAnalysisAbort == virusAnalysis(executable)) {
-			throw std::runtime_error(SUSUWU_ERRSTR(ERROR, "{virusAnalysisAbort == virusAnalysis(args[0]);} /* With such false positives, shouldn't hook kernel modules */"));
+			throw std::runtime_error(SUSUWU_ERRSTR(ERROR, "{virusAnalysisAbort == virusAnalysis(args[0]);} /* With such false positives, shouldn't hook kernel modules (next test is to hook+unhook `exec*` to scan programs on launch). */"));
 		}
+		const ResultList origPassList = passList, origAbortList = abortList;
+		passList.bytecodes.push_back(executable.bytecode);
+		abortList.bytecodes.push_back("test");
+		produceAbortListSignatures(passList, abortList);
+		if(virusAnalysisAbort == virusAnalysis(executable)) {
+			throw std::runtime_error(SUSUWU_ERRSTR(ERROR, "{virusAnalysisAbort == virusAnalysis(args[0]);} /* Ignored `signaturesAnalysisCaches`. */"));
+		}
+		signatureAnalysisCaches = {};
+		if(virusAnalysisAbort != virusAnalysis(executable)) {
+			throw std::runtime_error(SUSUWU_ERRSTR(ERROR, "{virusAnalysisAbort != virusAnalysis(args[0]);} /* This test was supposed to match positive but did not. */"));
+		}
+		passList = origPassList, abortList = origAbortList;
 	}
 	const bool originalRootStatus = classSysHasRoot();
 	classSysSetRoot(true);
