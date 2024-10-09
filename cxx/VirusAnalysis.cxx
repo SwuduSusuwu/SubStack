@@ -26,6 +26,13 @@ std::vector<std::string> syscallPotentialDangers = {
 };
 std::vector<std::string> stracePotentialDangers = {"write(*)"};
 std::map<ResultListHash, VirusAnalysisResult> hashAnalysisCaches, signatureAnalysisCaches, staticAnalysisCaches, cnsAnalysisCaches, sandboxAnalysisCaches; /* temporary caches; memoizes results */
+void virusAnalysisResetCaches() NOEXCEPT {
+	hashAnalysisCaches.clear();
+	signatureAnalysisCaches.clear();
+	staticAnalysisCaches.clear();
+	cnsAnalysisCaches.clear();
+	sandboxAnalysisCaches.clear();
+}
 std::vector<typeof(VirusAnalysisFun)> virusAnalyses = {hashAnalysis, signatureAnalysis, staticAnalysis, cnsAnalysis, sandboxAnalysis /* sandbox is slow, so put last*/};
 
 const bool virusAnalysisTests() {
@@ -71,7 +78,7 @@ const bool virusAnalysisTests() {
 		if(virusAnalysisAbort == virusAnalysis(executable)) {
 			throw std::runtime_error(SUSUWU_ERRSTR(ERROR, "{virusAnalysisAbort == virusAnalysis(args[0]);} /* Ignored `signaturesAnalysisCaches`. */"));
 		}
-		signatureAnalysisCaches = {};
+		virusAnalysisResetCaches();
 		if(virusAnalysisAbort != virusAnalysis(executable)) {
 			throw std::runtime_error(SUSUWU_ERRSTR(ERROR, "{virusAnalysisAbort != virusAnalysis(args[0]);} /* This test was supposed to match positive but did not. */"));
 		}

@@ -90,7 +90,12 @@ const float cnsAnalysisScore(const PortableExecutable &file, const ResultListHas
 const VirusAnalysisResult cnsAnalysis_(const PortableExecutable &file, const ResultListHash &fileHash, const Cns &cns = analysisCns);
 const VirusAnalysisResult cnsAnalysis(const PortableExecutable &file, const ResultListHash &fileHash);
 
-extern std::map<ResultListHash, VirusAnalysisResult> hashAnalysisCaches, signatureAnalysisCaches, staticAnalysisCaches, cnsAnalysisCaches, sandboxAnalysisCaches; /* temporary caches; memoizes results */
+/* temporary caches; memoizes results */
+extern std::map<ResultListHash, VirusAnalysisResult> hashAnalysisCaches, signatureAnalysisCaches, staticAnalysisCaches, cnsAnalysisCaches, sandboxAnalysisCaches;
+/* call to use new versions of `passList`/`abortList`
+ * @post @code *AnalysisCaches.empty() @encode
+ */
+void virusAnalysisResetCaches() NOEXCEPT;
 
 typedef const VirusAnalysisResult (*VirusAnalysisFun)(const PortableExecutable &file, const ResultListHash &fileHash);
 extern std::vector<typeof(VirusAnalysisFun)> virusAnalyses;

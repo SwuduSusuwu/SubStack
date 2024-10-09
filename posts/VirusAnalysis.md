@@ -775,7 +775,12 @@ const float cnsAnalysisScore(const PortableExecutable &file, const ResultListHas
 const VirusAnalysisResult cnsAnalysis_(const PortableExecutable &file, const ResultListHash &fileHash, const Cns &cns = analysisCns);
 const VirusAnalysisResult cnsAnalysis(const PortableExecutable &file, const ResultListHash &fileHash);
 
-extern std::map<ResultListHash, VirusAnalysisResult> hashAnalysisCaches, signatureAnalysisCaches, staticAnalysisCaches, cnsAnalysisCaches, sandboxAnalysisCaches; /* temporary caches; memoizes results */
+/* temporary caches; memoizes results */
+extern std::map<ResultListHash, VirusAnalysisResult> hashAnalysisCaches, signatureAnalysisCaches, staticAnalysisCaches, cnsAnalysisCaches, sandboxAnalysisCaches;
+/* call to use new versions of `passList`/`abortList`
+ * @post @code *AnalysisCaches.empty() @encode
+ */
+void virusAnalysisResetCaches() NOEXCEPT;
 
 typedef const VirusAnalysisResult (*VirusAnalysisFun)(const PortableExecutable &file, const ResultListHash &fileHash);
 extern std::vector<typeof(VirusAnalysisFun)> virusAnalyses;
@@ -810,6 +815,13 @@ std::vector<std::string> syscallPotentialDangers = {
 };
 std::vector<std::string> stracePotentialDangers = {"write(*)"};
 std::map<ResultListHash, VirusAnalysisResult> hashAnalysisCaches, signatureAnalysisCaches, staticAnalysisCaches, cnsAnalysisCaches, sandboxAnalysisCaches; /* temporary caches; memoizes results */
+void virusAnalysisResetCaches() NOEXCEPT {
+	hashAnalysisCaches.clear();
+	signatureAnalysisCaches.clear();
+	staticAnalysisCaches.clear();
+	cnsAnalysisCaches.clear();
+	sandboxAnalysisCaches.clear();
+}
 std::vector<typeof(VirusAnalysisFun)> virusAnalyses = {hashAnalysis, signatureAnalysis, staticAnalysis, cnsAnalysis, sandboxAnalysis /* sandbox is slow, so put last*/};
 
 const bool virusAnalysisTests() {
@@ -855,7 +867,7 @@ const bool virusAnalysisTests() {
 		if(virusAnalysisAbort == virusAnalysis(executable)) {
 			throw std::runtime_error(SUSUWU_ERRSTR(ERROR, "{virusAnalysisAbort == virusAnalysis(args[0]);} /* Ignored `signaturesAnalysisCaches`. */"));
 		}
-		signatureAnalysisCaches = {};
+		virusAnalysisResetCaches();
 		if(virusAnalysisAbort != virusAnalysis(executable)) {
 			throw std::runtime_error(SUSUWU_ERRSTR(ERROR, "{virusAnalysisAbort != virusAnalysis(args[0]);} /* This test was supposed to match positive but did not. */"));
 		}
