@@ -1,6 +1,6 @@
 #!/bin/sh
 . ./Macros.sh
-echo "${SUSUWU_SH_NOTICE}Dual licenses: choose "Creative Commons" or "Apache 2" (allows all uses)${SUSUWU_SH_CLOSE_}"
+SUSUWU_STDERR "${SUSUWU_SH_NOTICE}" "Dual licenses: choose \"Creative Commons\" or \"Apache 2\" (allows all uses)"
 #cd build
 sSRC="./cxx/"
 #INCLUDES="${sSRC}"
@@ -23,7 +23,7 @@ if [ "--mingw" = "$1" ] || [ "--mingw" = "$2" ]; then
 	elif command -v x86_64-w64-mingw32-g++ > /dev/null; then
 		CXX="x86_64-w64-mingw32-g++"
 	else
-		echo "${SUSUWU_SH_ERROR}\`x86_64-w64-mingw32-clang++ not found\`, \`x86_64-w64-mingw32-g++ not found\`. Do \`apt install llvm-mingw-w64\` or \`apt install mingw-w64\`${SUSUWU_SH_CLOSE_}"
+		SUSUWU_STDERR "${SUSUWU_SH_ERROR}" "\`x86_64-w64-mingw32-clang++ not found\`, \`x86_64-w64-mingw32-g++ not found\`. Do \`apt install llvm-mingw-w64\` or \`apt install mingw-w64\`"
 		exit 1
 	fi
 elif command -v clang++ > /dev/null; then
@@ -31,17 +31,17 @@ elif command -v clang++ > /dev/null; then
 elif command -v g++ > /dev/mull; then
 	CXX="g++"
 else
-	echo "${SUSUWU_SH_ERROR}\`clang++ not found\`, \`g++ not found\`. Do \`apt install clang\` or \`apt install gcc\`${SUSUWU_SH_CLOSE_}"
+	SUSUWU_STDERR "${SUSUWU_SH_ERROR}" "\`clang++ not found\`, \`g++ not found\`. Do \`apt install clang\` or \`apt install gcc\`"
 	exit 1
 fi
 if [ "--release" = "$1" ] || [ "--release" = "$2" ]; then
-	echo "${SUSUWU_SH_NOTICE}\`${0}${CROSS_COMP} --release\` does not support profilers/debuggers (use \`$0${CROSS_COMP} --debug\` for this)${SUSUWU_SH_CLOSE_}"
+	SUSUWU_STDERR "${SUSUWU_SH_NOTICE}" "\`${0}${CROSS_COMP} --release\` does not support profilers/debuggers (use \`$0${CROSS_COMP} --debug\` for this)"
 	CXX_FLAGS="${CXX_FLAGS} ${CXX_FLAGS_RELEASE}"
 else
 	if [ "--debug" != "$1" ] && [ "--debug" != "$2" ]; then
-		echo -n "${SUSUWU_SH_NOTICE}\`${0}${CROSS_COMP}\` defaults to \`${0}${CROSS_COMP} --debug\`.${SUSUWU_SH_CLOSE_} "
+		SUSUWU_STDERR "${SUSUWU_SH_NOTICE}" "\`${0}${CROSS_COMP}\` defaults to \`${0}${CROSS_COMP} --debug\`."
 	fi
-	echo "${SUSUWU_SH_NOTICE}Use \`${0}${CROSS_COMP} --release\` to improve how fast this executes${SUSUWU_SH_CLOSE_}"
+	SUSUWU_STDERR "${SUSUWU_SH_NOTICE}" "Use \`${0}${CROSS_COMP} --release\` to improve how fast this executes"
 	CXX_FLAGS="${CXX_FLAGS} ${CXX_FLAGS_DEBUG}"
 	export ASAN_OPTIONS=abort_on_error=1:fast_unwind_on_malloc=0:detect_leaks=0 UBSAN_OPTIONS=print_stacktrace=1 #/* "For LLDB/GDB and to prevent very short stack traces and usually false leaks detection" */
 fi

@@ -1,4 +1,5 @@
 #!/bin/sh
+#/* Based on cxx/Macros.hxx */
 SUSUWU_SH_DEFAULT="\033[0m"
 SUSUWU_SH_BLACK="\033[0;30m"
 SUSUWU_SH_DARK_GRAY="\033[1;30m"
@@ -23,4 +24,8 @@ SUSUWU_SH_SUCCESS="[${SUSUWU_SH_GREEN}Success: ${SUSUWU_SH_WHITE}"
 SUSUWU_SH_NOTICE="[${SUSUWU_SH_BLUE}Notice: ${SUSUWU_SH_WHITE}"
 SUSUWU_SH_DEBUG="[${SUSUWU_SH_BLUE}Debug: ${SUSUWU_SH_WHITE}"
 SUSUWU_SH_CLOSE_="${SUSUWU_SH_DEFAULT}]"
+SUSUWU_STDERR() {
+	local LEVEL="${1}"; local x="${2}"
+	echo "${LEVEL}${x}${SUSUWU_SH_CLOSE_}" >&2 #fd=2 is `std::cerr`/`stderr`
+}
 
