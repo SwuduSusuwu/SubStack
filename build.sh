@@ -60,5 +60,13 @@ $CXX -c ${sSRC}/main.cxx
 $CXX sha1.o sha224-256.o sha384-512.o ClassSha2.o ClassResultList.o ClassSys.o ClassCns.o VirusAnalysis.o AssistantCns.o main.o
 STATUS=$?
 set +x
+if [ 0 -eq $STATUS  ]; then
+	if [ -z $CROSS_COMP ]; then
+		FILE_OUT="a.out"
+	else
+		FILE_OUT="a.exe"
+	fi
+	SUSUWU_PRINT "${SUSUWU_SH_SUCCESS}" "produced \`${FILE_OUT}\` (`stat -c%s ${FILE_OUT}` bytes)"
+fi
 return $STATUS
 
