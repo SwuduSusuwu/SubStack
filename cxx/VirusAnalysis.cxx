@@ -135,8 +135,7 @@ const VirusAnalysisHook virusAnalysisHook(VirusAnalysisHook virusAnalysisHookSta
 			case virusAnalysisPass:
 				return true; /* launch this */
 			case virusAnalysisRequiresReview:
-				submitSampleToHosts(file); /* manual review */
-					return false;
+				return (virusAnalysisPass == virusAnalysisManualReview(file));
 			default:
 				return false; /* abort */
 			}
@@ -149,8 +148,7 @@ const VirusAnalysisHook virusAnalysisHook(VirusAnalysisHook virusAnalysisHookSta
 			case virusAnalysisPass:
 				return true; /* launch this */
 			case virusAnalysisRequiresReview:
-				submitSampleToHosts(file); /* manual review */
-				return false;
+				return (virusAnalysisPass == virusAnalysisManualReview(file));
 			default:
 				return false; /* abort */
 			}
@@ -167,7 +165,7 @@ const VirusAnalysisResult virusAnalysis(const PortableExecutable &file) {
 			case virusAnalysisPass:
 				return virusAnalysisPass;
 			case virusAnalysisRequiresReview:
-				/*submitSampleToHosts(file);*/ /* TODO:? up to caller to do this? */
+				/*return virusAnalysisManualReview(file);*/ /* TODO? Is up to caller to do this? */
 				return virusAnalysisRequiresReview;
 			case virusAnalysisAbort:
 				return virusAnalysisAbort;

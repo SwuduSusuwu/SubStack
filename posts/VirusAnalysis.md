@@ -780,7 +780,7 @@ typedef const VirusAnalysisResult (*VirusAnalysisFun)(const PortableExecutable &
 extern std::vector<typeof(VirusAnalysisFun)> virusAnalyses;
 
 const VirusAnalysisResult virusAnalysis(const PortableExecutable &file); /* auto hash = sha2(file.bytecode); for(VirusAnalysisFun analysis : virusAnalyses) {analysis(file, hash);} */
-static const VirusAnalysisResult submitSampleToHosts(const PortableExecutable &file) {return virusAnalysisRequiresReview;} /* TODO: requires compatible hosts to upload to */
+static const VirusAnalysisResult virusAnalysisManualReview(const PortableExecutable &file) {return virusAnalysisRequiresReview;} /* TODO: requires compatible hosts to upload to */
 
 /* Setup virus fix CMS, uses more resources than `produceAnalysisCns()` */
 /* `abortOrNull` should map to `passOrNull` (`ResultList` is composed of `std::tuple`s, because just `produceVirusFixCns()` requires this),
@@ -919,8 +919,7 @@ const VirusAnalysisHook virusAnalysisHook(VirusAnalysisHook virusAnalysisHookSta
 			case virusAnalysisPass:
 				return true; /* launch this */
 			case virusAnalysisRequiresReview:
-				submitSampleToHosts(file); /* manual review */
-					return false;
+				return (virusAnalysisPass == virusAnalysisManualReview(file));
 			default:
 				return false; /* abort */
 			}
@@ -933,8 +932,7 @@ const VirusAnalysisHook virusAnalysisHook(VirusAnalysisHook virusAnalysisHookSta
 			case virusAnalysisPass:
 				return true; /* launch this */
 			case virusAnalysisRequiresReview:
-				submitSampleToHosts(file); /* manual review */
-				return false;
+				return (virusAnalysisPass == virusAnalysisManualReview(file));
 			default:
 				return false; /* abort */
 			}
@@ -951,7 +949,7 @@ const VirusAnalysisResult virusAnalysis(const PortableExecutable &file) {
 			case virusAnalysisPass:
 				return virusAnalysisPass;
 			case virusAnalysisRequiresReview:
-				/*submitSampleToHosts(file);*/ /* TODO:? up to caller to do this? */
+				/*return virusAnalysisManualReview(file);*/ /* TODO? Is up to caller to do this? */
 				return virusAnalysisRequiresReview;
 			case virusAnalysisAbort:
 				return virusAnalysisAbort;
