@@ -91,7 +91,7 @@ const VirusAnalysisResult cnsAnalysis_(const PortableExecutable &file, const Res
 const VirusAnalysisResult cnsAnalysis(const PortableExecutable &file, const ResultListHash &fileHash);
 
 /* temporary caches; memoizes results */
-extern std::map<ResultListHash, VirusAnalysisResult> hashAnalysisCaches, signatureAnalysisCaches, staticAnalysisCaches, cnsAnalysisCaches, sandboxAnalysisCaches;
+extern std::map<ResultListHash, VirusAnalysisResult> hashAnalysisCaches, signatureAnalysisCaches, staticAnalysisCaches, cnsAnalysisCaches, sandboxAnalysisCaches, manualReviewCaches;
 /* call to use new versions of `passList`/`abortList`
  * @post @code *AnalysisCaches.empty() @encode
  */
@@ -101,7 +101,15 @@ typedef const VirusAnalysisResult (*VirusAnalysisFun)(const PortableExecutable &
 extern std::vector<typeof(VirusAnalysisFun)> virusAnalyses;
 const VirusAnalysisResult virusAnalysis(const PortableExecutable &file); /* auto hash = sha2(file.bytecode); for(VirusAnalysisFun analysis : virusAnalyses) {analysis(file, hash);} */
 const VirusAnalysisResult virusAnalysisManualRemoteAnalysis(const PortableExecutable &file, const ResultListHash &fileHash); /* TODO: compatible hosts to upload to */
-const VirusAnalysisResult virusAnalysisManualReview(const PortableExecutable &file, const ResultListHash &fileHash); /* Ask user to "Block", "Submit to remote hosts for analysis", or "Allow". */
+const VirusAnalysisResult virusAnalysisManualReviewCacheless(const PortableExecutable &file, const ResultListHash &fileHash); /* Ask user to "Block", "Submit to remote hosts for analysis", or "Allow". */
+static const VirusAnalysisResult virusAnalysisManualReview(const PortableExecutable &file, const ResultListHash &fileHash) {
+	try {
+		const auto result = manualReviewCaches.at(fileHash);
+		return result;
+	} catch (...) {
+		return manualReviewCaches[fileHash] = virusAnalysisManualReviewCacheless(file, fileHash);
+	}
+}
 static const VirusAnalysisResult virusAnalysisManualReview(const PortableExecutable &file) { return virusAnalysisManualReview(file, sha2(file.bytecode)); }
 
 /* Setup virus fix CMS, uses more resources than `produceAnalysisCns()` */
