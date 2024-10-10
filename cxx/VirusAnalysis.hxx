@@ -100,7 +100,9 @@ void virusAnalysisResetCaches() NOEXCEPT;
 typedef const VirusAnalysisResult (*VirusAnalysisFun)(const PortableExecutable &file, const ResultListHash &fileHash);
 extern std::vector<typeof(VirusAnalysisFun)> virusAnalyses;
 const VirusAnalysisResult virusAnalysis(const PortableExecutable &file); /* auto hash = sha2(file.bytecode); for(VirusAnalysisFun analysis : virusAnalyses) {analysis(file, hash);} */
-static const VirusAnalysisResult virusAnalysisManualReview(const PortableExecutable &file) {return virusAnalysisRequiresReview;} /* TODO: requires compatible hosts to upload to */
+const VirusAnalysisResult virusAnalysisManualRemoteAnalysis(const PortableExecutable &file, const ResultListHash &fileHash); /* TODO: compatible hosts to upload to */
+const VirusAnalysisResult virusAnalysisManualReview(const PortableExecutable &file, const ResultListHash &fileHash); /* Ask user to "Block", "Submit to remote hosts for analysis", or "Allow". */
+static const VirusAnalysisResult virusAnalysisManualReview(const PortableExecutable &file) { return virusAnalysisManualReview(file, sha2(file.bytecode)); }
 
 /* Setup virus fix CMS, uses more resources than `produceAnalysisCns()` */
 /* `abortOrNull` should map to `passOrNull` (`ResultList` is composed of `std::tuple`s, because just `produceVirusFixCns()` requires this),

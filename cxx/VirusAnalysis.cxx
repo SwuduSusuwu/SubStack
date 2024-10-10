@@ -12,6 +12,7 @@
 #include <cassert> /* assert */
 #include <cmath> /* round */
 #include <fstream> /* std::ifstream */
+#include <limits> /* std::numeric_limits std::streamsize */
 #include <stdexcept> /* std::runtime_error */
 #include <string> /* std::string std::to_string */
 #include <tuple> /* std::tuple std::get */
@@ -165,7 +166,7 @@ const VirusAnalysisResult virusAnalysis(const PortableExecutable &file) {
 			case virusAnalysisPass:
 				return virusAnalysisPass;
 			case virusAnalysisRequiresReview:
-				/*return virusAnalysisManualReview(file);*/ /* TODO? Is up to caller to do this? */
+				/*return virusAnalysisManualReview(file, fileHash);*/ /* TODO? Is up to caller to do this? */
 				return virusAnalysisRequiresReview;
 			case virusAnalysisAbort:
 				return virusAnalysisAbort;
@@ -174,6 +175,37 @@ const VirusAnalysisResult virusAnalysis(const PortableExecutable &file) {
 		}
 	}
 	return virusAnalysisPass;
+}
+const VirusAnalysisResult virusAnalysisRemoteAnalysis(const PortableExecutable &file, const ResultListHash &fileHash) {
+	SUSUWU_NOTICE("virusAnalysisRemoteAnalysis: {/* TODO: compatible hosts to upload to */}");
+	return virusAnalysisRequiresReview;
+}
+const VirusAnalysisResult virusAnalysisManualReview(const PortableExecutable &file, const ResultListHash &fileHash) {
+	SUSUWU_INFO("virusAnalysis(\"" + file.path + "\") {return virusAnalysisRequiresReview;}, what do you wish to do?");
+	do {
+		std::cout << "Allowed responses: ab(o)rt = `virusAnalysisAbort`, (s)ubmit to remote host for analysis /* TODO */ = `virusAnalysisRequiresReview`, la(u)nch = `virusAnalysisPass`. {'o', 's', or 'u'}. Input response: [s]";
+		const char defaultResponse = 's';
+		char response;
+		if(!std::cin.get(response)) {
+			SUSUWU_INFO("virusAnalysisManualReview(): {(!std::cin.get(response)) /* Input disabled */}, will assume default response.");
+			response = defaultResponse;
+		} else if('\n' != response) {
+			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+		}
+		if('\n' == response || '\r' == response) {
+			response = defaultResponse;
+		}
+		switch(response) {
+		case 'o':
+			return virusAnalysisAbort;
+		case 's':
+			return virusAnalysisRemoteAnalysis(file, fileHash);;
+		case 'u':
+			return virusAnalysisPass;
+		default:
+			SUSUWU_WARNING(std::string("virusAnalysisManualReview(): {\"response: '") + response + "'\" isn't valid. Choose from list (or press <enter> to default to '" + defaultResponse + "')}");
+		}
+	} while(true);
 }
 
 const VirusAnalysisResult hashAnalysis(const PortableExecutable &file, const ResultListHash &fileHash) {

@@ -780,7 +780,9 @@ typedef const VirusAnalysisResult (*VirusAnalysisFun)(const PortableExecutable &
 extern std::vector<typeof(VirusAnalysisFun)> virusAnalyses;
 
 const VirusAnalysisResult virusAnalysis(const PortableExecutable &file); /* auto hash = sha2(file.bytecode); for(VirusAnalysisFun analysis : virusAnalyses) {analysis(file, hash);} */
-static const VirusAnalysisResult virusAnalysisManualReview(const PortableExecutable &file) {return virusAnalysisRequiresReview;} /* TODO: requires compatible hosts to upload to */
+const VirusAnalysisResult virusAnalysisManualRemoteAnalysis(const PortableExecutable &file, const ResultListHash &fileHash); /* TODO: compatible hosts to upload to */
+const VirusAnalysisResult virusAnalysisManualReview(const PortableExecutable &file, const ResultListHash &fileHash); /* Ask user to "Block", "Submit to remote hosts for analysis", or "Allow". */
+static const VirusAnalysisResult virusAnalysisManualReview(const PortableExecutable &file) { return virusAnalysisManualReview(file, sha2(file.bytecode)); }
 
 /* Setup virus fix CMS, uses more resources than `produceAnalysisCns()` */
 /* `abortOrNull` should map to `passOrNull` (`ResultList` is composed of `std::tuple`s, because just `produceVirusFixCns()` requires this),
@@ -958,6 +960,37 @@ const VirusAnalysisResult virusAnalysis(const PortableExecutable &file) {
 		}
 	}
 	return virusAnalysisPass;
+}
+const VirusAnalysisResult virusAnalysisRemoteAnalysis(const PortableExecutable &file, const ResultListHash &fileHash) {
+	SUSUWU_NOTICE("virusAnalysisRemoteAnalysis: {/* TODO: compatible hosts to upload to */}");
+	return virusAnalysisRequiresReview;
+}
+const VirusAnalysisResult virusAnalysisManualReview(const PortableExecutable &file, const ResultListHash &fileHash) {
+	SUSUWU_INFO("virusAnalysis(\"" + file.path + "\") {return virusAnalysisRequiresReview;}, what do you wish to do?");
+	do {
+		std::cout << "Allowed responses: ab(o)rt = `virusAnalysisAbort`, (s)ubmit to remote host for analysis /* TODO */ = `virusAnalysisRequiresReview`, la(u)nch = `virusAnalysisPass`. {'o', 's', or 'u'}. Input response: [s]";
+		const char defaultResponse = 's';
+		char response;
+		if(!std::cin.get(response)) {
+			SUSUWU_INFO("virusAnalysisManualReview(): {(!std::cin.get(response)) /* Input disabled */}, will assume default response.");
+			response = defaultResponse;
+		} else if('\n' != response) {
+			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+		}
+		if('\n' == response || '\r' == response) {
+			response = defaultResponse;
+		}
+		switch(response) {
+		case 'o':
+			return virusAnalysisAbort;
+		case 's':
+			return virusAnalysisRemoteAnalysis(file, fileHash);;
+		case 'u':
+			return virusAnalysisPass;
+		default:
+			SUSUWU_WARNING(std::string("virusAnalysisManualReview(): {\"response: '") + response + "'\" isn't valid. Choose from list (or press <enter> to default to '" + defaultResponse + "')}");
+		}
+	} while(true);
 }
 
 const VirusAnalysisResult hashAnalysis(const PortableExecutable &file, const ResultListHash &fileHash) {
