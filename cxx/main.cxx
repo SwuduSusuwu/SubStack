@@ -3,7 +3,7 @@
 #define INCLUDES_cxx_main_cxx
 #include "AssistantCns.hxx" /* assistantCnsTestsNoexcept */
 #include "ClassSha2.hxx" /* classSha2TestsNoexcept */
-#include "ClassSys.hxx" /* execves execvex templateCatchAll */
+#include "ClassSys.hxx" /* classSysSetConsoleInput execves execvex templateCatchAll */
 #include "Macros.hxx" /* ASSUME EXPECTS ENSURES NOEXCEPT NORETURN */
 #include "VirusAnalysis.hxx" /* virusAnalysisTestsNoexcept */
 #include <cstdlib> /* exit EXIT_SUCCESS */
@@ -14,6 +14,7 @@ NORETURN void noReturn();
 void noExcept() NOEXCEPT {std::cout << std::flush;}
 void noReturn() {exit(0);}
 int testHarnesses() EXPECTS(true) ENSURES(true) {
+	classSysSetConsoleInput(false);
 	std::cout << "cxx/Macros.hxx: " << std::flush;
 	ASSUME(true);
 	noExcept();
@@ -37,6 +38,7 @@ int testHarnesses() EXPECTS(true) ENSURES(true) {
 		std::cout << "error" << std::endl;
 	}
 	noReturn();
+	assert(classSysSetConsoleInput(true));
 }
 }; /* namespace Susuwu */
 int main(int argc, const char **args) {

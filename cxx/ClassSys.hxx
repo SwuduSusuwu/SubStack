@@ -6,7 +6,7 @@
 #include <chrono> /* std::chrono */
 #include <exception> /* std::exception */
 #include <iomanip> /* std::dec std::hex */
-#include <iostream> /* std::cerr std::endl */
+#include <iostream> /* std::cerr std::cin std::endl */
 #include <sstream> /* std::stringstream */
 #include <string> /* std::string */
 #ifdef _POSIX_VERSION
@@ -44,6 +44,9 @@ const bool classSysHasRoot();
 /* #if _POSIX_VERSION, `root ? (seteuid(0) : (seteuid(getuid() || getenv("SUDO_UID")), setuid(geteuid)); return classSysHasRoot();` #endif
  * Usage: classSysSetRoot(true); functionsWhichRequireRoot; classSysSetRoot(false); */
 const bool classSysSetRoot(bool root); /* root ? (seteuid(0) : (seteuid(getuid() || atoi(getenv("SUDO_UID"))), setuid(geteuid)); return classSysHasRoot(); */
+
+static const bool classSysGetConsoleInput() { return std::cin.good(); }
+const bool classSysSetConsoleInput(bool input); /* return classSysGetConsoleInput(); */
 
 template<class Os, class Str>
 inline Os &classSysHexOs(Os &os, const Str &value) {

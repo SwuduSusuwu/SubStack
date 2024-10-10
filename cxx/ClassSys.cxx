@@ -5,7 +5,7 @@
 #include "ClassSys.hxx" /* std::string std::vector */
 #include <cassert> /* assert */
 #include <cstdlib> /* exit EXIT_FAILURE getenv strtol */
-#include <iostream> /* std::cerr std::endl */
+#include <iostream> /* std::cerr std::endl std::ios::eofbit */
 #ifdef _POSIX_VERSION
 #include <stdexcept> /* std::runtime_error */
 #include <sys/types.h> /* pid_t */
@@ -131,6 +131,10 @@ const bool classSysSetRoot(bool root) {
 	return classSysHasRoot();
 }
 
+const bool classSysSetConsoleInput(bool input) {
+	std::cin.setstate(std::ios::eofbit);
+	return classSysGetConsoleInput();
+}
 }; /* namespace Susuwu */
 #endif /* ndef INCLUDES_cxx_ClassSys_cxx */
 

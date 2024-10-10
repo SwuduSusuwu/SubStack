@@ -111,6 +111,9 @@ const bool classSysHasRoot();
  * Usage: classSysSetRoot(true); functionsWhichRequireRoot; classSysSetRoot(false); */
 const bool classSysSetRoot(bool root); /* root ? (seteuid(0) : (seteuid(getuid() || atoi(getenv("SUDO_UID"))), setuid(geteuid)); return classSysHasRoot(); */
 
+static const bool classSysGetConsoleInput() { return std::cin.good(); }
+const bool classSysSetConsoleInput(bool input); /* return classSysGetConsoleInput(); */
+
 template<class Os, class Str>
 inline Os &classSysHexOs(Os &os, const Str &value) {
 	os << std::hex;
@@ -250,6 +253,11 @@ const bool classSysSetRoot(bool root) {
 	SUSUWU_PRINT(WARNING, "classSysSetRoot(bool) {#ifndef _POSIX_VERSION /* TODO */}");
 #endif /* _POSIX_VERSION */
 	return classSysHasRoot();
+}
+
+classSysSetConsoleInput(bool input) {
+	std::cin.setstate(std::ios::eofbit);
+	return classSysGetConsoleInput();
 }
 ```
 `less` [cxx/ClassSha2.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ClassSha2.hxx)
@@ -959,7 +967,7 @@ const VirusAnalysisResult virusAnalysis(const PortableExecutable &file) {
 			case virusAnalysisPass:
 				return virusAnalysisPass;
 			case virusAnalysisRequiresReview:
-				/*return virusAnalysisManualReview(file);*/ /* TODO? Is up to caller to do this? */
+				return virusAnalysisManualReview(file); /* TODO: Is up to caller to do this? */
 				return virusAnalysisRequiresReview;
 			case virusAnalysisAbort:
 				return virusAnalysisAbort;
@@ -1175,7 +1183,7 @@ const FileBytecode cnsVirusFix(const PortableExecutable &file, const Cns &cns /*
 #define INCLUDES_cxx_main_cxx
 #include "AssistantCns.hxx" /* assistantCnsTestsNoexcept */
 #include "ClassSha2.hxx" /* classSha2TestsNoexcept */
-#include "ClassSys.hxx" /* execves execvex templateCatchAll */
+#include "ClassSys.hxx" /* classSysSetConsoleInput execves execvex templateCatchAll */
 #include "Macros.hxx" /* ASSUME EXPECTS ENSURES NOEXCEPT NORETURN */
 #include "VirusAnalysis.hxx" /* virusAnalysisTestsNoexcept */
 #include <cstdlib> /* exit EXIT_SUCCESS */
@@ -1186,6 +1194,7 @@ NORETURN void noReturn();
 void noExcept() NOEXCEPT {std::cout << std::flush;}
 void noReturn() {exit(0);}
 int testHarnesses() EXPECTS(true) ENSURES(true) {
+	classSysSetConsoleInput(false);
 	std::cout << "cxx/Macros.hxx: " << std::flush;
 	ASSUME(true);
 	noExcept();
@@ -1209,6 +1218,7 @@ int testHarnesses() EXPECTS(true) ENSURES(true) {
 		std::cout << "error" << std::endl;
 	}
 	noReturn();
+	assert(classSysSetConsoleInput(true));
 }
 }; /* namespace Susuwu */
 int main(int argc, const char **args) {

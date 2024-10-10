@@ -166,7 +166,7 @@ const VirusAnalysisResult virusAnalysis(const PortableExecutable &file) {
 			case virusAnalysisPass:
 				return virusAnalysisPass;
 			case virusAnalysisRequiresReview:
-				/*return virusAnalysisManualReview(file, fileHash);*/ /* TODO? Is up to caller to do this? */
+				return virusAnalysisManualReview(file, fileHash); /* TODO: Is up to caller to do this? */
 				return virusAnalysisRequiresReview;
 			case virusAnalysisAbort:
 				return virusAnalysisAbort;
