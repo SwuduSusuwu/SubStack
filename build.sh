@@ -28,7 +28,7 @@ if [ "--mingw" = "$1" ] || [ "--mingw" = "$2" ]; then
 	fi
 elif command -v clang++ > /dev/null; then
 	CXX="clang++"
-elif command -v g++ > /dev/mull; then
+elif command -v g++ > /dev/null; then
 	CXX="g++"
 else
 	SUSUWU_PRINT "${SUSUWU_SH_ERROR}" "\`clang++ not found\`, \`g++ not found\`. Do \`apt install clang\` or \`apt install gcc\`"
