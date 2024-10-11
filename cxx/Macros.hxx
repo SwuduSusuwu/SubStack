@@ -103,6 +103,9 @@ namespace Susuwu { /* namespaces do not affect macros. Is just standard practice
 #ifndef __has_feature
 #define __has_feature(X) 0 /* `gcc` "error: missing binary operator before token \"(\"" fix */
 #endif /* ndef __has_feature */
+#if (!defined _POSIX_VERSION) && (_POSIX_C_SOURCE)
+#define _POSIX_VERSION _POSIX_C_SOURCE /* "Error: ... ndef _POSIX_VERSION" fix */
+#endif /* (!defined _POSIX_VERSION) && (_POSIX_C_SOURCE) */
 
 #if (!defined __WIN32__) && (defined _WIN32 /* || defined __CYGWIN__ should use "#ifdef _POSIX_VERSION" path */ || __MSC_VER)
 # define __WIN32__ /* https://stackoverflow.com/questions/430424/are-there-any-macros-to-determine-if-my-code-is-being-compiled-to-windows/430435#430435 says that __WIN32__ is not always defined on Windows targets */
