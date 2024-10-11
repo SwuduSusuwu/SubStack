@@ -18,6 +18,7 @@ fi
 CROSS_COMP=""
 if [ "--mingw" = "$1" ] || [ "--mingw" = "$2" ]; then
 	CROSS_COMP=" --mingw"
+	LD_FLAGS="${LD_FLAGS} -static-libgcc -static-libstdc++"
 	if command -v x86_64-w64-mingw32-clang++ > /dev/null; then
 		CXX="x86_64-w64-mingw32-clang++"
 		CXX_FLAGS_DEBUG="${CXX_FLAGS_DEBUG} ${CXX_FLAGS_FSAN}" #/* Supports `x86_64-w64-mingw32-clang++`: https://github.com/SwuduSusuwu/SubStack/issues/16 */
@@ -61,7 +62,7 @@ $CXX -c ${sSRC}/ClassCns.cxx
 $CXX -c ${sSRC}/VirusAnalysis.cxx
 $CXX -c ${sSRC}/AssistantCns.cxx
 $CXX -c ${sSRC}/main.cxx
-$CXX sha1.o sha224-256.o sha384-512.o ClassSha2.o ClassResultList.o ClassSys.o ClassCns.o VirusAnalysis.o AssistantCns.o main.o
+$CXX ${LD_FLAGS} sha1.o sha224-256.o sha384-512.o ClassSha2.o ClassResultList.o ClassSys.o ClassCns.o VirusAnalysis.o AssistantCns.o main.o
 STATUS=$?
 set +x
 if [ 0 -eq $STATUS  ]; then
