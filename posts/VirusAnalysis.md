@@ -437,7 +437,7 @@ const typename List::value_type::const_iterator listDefaultIterator = typename L
 template<class List>
 /* return `list`'s `const_iterator` to first instance of `std::string(itBegin, itEndSubstr)`, or default iterator (if not found)
  * @pre @code itBegin < itEnd @endcode */
-typeof listDefaultIterator<List> listFindSubstr(const List &list, typename List::value_type::const_iterator itBegin, typename List::value_type::const_iterator itEnd) {
+decltype(listDefaultIterator<List>) listFindSubstr(const List &list, typename List::value_type::const_iterator itBegin, typename List::value_type::const_iterator itEnd) {
 #pragma unroll
 	for(const auto &value : list) {
 		auto result = std::search(value.cbegin(), value.cend(), itBegin, itEnd, [](char chValue, char chIt) { return chValue == chIt; });
