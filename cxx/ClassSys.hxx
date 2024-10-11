@@ -31,7 +31,7 @@ inline const ClassSysUSeconds classSysUSecondClock() {
 }
 
 /* `argv = argvS + NULL; envp = envpS + NULL: pid_t pid = fork() || (envpS.empty() ? execv(argv[0], &argv[0]) : execve(argv[0], &argv[0], &envp[0])); return pid;`
- * @throw std::runtime_error("execvesFork(): {-1 == pid}")
+ * @throw std::runtime_error("execvesFork(): {-1 == pid}, errno=" + std::to_string(errno))
  * @pre @code (-1 != access(argv[0], X_OK) @endcode */
 const pid_t execvesFork(/* const std::string &pathname, -- `execve` requires `&pathname == &argv[0]` */ const std::vector<std::string> &argvS = {}, const std::vector<std::string> &envpS = {});
 static const pid_t execvexFork(const std::string &toSh) {return execvesFork({"/bin/sh", "-c", toSh});}

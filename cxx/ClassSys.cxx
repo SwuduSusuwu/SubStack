@@ -2,7 +2,7 @@
 #ifndef INCLUDES_cxx_ClassSys_cxx
 #define INCLUDES_cxx_ClassSys_cxx
 #include "Macros.hxx" /* ERROR SUSUWU_PRINT SUSUWU_ERRSTR WARNING */
-#include "ClassSys.hxx" /* std::string std::vector */
+#include "ClassSys.hxx" /* std::string std::to_string std::vector */
 #include <cassert> /* assert */
 #include <cstdlib> /* exit EXIT_FAILURE getenv strtol */
 #include <iostream> /* std::cerr std::endl std::ios::eofbit */
@@ -35,7 +35,9 @@ const pid_t execvesFork(const std::vector<std::string> &argvS, const std::vector
 	const pid_t pid = fork();
 	if(0 != pid) {
 		if(-1 == pid) {
-			throw std::runtime_error(SUSUWU_ERRSTR(ERROR, "execvesFork: {-1 == pid}"));
+			std::string error = "execvesFork(): {(-1 == pid)}, errno=" + std::to_string(errno);
+			SUSUWU_ERROR(error);
+			throw std::runtime_error(error);
 		}
 		return pid;
 	} /* if 0, is fork */
