@@ -100,6 +100,10 @@ namespace Susuwu { /* namespaces do not affect macros. Is just standard practice
 #define SUSUWU_NOTICE_DEBUGEXECUTE(x) ((SUSUWU_NOTICE(#x)), SUSUWU_DEBUGEXECUTE(x))
 #define SUSUWU_DEBUG_DEBUGEXECUTE(x) ((SUSUWU_DEBUG(#x)), SUSUWU_DEBUGEXECUTE(x))
 
+#ifndef __has_feature
+#define __has_feature(X) 0 /* `gcc` "error: missing binary operator before token \"(\"" fix */
+#endif /* ndef __has_feature */
+
 #if (!defined __WIN32__) && (defined _WIN32 /* || defined __CYGWIN__ should use "#ifdef _POSIX_VERSION" path */ || __MSC_VER)
 # define __WIN32__ /* https://stackoverflow.com/questions/430424/are-there-any-macros-to-determine-if-my-code-is-being-compiled-to-windows/430435#430435 says that __WIN32__ is not always defined on Windows targets */
 #endif
@@ -151,10 +155,14 @@ namespace Susuwu { /* namespaces do not affect macros. Is just standard practice
 
 #if defined(__clang__) && __has_feature(cxx_noexcept) || defined(__GXX_EXPERIMENTAL_CXX0X__) && __GNUC__ * 10 + __GNUC_MINOR__ >= 46 || defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 180021114 /* [Other `noexcept` tests](https://stackoverflow.com/questions/18387640/how-to-deal-with-noexcept-in-visual-studio) */
 #	define NOEXCEPT noexcept /* Usage: `void versionInfo() NOEXCEPT;` is close to `void versionInfo() [[ensures: true]];` or `versionInfo(); !UNREACHABLE;*/
-#endif /* supports noexcept */
+#else /* !supports noexcept */
+#	define NOEXCEPT /* old `g++`/`clang++` "error: expected function body after function declarator" fix */
+#endif /* !supports noexcept */
 #if (defined __has_cpp_attribute) && __has_cpp_attribute(noreturn) /* TODO: [Cmake test for `\[\[noreturn\]\]`](https://stackoverflow.com/a/33517293/24473928) */
 #	define NORETURN [[noreturn]] /* Usage: `NORETURN void exit();` is close to `void exit() [[ensures:: false]];` or `exit(); UNREACHABLE;*/
-#endif /* supports [[noreturn]] */
+#else /* !supports [[noreturn]] */
+#	define NORETURN /* old `g++` "error: 'NORETURN' does not name a type" / old `clang++` "error: unknown type name 'NORETURN'" fix */
+#endif /* !supports [[noreturn]] */
 }; /* namespace Susuwu */
 #endif /* ndef INCLUDES_cxx_Macros_hxx */
 
