@@ -150,7 +150,7 @@ namespace Susuwu { /* namespaces do not affect macros. Is just standard practice
 #	elif __clang__ /* `~ $ clang++` */
 #		define ASSUME(X) __builtin_assume(X)
 #	else /* (!def IS_MSVC) && (!def __clang__) */
-#		define ASSUME(X) if(X) {UNREACHABLE;}
+#		define ASSUME(X) ((X) ? static_cast<void>(0) : UNREACHABLE)
 #	endif /* !def IS_MSVC */
 #else /* !def USE_ASSUME */
 #	define ASSUME(X)
