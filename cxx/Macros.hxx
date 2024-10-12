@@ -106,7 +106,7 @@ namespace Susuwu { /* namespaces do not affect macros. Is just standard practice
 #define SUSUWU_DEBUG_DEBUGEXECUTE(x) ((SUSUWU_DEBUG(#x)), SUSUWU_DEBUGEXECUTE(x))
 
 #ifndef __has_feature
-#define __has_feature(X) 0 /* `gcc` "error: missing binary operator before token \"(\"" fix */
+#define __has_feature(X) false /* `gcc` "error: missing binary operator before token \"(\"" fix */
 #endif /* ndef __has_feature */
 #if (!defined _POSIX_VERSION) && (_POSIX_C_SOURCE)
 #define _POSIX_VERSION _POSIX_C_SOURCE /* "Error: ... ndef _POSIX_VERSION" fix */

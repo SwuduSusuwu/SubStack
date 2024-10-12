@@ -89,7 +89,7 @@ extern const char **classSysArgs;
  * Much simpler to use path from args[0] (versus https://stackoverflow.com/questions/1528298/get-path-of-executable/34109000#34109000)
  * @pre @code (0 < argc && nullptr != args && nullptr != args[0]
  * @post @code (0 < classSysArgc && nullptr != classSysArgs && nullptr != classSysArgs[0] */
-bool classSysInit(int argc, const char *args[]);
+const bool classSysInit(int argc, const char *args[]);
 
 typedef long long ClassSysUSeconds;
 inline const ClassSysUSeconds classSysUSecondClock() {
@@ -147,7 +147,7 @@ static const bool classSysTestsNoexcept() NOEXCEPT {return templateCatchAll(clas
 ```
 int classSysArgc = 0;
 const char **classSysArgs = {nullptr};
-bool classSysInit(int argc, const char *args[]) {
+const bool classSysInit(int argc, const char *args[]) {
 	if(0 < (classSysArgc = argc)) {
 		classSysArgs = args;
 		assert(nullptr != args);
@@ -1207,7 +1207,7 @@ void noExcept() NOEXCEPT;
 NORETURN void noReturn();
 void noExcept() NOEXCEPT {std::cout << std::flush;}
 void noReturn() {exit(0);}
-int testHarnesses() EXPECTS(true) ENSURES(true) {
+const int testHarnesses() EXPECTS(true) ENSURES(true) {
 	classSysSetConsoleInput(false);
 	std::cout << "cxx/Macros.hxx: " << std::flush;
 	ASSUME(true);

@@ -20,7 +20,7 @@ typedef int pid_t;
 namespace Susuwu {
 int classSysArgc = 0;
 const char **classSysArgs = {nullptr};
-bool classSysInit(int argc, const char *args[]) {
+const bool classSysInit(int argc, const char *args[]) {
 	if(0 < (classSysArgc = argc)) {
 		classSysArgs = args;
 		assert(nullptr != args);

@@ -20,7 +20,7 @@ Conventions = Mozilla Org (ergo Firefox) style:
 
     Braces, functions:
 ```
-        bool classPrefixCamelCase(bool s, bool x) {
+        const /* const prevents `if(func() = x)` */ bool classPrefixCamelCase(bool s, bool x) {
 
             if(s && x) {
 
