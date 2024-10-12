@@ -20,6 +20,7 @@ namespace Susuwu { /* namespaces do not affect macros. Is just standard practice
 #define SUSUWU_GLUE(S, U) SUSUWU_GLUE2(S, U) /* concatanates 2 macro functions or constants */
 
 #if SKIP_CONSOLE_COLORS /* `g++ -DSKIP_CONSOLE_COLORS=1` to turn colors off */
+# define SUSUWU_SH_DEFAULT ""
 # define SUSUWU_SH_BLACK ""
 # define SUSUWU_SH_DARK_GRAY ""
 # define SUSUWU_SH_RED ""
