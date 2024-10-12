@@ -4,8 +4,8 @@
 #include "Macros.hxx" /* ERROR SUSUWU_PRINT SUSUWU_ERRSTR WARNING */
 #include "ClassSys.hxx" /* std::string std::to_string std::vector */
 #include <cassert> /* assert */
-#include <cstdlib> /* exit EXIT_FAILURE getenv strtol */
-#include <iostream> /* std::cerr std::endl std::ios::eofbit */
+#include <cstdlib> /* exit EXIT_FAILURE EXIT_SUCCESS getenv strtol */
+#include <iostream> /* std::cerr std::cout std::endl std::flush std::ios::eofbit */
 #ifdef _POSIX_VERSION
 #include <stdexcept> /* std::runtime_error */
 #include <sys/types.h> /* pid_t */
@@ -137,6 +137,16 @@ const bool classSysSetConsoleInput(bool input) {
 	std::cin.setstate(std::ios::eofbit);
 	return classSysGetConsoleInput();
 }
+
+const bool classSysTests() {
+	bool retval = true;
+	std::cout << "	execves(): " << std::flush;
+	(EXIT_SUCCESS == execves({"/bin/echo", "pass"})) || (retval = false) || (std::cout << "error" << std::endl);
+	std::cout << "	execvex(): " << std::flush;
+	(EXIT_SUCCESS == execvex("/bin/echo pass")) || (retval = false) || (std::cout << "error" << std::endl);
+	return retval;
+}
+
 }; /* namespace Susuwu */
 #endif /* ndef INCLUDES_cxx_ClassSys_cxx */
 

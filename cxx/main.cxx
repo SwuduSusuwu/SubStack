@@ -3,10 +3,10 @@
 #define INCLUDES_cxx_main_cxx
 #include "AssistantCns.hxx" /* assistantCnsTestsNoexcept */
 #include "ClassSha2.hxx" /* classSha2TestsNoexcept */
-#include "ClassSys.hxx" /* classSysSetConsoleInput execves execvex templateCatchAll */
+#include "ClassSys.hxx" /* classSysSetConsoleInput classSysTestsNoexcept templateCatchAll */
 #include "Macros.hxx" /* ASSUME EXPECTS ENSURES NOEXCEPT NORETURN */
 #include "VirusAnalysis.hxx" /* virusAnalysisTestsNoexcept */
-#include <cstdlib> /* exit EXIT_SUCCESS */
+#include <cstdlib> /* exit */
 #include <iostream> /* std::cout std::flush std::endl */
 namespace Susuwu {
 void noExcept() NOEXCEPT;
@@ -19,10 +19,8 @@ int testHarnesses() EXPECTS(true) ENSURES(true) {
 	ASSUME(true);
 	noExcept();
 	std::cout << "pass" << std::endl;
-	std::cout << "execves(): " << std::flush;
-	(EXIT_SUCCESS == execves({"/bin/echo", "pass"})) || std::cout << "error" << std::endl;
-	std::cout << "execvex(): " << std::flush;
-	(EXIT_SUCCESS == execvex("/bin/echo pass")) || std::cout << "error" << std::endl;
+	std::cout << "classSysTestsNoexcept(): " << std::flush;
+	classSysTestsNoexcept();
 	std::cout << "classSha2TestsNoexcept(): " << std::flush;
 	std::cout << (classSha2TestsNoexcept() ? "pass" : "error") << std::endl;
 	std::cout << "virusAnalysisTestsNoexcept(): " << std::flush;

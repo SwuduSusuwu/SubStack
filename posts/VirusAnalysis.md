@@ -97,7 +97,7 @@ inline const ClassSysUSeconds classSysUSecondClock() {
 }
 
 /* `argv = argvS + NULL; envp = envpS + NULL: pid_t pid = fork() || (envpS.empty() ? execv(argv[0], &argv[0]) : execve(argv[0], &argv[0], &envp[0])); return pid;`
- * @throw std::runtime_error("execvesFork(): {-1 == pid()}, errno=" + std::to_string(errno)")
+ * @throw std::runtime_error("execvesFork(): {-1 == pid}, errno=" + std::to_string(errno))
  * @pre @code (-1 != access(argv[0], X_OK) @endcode */
 const pid_t execvesFork(/* const std::string &pathname, -- `execve` requires `&pathname == &argv[0]` */ const std::vector<std::string> &argvS = {}, const std::vector<std::string> &envpS = {});
 static const pid_t execvexFork(const std::string &toSh) {return execvesFork({"/bin/sh", "-c", toSh});}
@@ -139,6 +139,9 @@ auto templateCatchAll(Func func, const std::string &funcName, Args... args) {
 		return decltype(func(args...))(); /* `func(args...)`'s default return value; if `int func(args...)`, `return 0;`. If `bool func(args...)`, `return false;` */
 	}
 }
+
+const bool classSysTests();
+static const bool classSysTestsNoexcept() NOEXCEPT {return templateCatchAll(classSysTests, "classSysTests()");}
 ```
 `less` [cxx/ClassSys.cxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ClassSys.cxx)
 ```
@@ -227,9 +230,9 @@ const bool classSysSetRoot(bool root) {
 # endif /* __APPLE__ else */
 #endif /* 0 */
 	} else {
- # ifdef LINUX // TODO: pam_loginuid.so(8) // https://stackoverflow.com/questions/10272784/how-do-i-get-the-users-real-uid-if-the-program-is-run-with-sudo/10272881#10272881
+# if 0 && defined LINUX // TODO: pam_loginuid.so(8) // https://stackoverflow.com/questions/10272784/how-do-i-get-the-users-real-uid-if-the-program-is-run-with-sudo/10272881#10272881
 		uid_t sudo_uid = audit_getloginuid();
-# else /* !ifdef LINUX */
+# else /* !def linux */
 		uid_t sudo_uid = getuid();
 		if(0 == sudo_uid) {
 			char *sudo_uid_str = getenv("SUDO_UID"), *sudo_uid_str_it;
@@ -238,12 +241,12 @@ const bool classSysSetRoot(bool root) {
 				return true;
 			} else {
 				sudo_uid = (uid_t)strtol(sudo_uid_str, &sudo_uid_str_it, 10);
-				if(sudo_uid_str == sudo_uidr_str_it || -1 == setuid(sudo_uid)) { /* prevent reescalation to root */
+				if(sudo_uid_str == sudo_uid_str_it || -1 == setuid(sudo_uid)) { /* prevent reescalation to root */
 					SUSUWU_PRINT(WARNING, "classSysSetRoot(false) {(-1 == setuid(sudo_uid)) /* can't prevent reescalation to root */}");
 				}
 			}
 		}
-# endif /* !ifdef LINUX */
+# endif /* !def LINUX */
 		if(0 == sudo_uid) {
 			SUSUWU_PRINT(WARNING, "classSysSetRoot(false) {(0 == sudo_uid) /* stuck as root */}");
 		} else if(-1 == seteuid(sudo_uid)) {
@@ -257,9 +260,18 @@ const bool classSysSetRoot(bool root) {
 	return classSysHasRoot();
 }
 
-classSysSetConsoleInput(bool input) {
+const bool classSysSetConsoleInput(bool input) {
 	std::cin.setstate(std::ios::eofbit);
 	return classSysGetConsoleInput();
+}
+
+const bool classSysTests() {
+	bool retval = true;
+	std::cout << "	execves(): " << std::flush;
+	(EXIT_SUCCESS == execves({"/bin/echo", "pass"})) || (retval = false) || (std::cout << "error" << std::endl);
+	std::cout << "	execvex(): " << std::flush;
+	(EXIT_SUCCESS == execvex("/bin/echo pass")) || (retval = false) || (std::cout << "error" << std::endl);
+	return retval;
 }
 ```
 `less` [cxx/ClassSha2.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ClassSha2.hxx)
@@ -1185,10 +1197,10 @@ const FileBytecode cnsVirusFix(const PortableExecutable &file, const Cns &cns /*
 #define INCLUDES_cxx_main_cxx
 #include "AssistantCns.hxx" /* assistantCnsTestsNoexcept */
 #include "ClassSha2.hxx" /* classSha2TestsNoexcept */
-#include "ClassSys.hxx" /* classSysSetConsoleInput execves execvex templateCatchAll */
+#include "ClassSys.hxx" /* classSysSetConsoleInput classSysTestsNoexcept templateCatchAll */
 #include "Macros.hxx" /* ASSUME EXPECTS ENSURES NOEXCEPT NORETURN */
 #include "VirusAnalysis.hxx" /* virusAnalysisTestsNoexcept */
-#include <cstdlib> /* exit EXIT_SUCCESS */
+#include <cstdlib> /* exit */
 #include <iostream> /* std::cout std::flush std::endl */
 namespace Susuwu {
 void noExcept() NOEXCEPT;
@@ -1201,10 +1213,8 @@ int testHarnesses() EXPECTS(true) ENSURES(true) {
 	ASSUME(true);
 	noExcept();
 	std::cout << "pass" << std::endl;
-	std::cout << "execves(): " << std::flush;
-	(EXIT_SUCCESS == execves({"/bin/echo", "pass"})) || std::cout << "error" << std::endl;
-	std::cout << "execvex(): " << std::flush;
-	(EXIT_SUCCESS == execvex("/bin/echo pass")) || std::cout << "error" << std::endl;
+	std::cout << "classSysTestsNoexcept(): " << std::flush;
+	classSysTestsNoexcept();
 	std::cout << "classSha2TestsNoexcept(): " << std::flush;
 	std::cout << (classSha2TestsNoexcept() ? "pass" : "error") << std::endl;
 	std::cout << "virusAnalysisTestsNoexcept(): " << std::flush;
