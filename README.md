@@ -17,6 +17,8 @@ Usage: `./build.sh` produces `*.o` static libraries (for distribution to others,
         `-DSUSUWU_SH_SKIP_COLORS = false` to force (even if unsupported) _VT100_ (_ANSI_) color use.
         To match `g++`/`clang++` output rules, use `-DSUSUWU_SKIP_BRACKETS = true, -DSUSUWU_SH_FILE = true, -DSUSUWU_SH_LINE = true, -DSUSUWU_SH_FUNC = false, -DSUSUWU_SKIP_COLORS = false` (sets output format to `__FILE__:__LINE__: WARN_LEVEL: message`).
 
+Linter: `clang-tidy cxx/*.cxx` /* uses `.clang_tidy` options */
+
 Conventions = Mozilla Org (ergo Firefox) style:
 
     Files: `#import "PascalCase.hxx"`
