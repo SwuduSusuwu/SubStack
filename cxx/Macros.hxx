@@ -26,6 +26,36 @@ namespace Susuwu { /* namespaces do not affect macros. Is just standard practice
 # define IF_SUSUWU_SH_BRACKETS(TRUE, FALSE) FALSE
 #endif
 
+#if (!defined(SUSUWU_SH_FILE) && !defined(NDEBUG)) || SUSUWU_SH_FILE /* overridable with `-DSUSUWU_SH_FILE true/false` */
+# define SUSUWU_SH_USE_FILE /* affix `__FILE__ ":"` to `stderr`/`cerr` printout */
+#endif
+#if (!defined(SUSUWU_SH_LINE) && !defined(NDEBUG)) || SUSUWU_SH_LINE /* overridable with `-DSUSUWU_SH_LINE true/false` */
+# define SUSUWU_SH_USE_LINE /* affix `__LINE__ ":"` to `stderr`/`cerr` printout */
+#endif
+#if defined(SUSUWU_SH_FUNC) && SUSUWU_SH_FUNC /* overridable with `-DSUSUWU_SH_FUNC true/false` */
+# define SUSUWU_SH_USE_FUNC /* affix `__func__ ":"` to `stderr`/`cerr` printout */
+#endif
+#ifdef SUSUWU_SH_USE_FILE
+# define IF_SUSUWU_SH_FILE(U /* wrap clauses which print __FILE__ to `cerr`/`cout` */) U /* printout */
+#else
+# define IF_SUSUWU_SH_FILE(U) /* don't printout */
+#endif
+#ifdef SUSUWU_SH_USE_LINE
+# define IF_SUSUWU_SH_LINE(U /* wrap clauses which print __LINE__ to `cerr`/`cout` */) U /* printout */
+#else
+# define IF_SUSUWU_SH_LINE(U) /* don't printout */
+#endif
+#ifdef SUSUWU_SH_USE_FUNC
+# define IF_SUSUWU_SH_FUNC(U /* wrap clauses which print __func__ to `cerr`/`cout` */) U /* printout */
+#else
+# define IF_SUSUWU_SH_FUNC(U) /* don't printout */
+#endif
+#if defined(SUSUWU_SH_USE_FILE) || defined(SUSUWU_SH_USE_LINE) || defined(SUSUWU_SH_USE_FUNC)
+# define IF_SUSUWU_SH_FILE_LINE_OR_FUNC(U /* wrap clauses common to `__FILE__`, `__LINE__`, `__func__` use */) U /* printout */
+#else
+# define IF_SUSUWU_SH_FILE_LINE_OR_FUNC(U) /* don't printout */
+#endif
+
 #define SUSUWU_SH_COLORS_UNSUPPORTED __MINGW32__ /* MinGW + WINE shows the literal ANSI color codes in console */
 #if SUSUWU_SH_COLORS_UNSUPPORTED && !defined SUSUWU_SH_SKIP_COLORS
 # define SUSUWU_SH_SKIP_COLORS true /* you can use `-DSUSUWU_SH_SKIP_COLORS=false` to force unsupported color use (such as if _MinGW_ will target _Windows_ but the executables aren't for use on _WINE_/`localhost`) */
@@ -82,9 +112,10 @@ namespace Susuwu { /* namespaces do not affect macros. Is just standard practice
 #define SUSUWU_CERR_IMP(WARN_LEVEL, x) SUSUWU_GLUE2(SUSUWU_SH_, WARN_LEVEL) << x << SUSUWU_SH_DEFAULT
 #define SUSUWU_STDERR_IMP(WARN_LEVEL, prefix, postfix, x, ... /* must pass SUSUWU_COMMA after __VA_ARGS__ params */) fprintf(stderr, prefix SUSUWU_GLUE2(SUSUWU_SH_, WARN_LEVEL) "%s" SUSUWU_SH_DEFAULT postfix, __VA_ARGS__ IF_SUSUWU_CPLUSPLUS(std::string(x).c_str(), x))
 
-#define SUSUWU_ERRSTR(WARN_LEVEL, x) std::string(SUSUWU_SH_PREFIX) + SUSUWU_ERRSTR_IMP(WARN_LEVEL, x) + SUSUWU_SH_POSTFIX
-#define SUSUWU_CERR(WARN_LEVEL, x) std::cerr << SUSUWU_SH_PREFIX << SUSUWU_CERR_IMP(WARN_LEVEL, x) << SUSUWU_SH_POSTFIX << std::endl
-#define SUSUWU_STDERR(WARN_LEVEL, x) SUSUWU_STDERR_IMP(WARN_LEVEL, SUSUWU_SH_PREFIX, SUSUWU_SH_POSTFIX "\n", x)
+
+#define SUSUWU_ERRSTR(WARN_LEVEL, x) std::string(SUSUWU_SH_PREFIX) IF_SUSUWU_SH_FILE(+ SUSUWU_SH_FILE) IF_SUSUWU_SH_LINE(+ std::to_string(__LINE__) + ':') IF_SUSUWU_SH_FUNC(+ std::string(__func__) + ':') IF_SUSUWU_SH_FILE_LINE_OR_FUNC(+ ' ') + SUSUWU_ERRSTR_IMP(WARN_LEVEL, x) + SUSUWU_SH_POSTFIX
+#define SUSUWU_CERR(WARN_LEVEL, x) std::cerr << SUSUWU_SH_PREFIX IF_SUSUWU_SH_FILE(<< std::string(SUSUWU_SH_FILE)) IF_SUSUWU_SH_LINE(<< std::to_string(__LINE__) << ":") IF_SUSUWU_SH_FUNC(<< std::string(__func__) << ":") IF_SUSUWU_SH_FILE_LINE_OR_FUNC(<< ' ') << SUSUWU_CERR_IMP(WARN_LEVEL, x) << SUSUWU_SH_POSTFIX << std::endl
+#define SUSUWU_STDERR(WARN_LEVEL, x) SUSUWU_STDERR_IMP(WARN_LEVEL, SUSUWU_SH_PREFIX IF_SUSUWU_SH_FILE(SUSUWU_SH_FILE) IF_SUSUWU_SH_LINE("%i:") IF_SUSUWU_SH_FUNC("%s:") IF_SUSUWU_SH_FILE_LINE_OR_FUNC(" "), SUSUWU_SH_POSTFIX "\n", x, IF_SUSUWU_SH_LINE(__LINE__ SUSUWU_COMMA) IF_SUSUWU_SH_FUNC(__func__ SUSUWU_COMMA))
 /* Use this to do C versus C++ agnostic code */
 #ifdef __cplusplus
 # define IF_SUSUWU_CPLUSPLUS(TRUE, FALSE) TRUE
