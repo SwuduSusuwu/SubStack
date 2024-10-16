@@ -19,11 +19,11 @@ namespace Susuwu { /* namespaces do not affect macros. Is just standard practice
 #define SUSUWU_GLUE2(S, U) S##U /* concatanates 2 macro constants */
 #define SUSUWU_GLUE(S, U) SUSUWU_GLUE2(S, U) /* concatanates 2 macro functions or constants */
 
-#define SUSUWU_COLORS_UNSUPPORTED __MINGW32__
-#if SUSUWU_COLORS_UNSUPPORTED && !defined SKIP_CONSOLE_COLORS
-# define SKIP_CONSOLE_COLORS 1 /* you can use `g++ -DSKIP_CONSOLE_COLORS=1` to force unsupported colors on */
-#endif /* SUSUWU_COLORS_UNSUPPORTED && !defined SKIP_CONSOLE_COLORS */
-#if SKIP_CONSOLE_COLORS /* `g++ -DSKIP_CONSOLE_COLORS=1` to turn colors off */
+#define SUSUWU_SH_COLORS_UNSUPPORTED __MINGW32__ /* MinGW + WINE shows the literal ANSI color codes in console */
+#if SUSUWU_SH_COLORS_UNSUPPORTED && !defined SUSUWU_SH_SKIP_COLORS
+# define SUSUWU_SH_SKIP_COLORS true /* you can use `-DSUSUWU_SH_SKIP_COLORS=false` to force unsupported color use (such as if _MinGW_ will target _Windows_ but the executables aren't for use on _WINE_/`localhost`) */
+#endif /* SUSUWU_SH_COLORS_UNSUPPORTED && !defined SUSUWU_SH_SKIP_COLORS */
+#if SUSUWU_SH_SKIP_COLORS /* `-DSUSUWU_SH_SKIP_COLORS=true` to turn colors off */
 # define SUSUWU_SH_DEFAULT ""
 # define SUSUWU_SH_BLACK ""
 # define SUSUWU_SH_DARK_GRAY ""
@@ -41,7 +41,7 @@ namespace Susuwu { /* namespaces do not affect macros. Is just standard practice
 # define SUSUWU_SH_LIGHT_CYAN ""
 # define SUSUWU_SH_LIGHT_GRAY ""
 # define SUSUWU_SH_WHITE ""
-#else /* !SKIP_CONSOLE_COLORS */
+#else /* !SUSUWU_SH_SKIP_COLORS */
 # define SUSUWU_SH_DEFAULT "\033[0m"
 # define SUSUWU_SH_BLACK "\033[0;30m"
 # define SUSUWU_SH_DARK_GRAY "\033[1;30m"
@@ -59,7 +59,7 @@ namespace Susuwu { /* namespaces do not affect macros. Is just standard practice
 # define SUSUWU_SH_LIGHT_CYAN "\033[1;36m"
 # define SUSUWU_SH_LIGHT_GRAY "\033[0;37m"
 # define SUSUWU_SH_WHITE "\033[1;37m"
-#endif /* !SKIP_CONSOLE_COLORS */
+#endif /* !SUSUWU_SH_SKIP_COLORS */
 #define SUSUWU_SH_ERROR "[" SUSUWU_SH_RED "Error: " SUSUWU_SH_WHITE
 #define SUSUWU_SH_WARNING "[" SUSUWU_SH_PURPLE "Warning: " SUSUWU_SH_WHITE
 #define SUSUWU_SH_INFO "[" SUSUWU_SH_CYAN "Info: " SUSUWU_SH_WHITE
