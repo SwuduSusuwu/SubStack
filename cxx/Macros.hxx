@@ -18,6 +18,13 @@ namespace Susuwu { /* namespaces do not affect macros. Is just standard practice
  */
 #define SUSUWU_GLUE2(S, U) S##U /* concatanates 2 macro constants */
 #define SUSUWU_GLUE(S, U) SUSUWU_GLUE2(S, U) /* concatanates 2 macro functions or constants */
+#define SUSUWU_COMMA , /* to pass to macro functions whose `__VA_ARGS__` is conditional */
+
+#if !defined(SUSUWU_SH_SKIP_BRACKETS) || SUSUWU_SH_SKIP_BRACKETS == false /* overridable with `-DSUSUWU_SH_SKIP_BRACKETS true` (which you can set to mimic `g++`/`clang++` syntax for outputs) */
+# define IF_SUSUWU_SH_BRACKETS(TRUE, FALSE) TRUE
+#else
+# define IF_SUSUWU_SH_BRACKETS(TRUE, FALSE) FALSE
+#endif
 
 #define SUSUWU_SH_COLORS_UNSUPPORTED __MINGW32__ /* MinGW + WINE shows the literal ANSI color codes in console */
 #if SUSUWU_SH_COLORS_UNSUPPORTED && !defined SUSUWU_SH_SKIP_COLORS
@@ -60,19 +67,24 @@ namespace Susuwu { /* namespaces do not affect macros. Is just standard practice
 # define SUSUWU_SH_LIGHT_GRAY "\033[0;37m"
 # define SUSUWU_SH_WHITE "\033[1;37m"
 #endif /* !SUSUWU_SH_SKIP_COLORS */
-#define SUSUWU_SH_ERROR "[" SUSUWU_SH_RED "Error: " SUSUWU_SH_WHITE
-#define SUSUWU_SH_WARNING "[" SUSUWU_SH_PURPLE "Warning: " SUSUWU_SH_WHITE
-#define SUSUWU_SH_INFO "[" SUSUWU_SH_CYAN "Info: " SUSUWU_SH_WHITE
-#define SUSUWU_SH_SUCCESS "[" SUSUWU_SH_GREEN "Success: " SUSUWU_SH_WHITE
-#define SUSUWU_SH_NOTICE "[" SUSUWU_SH_BLUE "Notice: " SUSUWU_SH_WHITE
-#define SUSUWU_SH_DEBUG "[" SUSUWU_SH_BLUE "Debug: " SUSUWU_SH_WHITE
-#define SUSUWU_SH_CLOSE_ SUSUWU_SH_DEFAULT "]"
+#define SUSUWU_SH_FILE __FILE__ ":"
+#define SUSUWU_SH_PREFIX IF_SUSUWU_SH_BRACKETS("[", "") SUSUWU_SH_WHITE
+#define SUSUWU_SH_ERROR SUSUWU_SH_RED "Error: " SUSUWU_SH_WHITE
+#define SUSUWU_SH_WARNING SUSUWU_SH_PURPLE "Warning: " SUSUWU_SH_WHITE
+#define SUSUWU_SH_INFO SUSUWU_SH_CYAN "Info: " SUSUWU_SH_WHITE
+#define SUSUWU_SH_SUCCESS SUSUWU_SH_GREEN "Success: " SUSUWU_SH_WHITE
+#define SUSUWU_SH_NOTICE SUSUWU_SH_BLUE "Notice: " SUSUWU_SH_WHITE
+#define SUSUWU_SH_DEBUG SUSUWU_SH_BLUE "Debug: " SUSUWU_SH_WHITE
+#define SUSUWU_SH_POSTFIX IF_SUSUWU_SH_BRACKETS("]", "")
 
 /* WARN_LEVEL = {ERROR, WARNING, INFO, SUCCESS, NOTICE, DEBUG} */
-#define SUSUWU_ERRSTR(WARN_LEVEL, x) std::string(SUSUWU_GLUE2(SUSUWU_SH_, WARN_LEVEL)) + std::string(x) + std::string(SUSUWU_SH_CLOSE_)
-#define SUSUWU_CERR(WARN_LEVEL, x) std::cerr << SUSUWU_GLUE2(SUSUWU_SH_, WARN_LEVEL) << x << SUSUWU_SH_CLOSE_ << std::endl
-#define SUSUWU_STDERR(WARN_LEVEL, x) fprintf(stderr, SUSUWU_GLUE2(SUSUWU_SH_, WARN_LEVEL) "%s" SUSUWU_SH_CLOSE_ "\n", IF_SUSUWU_CPLUSPLUS(std::string(x).c_str(), x))
+#define SUSUWU_ERRSTR_IMP(WARN_LEVEL, x) std::string(SUSUWU_GLUE2(SUSUWU_SH_, WARN_LEVEL)) + std::string(x) + std::string(SUSUWU_SH_DEFAULT)
+#define SUSUWU_CERR_IMP(WARN_LEVEL, x) SUSUWU_GLUE2(SUSUWU_SH_, WARN_LEVEL) << x << SUSUWU_SH_DEFAULT
+#define SUSUWU_STDERR_IMP(WARN_LEVEL, prefix, postfix, x, ... /* must pass SUSUWU_COMMA after __VA_ARGS__ params */) fprintf(stderr, prefix SUSUWU_GLUE2(SUSUWU_SH_, WARN_LEVEL) "%s" SUSUWU_SH_DEFAULT postfix, __VA_ARGS__ IF_SUSUWU_CPLUSPLUS(std::string(x).c_str(), x))
 
+#define SUSUWU_ERRSTR(WARN_LEVEL, x) std::string(SUSUWU_SH_PREFIX) + SUSUWU_ERRSTR_IMP(WARN_LEVEL, x) + SUSUWU_SH_POSTFIX
+#define SUSUWU_CERR(WARN_LEVEL, x) std::cerr << SUSUWU_SH_PREFIX << SUSUWU_CERR_IMP(WARN_LEVEL, x) << SUSUWU_SH_POSTFIX << std::endl
+#define SUSUWU_STDERR(WARN_LEVEL, x) SUSUWU_STDERR_IMP(WARN_LEVEL, SUSUWU_SH_PREFIX, SUSUWU_SH_POSTFIX "\n", x)
 /* Use this to do C versus C++ agnostic code */
 #ifdef __cplusplus
 # define IF_SUSUWU_CPLUSPLUS(TRUE, FALSE) TRUE

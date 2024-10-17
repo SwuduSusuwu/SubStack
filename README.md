@@ -8,7 +8,8 @@ Targets: Windows/Linux/Android/OSX/iOS; all C++ compilers, requires some extensi
 
 Usage: `./build.sh` produces `*.o` static libraries (for distribution to others,) plus `a.out` to do unit tests (test harnesses). Allowed flags; `--debug` (default; includes frame-pointers/debug symbols (`-g`), includes `valgrind`-replacement tools (such as `-fsanitize=address`), `--release` (excludes `--debug`, strips frame-pointers/symbols, optimizes with `-O2`), `--mingw` (if on _Linux_, can use with `--release` or `--debug`, produces _Portable Executable_ for _Windows_. If on _Windows_, the default is to produce _Portable Executable_'s for _Windows_)
     Optional flags (`vim build.sh` to use):
-        `-DSUSUWU_USE_STDERR` to replace `std::cerr` with `fprintf(stderr, ...)` (default is `!defined(__cplusplus)`).
+        `-DSUSUWU_USE_STDERR` to replace `std::cerr` with `fprintf(stderr, ...)`, default is `!defined(__cplusplus)`.
+        `-DSUSUWU_SH_SKIP_BRACKETS = true` changes `[WARN_LEVEL: message]` output format to `WARN_LEVEL: message` (matches `g++`/`clang++` output rules), default is `false`.
         `-DSUSUWU_SH_SKIP_COLORS = true` to omit _VT100_ (_ANSI_) colors (default includes colors).
         `-DSUSUWU_SH_SKIP_COLORS = false` to force _VT100_ (_ANSI_) color use (default disables if unsupported).
 
