@@ -71,14 +71,20 @@ namespace Susuwu { /* namespaces do not affect macros. Is just standard practice
 /* WARN_LEVEL = {ERROR, WARNING, INFO, SUCCESS, NOTICE, DEBUG} */
 #define SUSUWU_ERRSTR(WARN_LEVEL, x) std::string(SUSUWU_GLUE2(SUSUWU_SH_, WARN_LEVEL)) + std::string(x) + std::string(SUSUWU_SH_CLOSE_)
 #define SUSUWU_CERR(WARN_LEVEL, x) std::cerr << SUSUWU_GLUE2(SUSUWU_SH_, WARN_LEVEL) << x << SUSUWU_SH_CLOSE_ << std::endl
-#define SUSUWU_STDERR(WARN_LEVEL, x) fprintf(stderr, SUSUWU_GLUE2(SUSUWU_SH_, WARN_LEVEL) "%s" SUSUWU_SH_CLOSE_ "\n", x)
+#define SUSUWU_STDERR(WARN_LEVEL, x) fprintf(stderr, SUSUWU_GLUE2(SUSUWU_SH_, WARN_LEVEL) "%s" SUSUWU_SH_CLOSE_ "\n", IF_SUSUWU_CPLUSPLUS(std::string(x).c_str(), x))
 
-/* Use this to do C versus C++ agnostic messages */
+/* Use this to do C versus C++ agnostic code */
 #ifdef __cplusplus
-# define SUSUWU_PRINT(LEVEL, x) SUSUWU_CERR(LEVEL, x)
+# define IF_SUSUWU_CPLUSPLUS(TRUE, FALSE) TRUE
 #else /* !(defined __cplusplus */
-# define SUSUWU_PRINT(LEVEL, x) SUSUWU_STDERR(LEVEL, x)
+# define IF_SUSUWU_CPLUSPLUS(TRUE, FALSE) FALSE
+# define SUSUWU_USE_STDERR
 #endif /* !(defined __cplusplus */
+#ifdef SUSUWU_USE_STDERR
+# define SUSUWU_PRINT(LEVEL, x) SUSUWU_STDERR(LEVEL, x)
+#else
+# define SUSUWU_PRINT(LEVEL, x) SUSUWU_CERR(LEVEL, x)
+#endif
 #define SUSUWU_ERROR(x) SUSUWU_PRINT(ERROR, x)
 #define SUSUWU_WARNING(x) SUSUWU_PRINT(WARNING, x)
 #define SUSUWU_INFO(x) SUSUWU_PRINT(INFO, x)
