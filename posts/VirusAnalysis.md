@@ -778,9 +778,11 @@ typedef enum VirusAnalysisHook : char {
 	virusAnalysisHookExec    = 1 << 1, /* hook {execl(), execlp(), execle(), execv(), execvp(), execvpe()} */
 	virusAnalysisHookNewFile = 1 << 2, /* hook (for modeNew in {"w+", "a", "a+"}) fwrite((void *)ptr, (size_t)size, (size_t)nmemb, {fopen((const char *)pathname, modeNew), fdopen((int)fd, modeNew), freopen((const char *)pathname, modeNew, (FILE *)stream)}) */
 } VirusAnalysisHook;
+/* `clang-tidy` suppress: NOLINTBEGIN(clang-analyzer-optin.core.EnumCastOutOfRange, fuschia-overloaded-operator) */
 static const VirusAnalysisHook operator|(VirusAnalysisHook x,  VirusAnalysisHook s) {return static_cast<VirusAnalysisHook>(static_cast<unsigned>(x) | static_cast<unsigned>(s));}
 static const VirusAnalysisHook operator&(VirusAnalysisHook x,  VirusAnalysisHook s) {return static_cast<VirusAnalysisHook>(static_cast<unsigned>(x) & static_cast<unsigned>(s));}
-static VirusAnalysisHook globalVirusAnalysisHook = virusAnalysisHookDefault; /* Just use virusAnalysisHook() to set+get this, virusAnalysisGetHook() to get this */
+/* `clang-tidy` on: NOLINTEND(clang-analyzer-optin.core.EnumCastOutOfRange, fuschia-overloaded-operator) */
+extern VirusAnalysisHook globalVirusAnalysisHook /*= virusAnalysisHookDefault*/; /* Just use virusAnalysisHook() to set+get this, virusAnalysisGetHook() to get this */
 
 typedef enum VirusAnalysisResult : char {
 	virusAnalysisAbort = static_cast<char>(false), /* do not launch */
@@ -797,7 +799,7 @@ extern Cns analysisCns, virusFixCns; /* hosts produce, clients initialize shared
  * @pre @code analysisCns.hasImplementation() && virusFixCns.hasImplementation() @endcode */
 const bool virusAnalysisTests();
 static const bool virusAnalysisTestsNoexcept() NOEXCEPT {return templateCatchAll(virusAnalysisTests, "virusAnalysisTests()");}
-const bool virusAnalysisHookTests; /* return for(x: VirusAnalysisHook) {x == virusAnalysisHook(x)};` */
+const bool virusAnalysisHookTests(); /* return for(x: VirusAnalysisHook) {x == virusAnalysisHook(x)};` */
 static const bool virusAnalysisHookTestsNoexcept() NOEXCEPT {return templateCatchAll(virusAnalysisHookTests, "virusAnalysisHookTests()");}
 
 /* Use to turn off, query status of, or turn on what other virus scanners refer to as "real-time scans"
@@ -817,7 +819,7 @@ const VirusAnalysisResult hashAnalysis(const PortableExecutable &file, const Res
  * @pre @code passList.bytecodes.size() && abortList.bytecodes.size() && !listsIntersect(passList.bytecodes, abortList.bytecodes) @endcode
  * @post @code abortList.signatures.size() @endcode */
 void produceAbortListSignatures(const ResultList &passList, ResultList &abortList);
- /* `if(intersection(file.bytecode, abortList.signatures)) {return VirusAnalysisRequiresReview;} return VirusAnalysisContinue;` 
+ /* `if(intersection(file.bytecode, abortList.signatures)) {return VirusAnalysisRequiresReview;} return VirusAnalysisContinue;`
 	* @pre @code abortList.signatures.size() @endcode */
 const VirusAnalysisResult signatureAnalysis(const PortableExecutable &file, const ResultListHash &fileHash);
 
@@ -850,7 +852,7 @@ const VirusAnalysisResult cnsAnalysis_(const PortableExecutable &file, const Res
 const VirusAnalysisResult cnsAnalysis(const PortableExecutable &file, const ResultListHash &fileHash);
 
 /* temporary caches; memoizes results */
-extern std::map<ResultListHash, VirusAnalysisResult> hashAnalysisCaches, signatureAnalysisCaches, staticAnalysisCaches, cnsAnalysisCaches, sandboxAnalysisCaches, virusAnalysisManualReviewCaches;
+extern std::map<ResultListHash, VirusAnalysisResult> hashAnalysisCaches, signatureAnalysisCaches, staticAnalysisCaches, cnsAnalysisCaches, sandboxAnalysisCaches, manualReviewCaches;
 /* call to use new versions of `passList`/`abortList`
  * @post @code *AnalysisCaches.empty() @encode
  */
@@ -858,11 +860,10 @@ void virusAnalysisResetCaches() NOEXCEPT;
 
 typedef const VirusAnalysisResult (*VirusAnalysisFun)(const PortableExecutable &file, const ResultListHash &fileHash);
 extern std::vector<typeof(VirusAnalysisFun)> virusAnalyses;
-
 const VirusAnalysisResult virusAnalysis(const PortableExecutable &file); /* auto hash = sha2(file.bytecode); for(VirusAnalysisFun analysis : virusAnalyses) {analysis(file, hash);} */
 const VirusAnalysisResult virusAnalysisManualRemoteAnalysis(const PortableExecutable &file, const ResultListHash &fileHash); /* TODO: compatible hosts to upload to */
 const VirusAnalysisResult virusAnalysisManualReviewCacheless(const PortableExecutable &file, const ResultListHash &fileHash); /* Ask user to "Block", "Submit to remote hosts for analysis", or "Allow". */
-static const VirusAnalysisResult virusAnalysisManualReview(const PortableExecutable &file, const ResultListHash &fileHash) { /* all functions with caches use `try`/`catch` blocks such as this */
+static const VirusAnalysisResult virusAnalysisManualReview(const PortableExecutable &file, const ResultListHash &fileHash) {
 	try {
 		const auto result = manualReviewCaches.at(fileHash);
 		return result;
@@ -885,7 +886,7 @@ void produceVirusFixCns(
 	Cns &cns = virusFixCns
 );
 
-/* Uses more resources than `cnsAnalysis()`, can undo infection from bytecodes (restore to fresh SW) 
+/* Uses more resources than `cnsAnalysis()`, can undo infection from bytecodes (restore to fresh SW)
  * @pre @code cns.isInitialized() @endcode */
 const std::string cnsVirusFix(const PortableExecutable &file, const Cns &cns = virusFixCns);
 ```
@@ -898,7 +899,7 @@ std::vector<std::string> syscallPotentialDangers = {
 	"memopen", "fwrite", "socket", "GetProcAddress", "IsVmPresent"
 };
 std::vector<std::string> stracePotentialDangers = {"write(*)"};
-std::map<ResultListHash, VirusAnalysisResult> hashAnalysisCaches, signatureAnalysisCaches, staticAnalysisCaches, cnsAnalysisCaches, sandboxAnalysisCaches, virusAnalysisManualReviewCaches; /* temporary caches; memoizes results */
+std::map<ResultListHash, VirusAnalysisResult> hashAnalysisCaches, signatureAnalysisCaches, staticAnalysisCaches, cnsAnalysisCaches, sandboxAnalysisCaches, manualReviewCaches; /* temporary caches; memoizes results */
 void virusAnalysisResetCaches() NOEXCEPT {
 	hashAnalysisCaches.clear();
 	signatureAnalysisCaches.clear();
@@ -957,7 +958,6 @@ const bool virusAnalysisTests() {
 		}
 		passList = origPassList, abortList = origAbortList;
 	}
-	}
 	const bool originalRootStatus = classSysHasRoot();
 	classSysSetRoot(true);
 	virusAnalysisHookTests();
@@ -965,6 +965,7 @@ const bool virusAnalysisTests() {
 	return true;
 }
 
+/* `clang-tidy` suppress: NOLINTBEGIN(readability-implicit-bool-conversion) */
 const bool virusAnalysisHookTests() {
 	const VirusAnalysisHook originalHookStatus = virusAnalysisGetHook();
 	VirusAnalysisHook hookStatus = virusAnalysisHook(virusAnalysisHookClear | virusAnalysisHookExec);
@@ -1031,6 +1032,7 @@ const VirusAnalysisHook virusAnalysisHook(VirusAnalysisHook virusAnalysisHookSta
 	}
 	return virusAnalysisGetHook();
 }
+/* `clang-tidy` on: NOLINTEND(readability-implicit-bool-conversion) */
 
 const VirusAnalysisResult virusAnalysis(const PortableExecutable &file) {
 	const auto fileHash = sha2(file.bytecode);
@@ -1039,11 +1041,11 @@ const VirusAnalysisResult virusAnalysis(const PortableExecutable &file) {
 			case virusAnalysisPass:
 				return virusAnalysisPass;
 			case virusAnalysisRequiresReview:
-				return virusAnalysisManualReview(file); /* TODO: Is up to caller to do this? */
+				return virusAnalysisManualReview(file, fileHash); /* TODO: Is up to caller to do this? */
 				return virusAnalysisRequiresReview;
 			case virusAnalysisAbort:
 				return virusAnalysisAbort;
-			virusAnalysisContinue:
+			case virusAnalysisContinue:
 				continue;
 		}
 	}

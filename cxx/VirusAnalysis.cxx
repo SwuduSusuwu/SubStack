@@ -61,7 +61,7 @@ const bool virusAnalysisTests() {
 	SUSUWU_NOTICE_DEBUGEXECUTE((resultListDumpTo(/*.list = */abortOrNull, /*.os = */std::cout, /*.index = */false, /*.whitespace = */false, /*.pascalValues = */false), std::cout << std::endl));
 	assert(4 == passOrNull.bytecodes.size());
 	assert(passOrNull.bytecodes.size() - 1 /* 2 instances "SW", discount dup */ == passOrNull.hashes.size());
-	assert(0 == passOrNull.signatures.size());
+	assert(0 == passOrNull.signatures.size()); /* NOLINT(readability-container-size-empty); all `.size()`, intuitive */
 	assert(4 == abortOrNull.bytecodes.size());
 	assert(abortOrNull.bytecodes.size() == abortOrNull.hashes.size());
 	assert(abortOrNull.bytecodes.size() - 1 /* discount empty substr */ == abortOrNull.signatures.size());
@@ -92,6 +92,7 @@ const bool virusAnalysisTests() {
 	return true;
 }
 
+/* `clang-tidy` suppress: NOLINTBEGIN(readability-implicit-bool-conversion) */
 const bool virusAnalysisHookTests() {
 	const VirusAnalysisHook originalHookStatus = virusAnalysisGetHook();
 	VirusAnalysisHook hookStatus = virusAnalysisHook(virusAnalysisHookClear | virusAnalysisHookExec);
@@ -156,8 +157,9 @@ const VirusAnalysisHook virusAnalysisHook(VirusAnalysisHook virusAnalysisHookSta
 		} /* ) */ ;
 		globalVirusAnalysisHook = (globalVirusAnalysisHook | virusAnalysisHookNewFile);
 	}
-	return virusAnalysisGetHook();
+	return virusAnalysisGetHook(); /* Ignore depth-of-1 recursion NOLINT([misc-no-recursion]) */
 }
+/* `clang-tidy` on: NOLINTEND(readability-implicit-bool-conversion) */
 
 const VirusAnalysisResult virusAnalysis(const PortableExecutable &file) {
 	const auto fileHash = sha2(file.bytecode);
