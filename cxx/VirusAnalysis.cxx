@@ -11,8 +11,12 @@
 #include <algorithm> /* std::sort */
 #include <cassert> /* assert */
 #include <cmath> /* round */
+#include <cstddef> /* size_t */
 #include <fstream> /* std::ifstream */
-#include <limits> /* std::numeric_limits std::streamsize */
+#include <ios> /* std::streamsize */
+#include <iostream> /* std::cin std::cout std::endl */
+#include <limits> /* std::numeric_limits */
+#include <map> /* std::map */
 #include <stdexcept> /* std::runtime_error */
 #include <string> /* std::string std::to_string */
 #include <tuple> /* std::tuple std::get */
@@ -60,7 +64,7 @@ const bool virusAnalysisTests() {
 	SUSUWU_DEBUGEXECUTE(resultListDumpTo(passOrNull, std::cout, true, true, false));
 	SUSUWU_NOTICE_DEBUGEXECUTE((resultListDumpTo(/*.list = */abortOrNull, /*.os = */std::cout, /*.index = */false, /*.whitespace = */false, /*.pascalValues = */false), std::cout << std::endl));
 	assert(4 == passOrNull.bytecodes.size());
-	assert(passOrNull.bytecodes.size() - 1 /* 2 instances "SW", discount dup */ == passOrNull.hashes.size());
+	assert(passOrNull.bytecodes.size() - 1 /* 2 instances of "SW", discount dup */ == passOrNull.hashes.size());
 	assert(0 == passOrNull.signatures.size()); /* NOLINT(readability-container-size-empty); all `.size()`, intuitive */
 	assert(4 == abortOrNull.bytecodes.size());
 	assert(abortOrNull.bytecodes.size() == abortOrNull.hashes.size());
@@ -68,7 +72,7 @@ const bool virusAnalysisTests() {
 	produceAnalysisCns(passOrNull, abortOrNull, ResultList(), analysisCns);
 	produceVirusFixCns(passOrNull, abortOrNull, virusFixCns);
 	if(0 < classSysArgc) {
-		const PortableExecutableBytecode executable(classSysArgs[0]);
+		const PortableExecutableBytecode executable(classSysArgs[0]); /* Pointer is from `main()`, suppress: NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic) */
 		if(virusAnalysisAbort == virusAnalysis(executable)) {
 			throw std::runtime_error(SUSUWU_ERRSTR(ERROR, "{virusAnalysisAbort == virusAnalysis(args[0]);} /* With such false positives, shouldn't hook kernel modules (next test is to hook+unhook `exec*` to scan programs on launch). */"));
 		}
@@ -122,16 +126,16 @@ const bool virusAnalysisHookTests() {
 	}
 	return true;
 }
-const VirusAnalysisHook virusAnalysisHook(VirusAnalysisHook virusAnalysisHookStatus) {
+const VirusAnalysisHook virusAnalysisHook(VirusAnalysisHook hookStatus) { /* Ignore depth-of-1 recursion: NOLINT(misc-no-recursion) */
 	const VirusAnalysisHook originalHookStatus = globalVirusAnalysisHook;
-	if(virusAnalysisHookQuery == virusAnalysisHookStatus || originalHookStatus == virusAnalysisHookStatus) {
+	if(virusAnalysisHookQuery == hookStatus || originalHookStatus == hookStatus) {
 		return originalHookStatus;
 	}
-	if(virusAnalysisHookClear & virusAnalysisHookStatus) {
+	if(virusAnalysisHookClear & hookStatus) {
 		/* TODO: undo OS-specific "hook"s/"callback"s */
 		globalVirusAnalysisHook = virusAnalysisHookDefault;
 	}
-	if(virusAnalysisHookExec & virusAnalysisHookStatus) {
+	if(virusAnalysisHookExec & hookStatus) {
 		/* callbackHook("exec*", */ [](const PortableExecutable &file) { /* TODO: OS-specific "hook"/"callback" for `exec()`/app-launches */
 			switch(virusAnalysis(file)) {
 			case virusAnalysisPass:
@@ -144,7 +148,7 @@ const VirusAnalysisHook virusAnalysisHook(VirusAnalysisHook virusAnalysisHookSta
 		} /* ) */ ;
 		globalVirusAnalysisHook = (globalVirusAnalysisHook | virusAnalysisHookExec);
 	}
-	if(virusAnalysisHookNewFile & virusAnalysisHookStatus) {
+	if(virusAnalysisHookNewFile & hookStatus) {
 		/* callbackHook("fwrite", */ [](const PortableExecutable &file) { /* TODO: OS-specific "hook"/"callback" for new files/downloads */
 			switch(virusAnalysis(file)) {
 			case virusAnalysisPass:
@@ -157,7 +161,7 @@ const VirusAnalysisHook virusAnalysisHook(VirusAnalysisHook virusAnalysisHookSta
 		} /* ) */ ;
 		globalVirusAnalysisHook = (globalVirusAnalysisHook | virusAnalysisHookNewFile);
 	}
-	return virusAnalysisGetHook(); /* Ignore depth-of-1 recursion NOLINT([misc-no-recursion]) */
+	return virusAnalysisGetHook();
 }
 /* `clang-tidy` on: NOLINTEND(readability-implicit-bool-conversion) */
 
@@ -184,13 +188,12 @@ const VirusAnalysisResult virusAnalysisRemoteAnalysis(const PortableExecutable &
 }
 const VirusAnalysisResult virusAnalysisManualReviewCacheless(const PortableExecutable &file, const ResultListHash &fileHash) {
 	SUSUWU_INFO("virusAnalysis(\"" + file.path + "\") {return virusAnalysisRequiresReview;}, what do you wish to do?");
-	do {
+	while(true) {
 		std::cout << "Allowed responses: ab(o)rt = `virusAnalysisAbort`, (s)ubmit to remote host for analysis /* TODO */ = `virusAnalysisRequiresReview`, la(u)nch = `virusAnalysisPass`. {'o', 's', or 'u'}. Input response: [s]";
 		const char defaultResponse = 's';
-		char response;
+		char response = defaultResponse;
 		if(!std::cin.get(response)) {
 			SUSUWU_INFO("virusAnalysisManualReview(): {(!std::cin.get(response)) /* Input disabled */}, will assume default response.");
-			response = defaultResponse;
 		} else if('\n' != response) {
 			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 		}
@@ -207,7 +210,7 @@ const VirusAnalysisResult virusAnalysisManualReviewCacheless(const PortableExecu
 		default:
 			SUSUWU_WARNING(std::string("virusAnalysisManualReview(): {\"response: '") + response + "'\" isn't valid. Choose from list (or press <enter> to default to '" + defaultResponse + "')}");
 		}
-	} while(true);
+	}
 }
 
 const VirusAnalysisResult hashAnalysis(const PortableExecutable &file, const ResultListHash &fileHash) {
@@ -218,6 +221,7 @@ const VirusAnalysisResult hashAnalysis(const PortableExecutable &file, const Res
 		if(listHasValue(passList.hashes, fileHash)) {
 			return hashAnalysisCaches[fileHash] = virusAnalysisPass;
 		} else if(listHasValue(abortList.hashes, fileHash)) {
+			SUSUWU_PRINT(NOTICE, "hashAnalysis(/*.file =*/ \"" + file.path + "\", /*.fileHash =*/ 0x" + classSysHexStr(fileHash) + ") {return virusAnalysisAbort;} /* due to hash 0x" + classSysHexStr(fileHash) + " (found in `abortList.hashes`). You should treat this as a virus detection if this was not a test. */");
 			return hashAnalysisCaches[fileHash] = virusAnalysisAbort;
 		} else {
 			return hashAnalysisCaches[fileHash] =  virusAnalysisContinue; /* continue to next tests */
@@ -316,12 +320,14 @@ Cns &cns /* = analysisCns */
 	std::vector<std::tuple<FileBytecode, float>> inputsToOutputs;
 	const size_t maxPassSize = listMaxSize(pass.bytecodes);
 	const size_t maxAbortSize = listMaxSize(abort.bytecodes);
+	const size_t maxDepthOfOpcodes = 6666; /* is not max depth of callstack, but of instruction pointer. TODO: compute this */
+	const size_t maxWidthOfOpcodes = (maxPassSize > maxAbortSize ? maxPassSize : maxAbortSize);
 	cns.setInputMode(cnsModeString);
 	cns.setOutputMode(cnsModeFloat);
-	cns.setInputNeurons(maxPassSize > maxAbortSize ? maxPassSize : maxAbortSize);
+	cns.setInputNeurons(maxWidthOfOpcodes);
 	cns.setOutputNeurons(1);
-	cns.setLayersOfNeurons(6666);
-	cns.setNeuronsPerLayer(26666);
+	cns.setLayersOfNeurons(maxDepthOfOpcodes);
+	cns.setNeuronsPerLayer(maxWidthOfOpcodes /* TODO: reduce this */);
 	inputsToOutputs.reserve(pass.bytecodes.size());
 	for(const auto &bytecodes : pass.bytecodes) {
 		inputsToOutputs.push_back({bytecodes, 1.0});
@@ -343,29 +349,33 @@ Cns &cns /* = analysisCns */
 	cns.setupSynapses(inputsToOutputs);
 	inputsToOutputs.clear();
 }
-const float cnsAnalysisScore(const PortableExecutable &file, const Cns &cns /* = analysisCns */) {
+const float cnsAnalysisScore(const PortableExecutable &file, const ResultListHash &fileHash, const Cns &cns /* = analysisCns */) {
 	return cns.processToFloat(file.bytecode);
 }
-const VirusAnalysisResult cnsAnalysis_(const PortableExecutable &file, const ResultListHash &fileHash, const Cns &cns /* = analysisCns */) {
+const VirusAnalysisResult cnsAnalysisImpl(const PortableExecutable &file, const ResultListHash &fileHash, const Cns &cns /* = analysisCns */) {
 	try {
 		const auto result = cnsAnalysisCaches.at(fileHash);
 		return result;
 	} catch (...) {
-		return cnsAnalysisCaches[fileHash] = static_cast<bool>(round(cnsAnalysisScore(file, cns))) ? virusAnalysisContinue : virusAnalysisRequiresReview;
+		return cnsAnalysisCaches[fileHash] = static_cast<bool>(round(cnsAnalysisScore(file, fileHash, cns))) ? virusAnalysisContinue : virusAnalysisRequiresReview;
 	}
 }
 const VirusAnalysisResult cnsAnalysis(const PortableExecutable &file, const ResultListHash &fileHash) {
-	return cnsAnalysis_(file, fileHash);
+	return cnsAnalysisImpl(file, fileHash);
 }
 
 void produceVirusFixCns(const ResultList &passOrNull, const ResultList &abortOrNull, Cns &cns /* = virusFixCns */) {
 	std::vector<std::tuple<FileBytecode, FileBytecode>> inputsToOutputs;
+	const size_t maxDepthOfOpcodes = 6666; /* is not max depth of callstack, but of instruction pointer. TODO: compute this */
+	const size_t maxPassSize = listMaxSize(passOrNull.bytecodes);
+	const size_t maxAbortSize = listMaxSize(abortOrNull.bytecodes);
+	const size_t maxWidthOfOpcodes = (maxPassSize > maxAbortSize ? maxPassSize : maxAbortSize);
 	cns.setInputMode(cnsModeString);
 	cns.setOutputMode(cnsModeString);
-	cns.setInputNeurons(listMaxSize(passOrNull.bytecodes));
-	cns.setOutputNeurons(listMaxSize(abortOrNull.bytecodes));
-	cns.setLayersOfNeurons(6666);
-	cns.setNeuronsPerLayer(26666);
+	cns.setInputNeurons(maxPassSize);
+	cns.setOutputNeurons(maxAbortSize);
+	cns.setLayersOfNeurons(maxDepthOfOpcodes);
+	cns.setNeuronsPerLayer(maxWidthOfOpcodes /* TODO: reduce this */);
 	assert(passOrNull.bytecodes.size() == abortOrNull.bytecodes.size());
 	inputsToOutputs.reserve(passOrNull.bytecodes.size());
 	for(size_t x = 0; passOrNull.bytecodes.size() > x; ++x) {
