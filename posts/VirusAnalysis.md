@@ -6,38 +6,91 @@ Static analysis + sandbox + CNS = 1 second (approx) analysis of **new executable
 `Licenses: allows all uses ("Creative Commons"/"Apache 2")`
 For the most new sources (+ static libs), use apps such as [iSH](https://apps.apple.com/us/app/ish-shell/id1436902243) (for **iOS**) or [Termux](https://play.google.com/store/apps/details?id=com.termux) (for **Android OS**) to run this:
 `git clone https://github.com/SwuduSusuwu/SubStack.git && cd ./Substack/ && ./build`
-`less` [cxx/Macros.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/Macros.hxx)
+`less` [cxx/Macros.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/Macros.hxx) /* follow URL for whole Macros.hxx */
 ```
 #define SUSUWU_GLUE2(S, U) S##U /* concatanates 2 macro constants */
 #define SUSUWU_GLUE(S, U) SUSUWU_GLUE2(S, U) /* concatanates 2 macro functions or constants */
+#define SUSUWU_COMMA , /* to pass to macro functions whose `__VA_ARGS__` is conditional */
+
+#if !defined(SUSUWU_SH_SKIP_BRACKETS) || SUSUWU_SH_SKIP_BRACKETS == false /* overridable with `-DSUSUWU_SH_SKIP_BRACKETS true` (which you can set to mimic `g++`/`clang++` syntax for outputs) */
+# define IF_SUSUWU_SH_BRACKETS(TRUE, FALSE) TRUE
+#else
+# define IF_SUSUWU_SH_BRACKETS(TRUE, FALSE) FALSE
+#endif
+
+#ifdef SUSUWU_SH_USE_FILE
+# define IF_SUSUWU_SH_FILE(U /* wrap clauses which print __FILE__ to `cerr`/`cout` */) U /* printout */
+#else
+# define IF_SUSUWU_SH_FILE(U) /* don't printout */
+#endif
+#ifdef SUSUWU_SH_USE_LINE
+# define IF_SUSUWU_SH_LINE(U /* wrap clauses which print __LINE__ to `cerr`/`cout` */) U /* printout */
+#else
+# define IF_SUSUWU_SH_LINE(U) /* don't printout */
+#endif
+#ifdef SUSUWU_SH_USE_FUNC
+# define IF_SUSUWU_SH_FUNC(U /* wrap clauses which print __func__ to `cerr`/`cout` */) U /* printout */
+#else
+# define IF_SUSUWU_SH_FUNC(U) /* don't printout */
+#endif
+#if defined(SUSUWU_SH_USE_FILE) || defined(SUSUWU_SH_USE_LINE) || defined(SUSUWU_SH_USE_FUNC)
+# define IF_SUSUWU_SH_FILE_LINE_OR_FUNC(U /* wrap clauses common to `__FILE__`, `__LINE__`, `__func__` use */) U /* printout */
+#else
+# define IF_SUSUWU_SH_FILE_LINE_OR_FUNC(U) /* don't printout */
+#endif
+
 #define SUSUWU_SH_DEFAULT "\033[0m"
+#define SUSUWU_SH_BLACK "\033[0;30m"
+#define SUSUWU_SH_DARK_GRAY "\033[1;30m"
 #define SUSUWU_SH_RED "\033[0;31m"
+#define SUSUWU_SH_LIGHT_RED "\033[1;31m"
 #define SUSUWU_SH_GREEN "\033[0;32m"
+#define SUSUWU_SH_LIGHT_GREEN "\033[1;32m"
+#define SUSUWU_SH_BROWN "\033[0;33m"
+#define SUSUWU_SH_YELLOW "\033[1;33m"
 #define SUSUWU_SH_BLUE "\033[0;34m"
+#define SUSUWU_SH_LIGHT_BLUE "\033[1;34m"
 #define SUSUWU_SH_PURPLE "\033[0;35m"
+#define SUSUWU_SH_LIGHT_PURPLE "\033[1;35m"
 #define SUSUWU_SH_CYAN "\033[0;36m"
+#define SUSUWU_SH_LIGHT_CYAN "\033[1;36m"
+#define SUSUWU_SH_LIGHT_GRAY "\033[0;37m"
 #define SUSUWU_SH_WHITE "\033[1;37m"
-#define SUSUWU_SH_ERROR "[" SUSUWU_SH_RED "Error: " SUSUWU_SH_WHITE
-#define SUSUWU_SH_WARNING "[" SUSUWU_SH_PURPLE "Warning: " SUSUWU_SH_WHITE
-#define SUSUWU_SH_INFO "[" SUSUWU_SH_CYAN "Info: " SUSUWU_SH_WHITE
-#define SUSUWU_SH_SUCCESS "[" SUSUWU_SH_GREEN "Success: " SUSUWU_SH_WHITE
-#define SUSUWU_SH_NOTICE "[" SUSUWU_SH_BLUE "Notice: " SUSUWU_SH_WHITE
-#define SUSUWU_SH_DEBUG "[" SUSUWU_SH_BLUE "Debug: " SUSUWU_SH_WHITE
-#define SUSUWU_SH_CLOSE_ SUSUWU_SH_DEFAULT "]"
+#define SUSUWU_SH_FILE __FILE__ ":"
+#define SUSUWU_SH_PREFIX IF_SUSUWU_SH_BRACKETS("[", "") SUSUWU_SH_WHITE
+#define SUSUWU_SH_ERROR SUSUWU_SH_RED "Error: " SUSUWU_SH_WHITE
+#define SUSUWU_SH_WARNING SUSUWU_SH_PURPLE "Warning: " SUSUWU_SH_WHITE
+#define SUSUWU_SH_INFO SUSUWU_SH_CYAN "Info: " SUSUWU_SH_WHITE
+#define SUSUWU_SH_SUCCESS SUSUWU_SH_GREEN "Success: " SUSUWU_SH_WHITE
+#define SUSUWU_SH_NOTICE SUSUWU_SH_BLUE "Notice: " SUSUWU_SH_WHITE
+#define SUSUWU_SH_DEBUG SUSUWU_SH_BLUE "Debug: " SUSUWU_SH_WHITE
+#define SUSUWU_SH_POSTFIX IF_SUSUWU_SH_BRACKETS("]", "")
+
+#define SUSUWU_ERRSTR_IMP(WARN_LEVEL, x) std::string(SUSUWU_GLUE2(SUSUWU_SH_, WARN_LEVEL)) + std::string(x) + std::string(SUSUWU_SH_DEFAULT)
+#define SUSUWU_CERR_IMP(WARN_LEVEL, x) SUSUWU_GLUE2(SUSUWU_SH_, WARN_LEVEL) << (x) << SUSUWU_SH_DEFAULT
+#define SUSUWU_STDERR_IMP(WARN_LEVEL, prefix, postfix, x, ... /* must pass SUSUWU_COMMA after __VA_ARGS__ params */) fprintf(stderr, prefix SUSUWU_GLUE2(SUSUWU_SH_, WARN_LEVEL) "%s" SUSUWU_SH_DEFAULT postfix, __VA_ARGS__ IF_SUSUWU_CPLUSPLUS(std::string(x).c_str(), x))
+
 /* WARN_LEVEL = {ERROR, WARNING, INFO, SUCCESS, NOTICE, DEBUG} */
-#define SUSUWU_ERRSTR(WARN_LEVEL, x) std::string(SUSUWU_GLUE2(SUSUWU_SH_, WARN_LEVEL)) + std::string(x) + std::string(SUSUWU_SH_CLOSE_)
-#define SUSUWU_CERR(WARN_LEVEL, x) std::cerr << SUSUWU_GLUE2(SUSUWU_SH_, WARN_LEVEL) << x << SUSUWU_SH_CLOSE_ << std::endl
-#define SUSUWU_STDERR(WARN_LEVEL, x) fprintf(stderr, SUSUWU_GLUE2(SUSUWU_SH_, WARN_LEVEL) "%s" SUSUWU_SH_CLOSE_ "\n", x)
-/* Use this to do C versus C++ agnostic messages */
+#define SUSUWU_ERRSTR(WARN_LEVEL, x) std::string(SUSUWU_SH_PREFIX) IF_SUSUWU_SH_FILE(+ SUSUWU_SH_FILE) IF_SUSUWU_SH_LINE(+ std::to_string(__LINE__) + ':') IF_SUSUWU_SH_FUNC(+ std::string(__func__) + ':') IF_SUSUWU_SH_FILE_LINE_OR_FUNC(+ ' ') + SUSUWU_ERRSTR_IMP(WARN_LEVEL, x) + SUSUWU_SH_POSTFIX
+#define SUSUWU_CERR(WARN_LEVEL, x) std::cerr << SUSUWU_SH_PREFIX IF_SUSUWU_SH_FILE(<< std::string(SUSUWU_SH_FILE)) IF_SUSUWU_SH_LINE(<< std::to_string(__LINE__) << ":") IF_SUSUWU_SH_FUNC(<< std::string(__func__) << ":") IF_SUSUWU_SH_FILE_LINE_OR_FUNC(<< ' ') << SUSUWU_CERR_IMP(WARN_LEVEL, x) << SUSUWU_SH_POSTFIX << std::endl
+#define SUSUWU_STDERR(WARN_LEVEL, x) SUSUWU_STDERR_IMP(WARN_LEVEL, SUSUWU_SH_PREFIX IF_SUSUWU_SH_FILE(SUSUWU_SH_FILE) IF_SUSUWU_SH_LINE("%i:") IF_SUSUWU_SH_FUNC("%s:") IF_SUSUWU_SH_FILE_LINE_OR_FUNC(" "), SUSUWU_SH_POSTFIX "\n", x, IF_SUSUWU_SH_LINE(__LINE__ SUSUWU_COMMA) IF_SUSUWU_SH_FUNC(__func__ SUSUWU_COMMA))
+/* Use this to do C versus C++ agnostic code */
 #ifdef __cplusplus
-# define SUSUWU_PRINT(LEVEL, x) SUSUWU_CERR(LEVEL, x)
+# define IF_SUSUWU_CPLUSPLUS(TRUE, FALSE) TRUE
 #else /* !(defined __cplusplus */
-# define SUSUWU_PRINT(LEVEL, x) SUSUWU_STDERR(LEVEL, x)
+# define IF_SUSUWU_CPLUSPLUS(TRUE, FALSE) FALSE
+# define SUSUWU_USE_STDERR
 #endif /* !(defined __cplusplus */
+#ifdef SUSUWU_USE_STDERR
+# define SUSUWU_PRINT(LEVEL, x) SUSUWU_STDERR(LEVEL, x)
+#else
+# define SUSUWU_PRINT(LEVEL, x) SUSUWU_CERR(LEVEL, x)
+#endif
 #define SUSUWU_ERROR(x) SUSUWU_PRINT(ERROR, x)
 #define SUSUWU_WARNING(x) SUSUWU_PRINT(WARNING, x)
 #define SUSUWU_INFO(x) SUSUWU_PRINT(INFO, x)
 #define SUSUWU_SUCCESS(x) SUSUWU_PRINT(SUCESS, x)
+
 /* Use this to limit notices/diagnostics to release builds (+ do conditional execution) */
 #ifdef NDEBUG
 # define SUSUWU_NOTICE(x) (true)/* skip */
@@ -48,10 +101,12 @@ For the most new sources (+ static libs), use apps such as [iSH](https://apps.ap
 # define SUSUWU_DEBUG(x) SUSUWU_PRINT(DEBUG, x)
 # define SUSUWU_DEBUGEXECUTE(x) x
 #endif /* !(defined NDEBUG) */
+
 /* Use this to reduce (conditional) print + (unconditional) execute into single statement */
 #define SUSUWU_INFO_EXECUTE(x) ((SUSUWU_INFO(#x)), (x))
 #define SUSUWU_NOTICE_EXECUTE(x) ((SUSUWU_NOTICE(#x)), (x))
 #define SUSUWU_DEBUG_EXECUTE(x) ((SUSUWU_DEBUG(#x)), (x))
+
 /* Use this to reduce (conditional) print + (conditional) execute into single statement */
 #define SUSUWU_INFO_DEBUGEXECUTE(x) ((SUSUWU_INFO(#x)), SUSUWU_DEBUGEXECUTE(x))
 #define SUSUWU_NOTICE_DEBUGEXECUTE(x) ((SUSUWU_NOTICE(#x)), SUSUWU_DEBUGEXECUTE(x))

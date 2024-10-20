@@ -2,10 +2,8 @@
 #ifndef INCLUDES_cxx_Macros_hxx
 #define INCLUDES_cxx_Macros_hxx
 /* Miscellaneous macros */
-#include <string> /* std::cerr std::endl */
 #include <cassert> /* assert static_assert */
-#include <cstdbool> /* false */
-#include <version> /* __cpp_lib_unreachable */ /* [https://en.cppreference.com/w/cpp/feature_test] */
+#include <iostream> /* std::cerr std::endl */
 namespace Susuwu { /* namespaces do not affect macros. Is just standard practice to wrap all of a project's contents with namespaces. */
 /* To printout default preprocessor definitions:
  * for X={clang, clang++, gcc, g++, hipcc, icc}: `$X -dM -E -x c++ /dev/null`
@@ -16,6 +14,7 @@ namespace Susuwu { /* namespaces do not affect macros. Is just standard practice
  * to `clang`/`clang++`/`gcc`/`g++`/Intel(`icc`): `-DUSE_CONTRACTS=true`
  * to MSVC(`cl`): `\DUSE_CONTRACTS=true`
  */
+/* `clang-tidy` off: NOLINTBEGIN(cppcoreguidelines-macro-usage); https://github.com/SwuduSusuwu/SubStack/issues/3 more simple with macros, plus some of the `constexpr` versions require `__cplusplus >= 202002` */
 #define SUSUWU_GLUE2(S, U) S##U /* concatanates 2 macro constants */
 #define SUSUWU_GLUE(S, U) SUSUWU_GLUE2(S, U) /* concatanates 2 macro functions or constants */
 #define SUSUWU_COMMA , /* to pass to macro functions whose `__VA_ARGS__` is conditional */
@@ -107,12 +106,11 @@ namespace Susuwu { /* namespaces do not affect macros. Is just standard practice
 #define SUSUWU_SH_DEBUG SUSUWU_SH_BLUE "Debug: " SUSUWU_SH_WHITE
 #define SUSUWU_SH_POSTFIX IF_SUSUWU_SH_BRACKETS("]", "")
 
-/* WARN_LEVEL = {ERROR, WARNING, INFO, SUCCESS, NOTICE, DEBUG} */
 #define SUSUWU_ERRSTR_IMP(WARN_LEVEL, x) std::string(SUSUWU_GLUE2(SUSUWU_SH_, WARN_LEVEL)) + std::string(x) + std::string(SUSUWU_SH_DEFAULT)
-#define SUSUWU_CERR_IMP(WARN_LEVEL, x) SUSUWU_GLUE2(SUSUWU_SH_, WARN_LEVEL) << x << SUSUWU_SH_DEFAULT
+#define SUSUWU_CERR_IMP(WARN_LEVEL, x) SUSUWU_GLUE2(SUSUWU_SH_, WARN_LEVEL) << (x) << SUSUWU_SH_DEFAULT
 #define SUSUWU_STDERR_IMP(WARN_LEVEL, prefix, postfix, x, ... /* must pass SUSUWU_COMMA after __VA_ARGS__ params */) fprintf(stderr, prefix SUSUWU_GLUE2(SUSUWU_SH_, WARN_LEVEL) "%s" SUSUWU_SH_DEFAULT postfix, __VA_ARGS__ IF_SUSUWU_CPLUSPLUS(std::string(x).c_str(), x))
 
-
+/* WARN_LEVEL = {ERROR, WARNING, INFO, SUCCESS, NOTICE, DEBUG} */
 #define SUSUWU_ERRSTR(WARN_LEVEL, x) std::string(SUSUWU_SH_PREFIX) IF_SUSUWU_SH_FILE(+ SUSUWU_SH_FILE) IF_SUSUWU_SH_LINE(+ std::to_string(__LINE__) + ':') IF_SUSUWU_SH_FUNC(+ std::string(__func__) + ':') IF_SUSUWU_SH_FILE_LINE_OR_FUNC(+ ' ') + SUSUWU_ERRSTR_IMP(WARN_LEVEL, x) + SUSUWU_SH_POSTFIX
 #define SUSUWU_CERR(WARN_LEVEL, x) std::cerr << SUSUWU_SH_PREFIX IF_SUSUWU_SH_FILE(<< std::string(SUSUWU_SH_FILE)) IF_SUSUWU_SH_LINE(<< std::to_string(__LINE__) << ":") IF_SUSUWU_SH_FUNC(<< std::string(__func__) << ":") IF_SUSUWU_SH_FILE_LINE_OR_FUNC(<< ' ') << SUSUWU_CERR_IMP(WARN_LEVEL, x) << SUSUWU_SH_POSTFIX << std::endl
 #define SUSUWU_STDERR(WARN_LEVEL, x) SUSUWU_STDERR_IMP(WARN_LEVEL, SUSUWU_SH_PREFIX IF_SUSUWU_SH_FILE(SUSUWU_SH_FILE) IF_SUSUWU_SH_LINE("%i:") IF_SUSUWU_SH_FUNC("%s:") IF_SUSUWU_SH_FILE_LINE_OR_FUNC(" "), SUSUWU_SH_POSTFIX "\n", x, IF_SUSUWU_SH_LINE(__LINE__ SUSUWU_COMMA) IF_SUSUWU_SH_FUNC(__func__ SUSUWU_COMMA))
@@ -172,15 +170,18 @@ namespace Susuwu { /* namespaces do not affect macros. Is just standard practice
 #	define UNREACHABLE static_assert(false)
 #elif (!defined NDEBUG)
 #	define UNREACHABLE assert(false)
-#elif __cpp_lib_unreachable
+#else
+#	include <version> /* __cpp_lib_unreachable */ /* [https://en.cppreference.com/w/cpp/feature_test] */
+#	if __cpp_lib_unreachable
 /* Release: Promises executable can not reach this spot, for compiler which optimizes this. Warning: `UNREACHABLE && UB (undefined behaviour)` */
-#include <utility> /* std::unreachable() */
-#	define UNREACHABLE std::unreachable()
-#elif (defined __GNUC__) && ((4 <= __GNUC__ && 4 < __GNUC_MINOR__) || 4 < __GNUC__) /* `~ $ g++` */
-#	define UNREACHABLE __builtin_unreachable()
-#else /* else (!def NDEBUG) && (!supports unreachable) */
-#	define UNREACHABLE /* No-op */
-#endif /* __cpp_lib_unreachable elif IS_GCC ...*/
+#		include <utility> /* std::unreachable() */
+#		define UNREACHABLE std::unreachable()
+#	elif (defined __GNUC__) && ((4 <= __GNUC__ && 4 < __GNUC_MINOR__) || 4 < __GNUC__) /* `~ $ g++` */
+#		define UNREACHABLE __builtin_unreachable()
+#	else /* else (!def NDEBUG) && (!supports unreachable) */
+#		define UNREACHABLE /* No-op */
+#	endif /* __cpp_lib_unreachable elif IS_GCC ...*/
+#endif  /* #elif (!defined NDEBUG) ... #else */
 
 #ifdef USE_CONTRACTS /* Pass `-DUSE_CONTRACTS` once compiler has C++26 (Contracts) */
 /* `EXPECTS(X)` is close to `@pre @code X @endcode` or `ASSUME(X)` but is for headers; https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2022/p2521r2.html */
@@ -209,6 +210,7 @@ namespace Susuwu { /* namespaces do not affect macros. Is just standard practice
 #else /* !def USE_ASSUME */
 #	define ASSUME(X)
 #endif /* !def USE_ASSUME */
+/* `clang-tidy` on: NOLINTEND(cppcoreguidelines-macro-usage) */
 
 #if defined(__clang__) && __has_feature(cxx_noexcept) || defined(__GXX_EXPERIMENTAL_CXX0X__) && __GNUC__ * 10 + __GNUC_MINOR__ >= 46 || defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 180021114 /* [Other `noexcept` tests](https://stackoverflow.com/questions/18387640/how-to-deal-with-noexcept-in-visual-studio) */
 #	define NOEXCEPT noexcept /* Usage: `void versionInfo() NOEXCEPT;` is close to `void versionInfo() [[ensures: true]];` or `versionInfo(); !UNREACHABLE;*/
