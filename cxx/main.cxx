@@ -14,7 +14,11 @@ NORETURN void noReturn();
 void noExcept() NOEXCEPT {std::cout << std::flush;}
 void noReturn() {exit(0);}
 const int testHarnesses() EXPECTS(true) ENSURES(true) {
-	classSysSetConsoleInput(false);
+	const bool consoleHasInput = classSysGetConsoleInput();
+	if(consoleHasInput) {
+		classSysSetConsoleInput(false);
+	}
+	assert(!classSysGetConsoleInput());
 	std::cout << "cxx/Macros.hxx: " << std::flush;
 	ASSUME(true);
 	noExcept();
@@ -29,6 +33,9 @@ const int testHarnesses() EXPECTS(true) ENSURES(true) {
 	} else {
 		std::cout << "error" << std::endl;
 	}
+	if(consoleHasInput) {
+		assert(classSysSetConsoleInput(true));
+	}
 	std::cout << "assistantCnsTestsNoexcept(): " << std::flush;
 	if(assistantCnsTestsNoexcept()) {
 		std::cout << "pass" << std::endl;
@@ -36,7 +43,6 @@ const int testHarnesses() EXPECTS(true) ENSURES(true) {
 		std::cout << "error" << std::endl;
 	}
 	noReturn();
-	assert(classSysSetConsoleInput(true));
 }
 }; /* namespace Susuwu */
 int main(int argc, const char **args) {

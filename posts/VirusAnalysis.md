@@ -166,8 +166,8 @@ const bool classSysHasRoot();
  * Usage: classSysSetRoot(true); functionsWhichRequireRoot; classSysSetRoot(false); */
 const bool classSysSetRoot(bool root); /* root ? (seteuid(0) : (seteuid(getuid() || atoi(getenv("SUDO_UID"))), setuid(geteuid)); return classSysHasRoot(); */
 
-static const bool classSysGetConsoleInput() { return std::cin.good(); }
-const bool classSysSetConsoleInput(bool input); /* return classSysGetConsoleInput(); */
+static const bool classSysGetConsoleInput() { return std::cin.good() && !std::cin.eof(); }
+const bool classSysSetConsoleInput(bool input); /* Set to `false` for unit tests/background tasks (acts as if user pressed `<ctrl>+d`, thus input prompts will use default choices.) Returns `classSysGetConsoleInput();` */
 
 template<class Os, class Str>
 inline Os &classSysHexOs(Os &os, const Str &value) {
@@ -195,6 +195,7 @@ auto templateCatchAll(Func func, const std::string &funcName, Args... args) {
 	}
 }
 
+/* @throw std::runtime_error */
 const bool classSysTests();
 static const bool classSysTestsNoexcept() NOEXCEPT {return templateCatchAll(classSysTests, "classSysTests()");}
 ```
@@ -316,7 +317,7 @@ const bool classSysSetRoot(bool root) {
 }
 
 const bool classSysSetConsoleInput(bool input) {
-	std::cin.setstate(std::ios::eofbit);
+	input ? std::cin.clear(std::ios::goodbit) : std::cin.setstate(std::ios::eofbit);
 	return classSysGetConsoleInput();
 }
 
@@ -1263,7 +1264,11 @@ NORETURN void noReturn();
 void noExcept() NOEXCEPT {std::cout << std::flush;}
 void noReturn() {exit(0);}
 const int testHarnesses() EXPECTS(true) ENSURES(true) {
-	classSysSetConsoleInput(false);
+	const bool consoleHasInput = classSysGetConsoleInput();
+	if(consoleHasInput) {
+		classSysSetConsoleInput(false);
+	}
+	assert(!classSysGetConsoleInput());
 	std::cout << "cxx/Macros.hxx: " << std::flush;
 	ASSUME(true);
 	noExcept();
@@ -1278,6 +1283,9 @@ const int testHarnesses() EXPECTS(true) ENSURES(true) {
 	} else {
 		std::cout << "error" << std::endl;
 	}
+	if(consoleHasInput) {
+		assert(classSysSetConsoleInput(true));
+	}
 	std::cout << "assistantCnsTestsNoexcept(): " << std::flush;
 	if(assistantCnsTestsNoexcept()) {
 		std::cout << "pass" << std::endl;
@@ -1285,7 +1293,6 @@ const int testHarnesses() EXPECTS(true) ENSURES(true) {
 		std::cout << "error" << std::endl;
 	}
 	noReturn();
-	assert(classSysSetConsoleInput(true));
 }
 }; /* namespace Susuwu */
 int main(int argc, const char **args) {

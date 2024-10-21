@@ -45,8 +45,8 @@ const bool classSysHasRoot();
  * Usage: classSysSetRoot(true); functionsWhichRequireRoot; classSysSetRoot(false); */
 const bool classSysSetRoot(bool root); /* root ? (seteuid(0) : (seteuid(getuid() || atoi(getenv("SUDO_UID"))), setuid(geteuid)); return classSysHasRoot(); */
 
-static const bool classSysGetConsoleInput() { return std::cin.good(); }
-const bool classSysSetConsoleInput(bool input); /* return classSysGetConsoleInput(); */
+static const bool classSysGetConsoleInput() { return std::cin.good() && !std::cin.eof(); }
+const bool classSysSetConsoleInput(bool input); /* Set to `false` for unit tests/background tasks (acts as if user pressed `<ctrl>+d`, thus input prompts will use default choices.) Returns `classSysGetConsoleInput();` */
 
 template<class Os, class Str>
 inline Os &classSysHexOs(Os &os, const Str &value) {

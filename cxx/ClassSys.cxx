@@ -5,7 +5,7 @@
 #include "ClassSys.hxx" /* std::string std::to_string std::vector */
 #include <cassert> /* assert */
 #include <cstdlib> /* exit EXIT_FAILURE EXIT_SUCCESS getenv strtol */
-#include <iostream> /* std::cerr std::cout std::endl std::flush std::ios::eofbit */
+#include <iostream> /* std::cerr std::cout std::endl std::flush std::ios::eofbit std::ios::goodbit */
 #ifdef _POSIX_VERSION
 #include <stdexcept> /* std::runtime_error */
 #include <sys/types.h> /* pid_t */
@@ -134,7 +134,7 @@ const bool classSysSetRoot(bool root) {
 }
 
 const bool classSysSetConsoleInput(bool input) {
-	std::cin.setstate(std::ios::eofbit);
+	input ? std::cin.clear(std::ios::goodbit) : std::cin.setstate(std::ios::eofbit);
 	return classSysGetConsoleInput();
 }
 
