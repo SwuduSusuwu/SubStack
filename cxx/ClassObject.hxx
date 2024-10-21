@@ -1,22 +1,23 @@
 /* Dual licenses: choose "Creative Commons" or "Apache 2" (allows all uses) */
 #ifndef INCLUDES_cxx_ClassObject_hxx
 #define INCLUDES_cxx_ClassObject_hxx
-#include <cctype> /* size_t */
 #include <cassert> /* assert */
-#include <iostream> /* operator+() */
+#include <cctype> /* size_t */
+#include <cstring> /* memcmp */
+#include <stdexcept> /* std::runtime_error */
 #include <string> /* std::string */
-#include <string.h> /* memcmp */
-#include <vector> /* std::vector */
 namespace Susuwu {
-typedef enum ObjectCloneAs {
+typedef enum ObjectCloneAs : unsigned char {
 	objectCloneAsShallow, /* `memcopy` */
 	objectCloneAsDeep, /* Recursive `new` */
 	objectCloneAsCoW, /* Copy-on-Write */
 	objectCloneAsReferenceCount, /* std::shared_ptr */
 	objectCloneAsNone /* (!isCloneabble()) */
 } ObjectCloneAs;
-typedef class Class {
+typedef class Class { /* suppress `clang-tidy`'s suggestion of constructor (cannot have virtual constructor): NOLINT(cppcoreguidelines-special-member-functions, hicpp-special-member-functions) */
 public:
+	virtual ~Class() = default; /* allow subclasses to release resources */
+/* `clang-tidy` off: NOLINTBEGIN(fuchsia-overloaded-operator, cppcoreguidelines-explicit-virtual-functions, hicpp-use-override,modernize-use-override) */
 #if 202000 /* TODO? `clang++` support this at 201703, but emits `-Wc++20-extensions`*/ <= __cplusplus
 	virtual /* const requires C++26 */ bool operator==(const Class &obj) const = default;
 #else /* !C++20 */
@@ -26,9 +27,9 @@ public:
 } Class;
 typedef class Object : Class { /* `Java` superclass based-on https://docs.oracle.com/javase%2Ftutorial%2F/java/IandI/objectclass.html https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html , to assist future `Java` ports from C++ */
 public:
-	virtual ~Object() = default; /* release resources */
 	virtual /* const -- requires C++26 */ bool operator==(const Object &obj) const { return Class::operator==(obj); } /* [-Wdynamic-class-memaccess] too; Identical objects will `return false` if vtables (member signatures) differ. */
 	virtual const std::string getName() const { return "Susuwu::class Object"; }
+/* `clang-tidy` on: NOLINTEND(fuchsia-overloaded-operator, cppcoreguidelines-explicit-virtual-functions, hicpp-use-override,modernize-use-override) */
 	virtual const bool hasImplementation() const { return typeid(Object) != typeid(this); }
 	virtual const bool isInitialized() const {return true;} /* override this if the constructor is not enough to produce usable subclass */
 	virtual const bool isCloneable() const { return objectCloneAsNone != cloneableAs(); }
@@ -56,8 +57,8 @@ public:
 		this->~Object();
 	}
 	const Class &getClass() const {return *this;}
-	virtual const Object *getBaseClassPtr() const { return NULL; /* no base for root class */ }
-	virtual const Object &getBaseClassRef() const { return *this; /* for promises not to "return NULL", use references */ }
+	virtual const Object *getBaseClassPtr() const { return nullptr; /* no base for root class */ }
+	virtual const Object &getBaseClassRef() const { return *this; /* for promises not to "return nullptr", use references */ }
 	virtual const size_t getStaticSize() const { return sizeof(*this); /* sizeof vtable + member variables */ }
 	virtual const size_t getDynamicSize() const { return 0; /* sizeof allocations from functions such as `malloc` / `new` */ }
 	virtual const bool usesDynamicAllocations() const { /* if(uses functions suchas `malloc` / `new`) {return true;} */ return false; }
@@ -69,6 +70,6 @@ public:
 /* Is some slowdown to use inheritance+polymorphism with all classes;
  * https://stackoverflow.com/questions/8824587/what-is-the-purpose-of-the-final-keyword-in-c11-for-functions/78680754#78680754 shows howto use `final` to fix this */
 
-}; /* namespace SwuduSusuwu */
+}; /* namespace Susuwu */
 #endif /* ndef INCLUDES_cxx_ClassObject_hxx */
 
