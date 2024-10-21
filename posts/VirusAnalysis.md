@@ -122,18 +122,20 @@ typedef FilePath FileHash; /* TODO: `std::unordered_set<std::basic_string<unsign
 typedef class PortableExecutable : Object {
 /* TODO: union of actual Portable Executable (Microsoft) + ELF (Linux) specifications */
 public:
-	PortableExecutable(FilePath path_ = "") : path(path_) {}
-	PortableExecutable(FilePath path_, FileBytecode bytecode_) : path(path_), bytecode(bytecode_) {}
-/*TODO: overload on typedefs which map to the same types:	PortableExecutable(FilePath path_, std::string hex_) : path(path_), hex(hex_) {} */
-	const std::string getName() const {return "Susuwu::class PortableExecutable";}
-	FilePath path; /* Suchas "C:\Program.exe" or "/usr/bin/library.so" */
+	const std::string getName() const override {return "Susuwu::class PortableExecutable";}
+	explicit PortableExecutable(FilePath path_ = "") : path(std::move(path_)) {}
+	PortableExecutable(FilePath path_, FileBytecode bytecode_) : path(std::move(path_)), bytecode(std::move(bytecode_)) {} /* TODO: NOLINT(bugprone-easily-swappable-parameters) */
+/*TODO: overload on typedefs which map to the same types:	PortableExecutable(const FilePath &path_, const std::string &hex_) : path(path_), hex(hex_) {} */
+/* `clang-tidy` off: NOLINTBEGIN(misc-non-private-member-variables-in-classes) */
+	const FilePath path; /* Suchas "C:\Program.exe" or "/usr/bin/library.so" */ /* NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members) */
 	FileBytecode bytecode; /* compiled programs; bytecode */
 	std::string hex; /* `hexdump(path)`, hexadecimal, for C string functions */
+/* `clang-tidy` on: NOLINTEND(misc-non-private-member-variables-in-classes) */
 } PortableExecutable;
 typedef class PortableExecutableBytecode : public PortableExecutable {
 public:
-	PortableExecutableBytecode(FilePath path_) : input(path_) {path = path_; if(input.good()) {bytecode = std::string(std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>());}}
-	std::ifstream input;
+	const std::string getName() const override {return "Susuwu::class PortableExecutableBytecode";}
+	explicit PortableExecutableBytecode(FilePath path_) : PortableExecutable(std::move(path_))  {std::ifstream input(path); if(input.good()) {bytecode = std::string(std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>());}}
 } PortableExecutableBytecode;
 ```
 `less` [cxx/ClassSys.hxx](https://github.com/SwuduSusuwu/SubStack/blob/trunk/cxx/ClassSys.hxx)
