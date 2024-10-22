@@ -41,22 +41,22 @@ void virusAnalysisResetCaches() NOEXCEPT {
 std::vector<typeof(VirusAnalysisFun)> virusAnalyses = {hashAnalysis, signatureAnalysis, staticAnalysis, cnsAnalysis, sandboxAnalysis /* sandbox is slow, so put last*/};
 
 const bool virusAnalysisTests() {
-	ResultList abortOrNull {
-		.hashes {}, .signatures {}, .bytecodes {  /* Produce from an antivirus vendor's (such as VirusTotal.com's) infection databases */
+	ResultList abortOrNull; {
+		abortOrNull.hashes = {}, abortOrNull.signatures = {}, abortOrNull.bytecodes = {  /* Produce from an antivirus vendor's (such as VirusTotal.com's) infection databases */
 			"infection",
 			"infectedSW",
 			"corruptedSW",
 			""
-		}
-	};
-	ResultList passOrNull {
-		.hashes {}, .signatures {}, .bytecodes {  /* Produce from an antivirus vendor's (such as VirusTotal.com's) fresh-files databases */
+		};
+	}
+	ResultList passOrNull; {
+		passOrNull.hashes = {}, passOrNull.signatures = {}, passOrNull.bytecodes = {  /* Produce from an antivirus vendor's (such as VirusTotal.com's) fresh-files databases */
 			"",
 			"SW",
 			"SW",
 			"newSW"
-		}
-	};
+		};
+	}
 	resultListProduceHashes(passOrNull);
 	resultListProduceHashes(abortOrNull);
 	produceAbortListSignatures(passOrNull, abortOrNull);

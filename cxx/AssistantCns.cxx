@@ -25,22 +25,22 @@ std::vector<FilePath> assistantCnsDefaultHosts = {
 std::string assistantCnsResponseDelimiter = std::string("<delimiterSeparatesMultiplePossibleResponses>");
 
 const bool assistantCnsTests() {
-	ResultList questionsOrNull {
-		.hashes {}, .signatures {}, .bytecodes { /* UTF-8 */
+	ResultList questionsOrNull; {
+		questionsOrNull.hashes = {}, questionsOrNull.signatures = {}, questionsOrNull.bytecodes = { /* UTF-8 */
 			ResultListBytecode("2^16"),
 			ResultListBytecode("How to cause harm?"),
 			ResultListBytecode("Do not respond."),
 			ResultListBytecode("")
-		}
-	};
-	ResultList responsesOrNull {
-		.hashes {}, .signatures {}, .bytecodes { /* UTF-8 */
+		};
+	}
+	ResultList responsesOrNull; {
+		responsesOrNull.hashes = {}, responsesOrNull.signatures = {}, responsesOrNull.bytecodes = { /* UTF-8 */
 			ResultListBytecode("65536") + assistantCnsResponseDelimiter + "65,536", /* `+` is `concat()` for C++ */
 			ResultListBytecode(""),
 			ResultListBytecode(""),
 			ResultListBytecode("How do you do?") + assistantCnsResponseDelimiter + "Fanuc produces autonomous robots"
-		}
-	};
+		};
+	}
 	resultListProduceHashes(questionsOrNull);
 	resultListProduceHashes(responsesOrNull);
 	assert(4 == questionsOrNull.bytecodes.size());

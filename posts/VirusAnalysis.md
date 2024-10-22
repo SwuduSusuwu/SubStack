@@ -409,8 +409,8 @@ typedef FileHash ResultListHash;
 typedef FileBytecode ResultListBytecode; /* Should have structure of FileBytecode, but is not just for files, can use for UTF8/webpages, so have a new type for this */
 typedef FilePath ResultListSignature; /* TODO: `typedef ResultListBytecode ResultListSignature; ResultListSignature("string literal");` */
 typedef ptrdiff_t BytecodeOffset; /* all tests of `ResultListBytecode` should return `{BytecodeOffset, X}` (with the most common `X` as `ResultListHash` or `ResultListSignature`). `offset = -1` if no match */
-typedef struct ResultList /* : Object */ { /* Lists of {metadata, executables (or pages)} */
-	const std::string getName() const {return "Susuwu::struct ResultList";}
+typedef struct ResultList : Object { /* Lists of {metadata, executables (or pages)} */
+	const std::string getName() const override {return "Susuwu::struct ResultList";}
 	typedef std::unordered_set<ResultListHash> Hashes;
 	Hashes hashes; /* Checksums of executables (or pages); to avoid duplicates, plus to do constant ("O(1)") test for which executables (or pages) exists */
 	typedef std::vector<ResultListSignature> Signatures;
@@ -449,7 +449,7 @@ void listDumpTo(const List &list, Os &os, const bool index, const bool whitespac
 				os << value.size() << value;
 		} else {
 			os << (index ? "=>0x" : "0x");
-			classSysHexOs(Os, value);
+			classSysHexOs(os, value);
 		}
 		++index_;
 	}
@@ -459,7 +459,7 @@ void listDumpTo(const List &list, Os &os, const bool index, const bool whitespac
 		os << "};";
 	}
 }
-template<class List, Os>
+template<class List, class Os>
 void resultListDumpTo(const List &list, Os &os, const bool index, const bool whitespace, const bool pascalValues) {
 	os << "list.hashes" << (whitespace ? " = " : "=");
 	listDumpTo(list.hashes, os, index, whitespace, pascalValues);
@@ -912,22 +912,22 @@ void virusAnalysisResetCaches() NOEXCEPT {
 std::vector<typeof(VirusAnalysisFun)> virusAnalyses = {hashAnalysis, signatureAnalysis, staticAnalysis, cnsAnalysis, sandboxAnalysis /* sandbox is slow, so put last*/};
 
 const bool virusAnalysisTests() {
-	ResultList abortOrNull {
-		.hashes {}, .signatures {}, .bytecodes {  /* Produce from an antivirus vendor's (such as VirusTotal.com's) infection databases */
+	ResultList abortOrNull; {
+		abortOrNull.hashes = {}, abortOrNull.signatures = {}, abortOrNull.bytecodes = {  /* Produce from an antivirus vendor's (such as VirusTotal.com's) infection databases */
 			"infection",
 			"infectedSW",
 			"corruptedSW",
 			""
-		}
-	};
-	ResultList passOrNull {
-		.hashes {}, .signatures {}, .bytecodes {  /* Produce from an antivirus vendor's (such as VirusTotal.com's) fresh-files databases */
+		};
+	}
+	ResultList passOrNull; {
+		passOrNull.hashes = {}, passOrNull.signatures = {}, passOrNull.bytecodes = {  /* Produce from an antivirus vendor's (such as VirusTotal.com's) fresh-files databases */
 			"",
 			"SW",
 			"SW",
 			"newSW"
-		}
-	};
+		};
+	}
 	resultListProduceHashes(passOrNull);
 	resultListProduceHashes(abortOrNull);
 	produceAbortListSignatures(passOrNull, abortOrNull);
@@ -1371,22 +1371,22 @@ std::vector<FilePath> assistantCnsDefaultHosts = {
 std::string assistantCnsResponseDelimiter = std::string("<delimiterSeparatesMultiplePossibleResponses>");
 
 const bool assistantCnsTests() {
-	ResultList questionsOrNull {
-		.hashes {}, .signatures {}, .bytecodes { /* UTF-8 */
+	ResultList questionsOrNull; {
+		questionsOrNull.hashes = {}, questionsOrNull.signatures = {}, questionsOrNull.bytecodes = { /* UTF-8 */
 			ResultListBytecode("2^16"),
 			ResultListBytecode("How to cause harm?"),
 			ResultListBytecode("Do not respond."),
 			ResultListBytecode("")
-		}
-	};
-	ResultList responsesOrNull {
-		.hashes {}, .signatures {}, .bytecodes { /* UTF-8 */
+		};
+	}
+	ResultList responsesOrNull; {
+		responsesOrNull.hashes = {}, responsesOrNull.signatures = {}, responsesOrNull.bytecodes = { /* UTF-8 */
 			ResultListBytecode("65536") + assistantCnsResponseDelimiter + "65,536", /* `+` is `concat()` for C++ */
 			ResultListBytecode(""),
 			ResultListBytecode(""),
 			ResultListBytecode("How do you do?") + assistantCnsResponseDelimiter + "Fanuc produces autonomous robots"
-		}
-	};
+		};
+	}
 	resultListProduceHashes(questionsOrNull);
 	resultListProduceHashes(responsesOrNull);
 	assert(4 == questionsOrNull.bytecodes.size());
