@@ -4,6 +4,7 @@
 #include "Macros.hxx" /* ERROR SUSUWU_PRINT SUSUWU_ERRSTR WARNING */
 #include "ClassSys.hxx" /* std::string std::to_string std::vector */
 #include <cassert> /* assert */
+#include <cerrno> /* errno */
 #include <cstdlib> /* exit EXIT_FAILURE EXIT_SUCCESS getenv strtol */
 #include <iostream> /* std::cerr std::cout std::endl std::flush std::ios::eofbit std::ios::goodbit */
 #ifdef _POSIX_VERSION
@@ -17,14 +18,17 @@
 # endif /* def __WIN32__ */
 typedef int pid_t;
 #endif /* def _POSIX_VERSION */
+#include <string> /* std::string */
+#include <vector> /* std::vector */
 namespace Susuwu {
 int classSysArgc = 0;
 const char **classSysArgs = {nullptr};
-const bool classSysInit(int argc, const char *args[]) {
-	if(0 < (classSysArgc = argc)) {
+const bool classSysInit(int argc, const char **args) {
+	classSysArgc = argc;
+	if(0 < argc) {
 		classSysArgs = args;
 		assert(nullptr != args);
-		assert(nullptr != args[0]);
+		assert(nullptr != args[0]); /* `clangtidy` off: NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic) */
 		return true;
 	}
 	return false;
@@ -35,7 +39,7 @@ const pid_t execvesFork(const std::vector<std::string> &argvS, const std::vector
 	const pid_t pid = fork();
 	if(0 != pid) {
 		if(-1 == pid) {
-			std::string error = "execvesFork(): {(-1 == pid)}, errno=" + std::to_string(errno);
+			const std::string error = "execvesFork(): {(-1 == pid)}, errno=" + std::to_string(errno);
 			SUSUWU_ERROR(error);
 			throw std::runtime_error(error);
 		}
@@ -44,22 +48,23 @@ const pid_t execvesFork(const std::vector<std::string> &argvS, const std::vector
 	const std::vector<std::string> argvSmutable = {argvS.cbegin(), argvS.cend()};
 	std::vector<char *> argv;
 	//for(auto x : argvSmutable) { /* with `fsanitize=address` this triggers "stack-use-after-scope" */
-	for(auto x = argvSmutable.begin(); argvSmutable.end() != x; ++x) {
-		argv.push_back(const_cast<char *>(x->c_str()));
+	for(const auto &x: argvSmutable /* auto x = argvSmutable.cbegin(); argvSmutable.cend() != x; ++x */) {
+		argv.push_back(const_cast<char *>(x.c_str()));
 	}
-	argv.push_back(NULL);
+	argv.push_back(nullptr);
 	if(envpS.empty()) { /* Reuse LD_PRELOAD to fix https://github.com/termux-play-store/termux-issues/issues/24 */
 		execv(argv[0], &argv[0]); /* NORETURN */
 	} else {
 		std::vector<std::string> envpSmutable = {envpS.cbegin(), envpS.cend()};
 		std::vector<char *> envp;
-		for(auto x = envpSmutable.begin(); envpSmutable.end() != x; ++x) {
-			envp.push_back(const_cast<char *>(x->c_str()));
+		envp.reserve(envpSmutable.size());
+		for(const auto &x: envpSmutable) {
+			envp.push_back(const_cast<char *>(x.c_str()));
 		}
-		envp.push_back(NULL);
+		envp.push_back(nullptr);
 		execve(argv[0], &argv[0], &envp[0]); /* NORETURN */
 	}
-	exit(EXIT_FAILURE); /* execv*() is NORETURN */
+	exit(EXIT_FAILURE); /* execv*() is `NORETURN`. NOLINT(concurrency-mt-unsafe) */
 #else /* ndef _POSIX_VERSION */
 # undef ERROR /* undo `shlobj.h`'s `#define ERROR 0` */
 	throw std::runtime_error(SUSUWU_ERRSTR(ERROR, "execvesFork: {#ifndef _POSIX_VERSION /* TODO: convert to win32 */}"));
@@ -68,7 +73,7 @@ const pid_t execvesFork(const std::vector<std::string> &argvS, const std::vector
 const int execves(const std::vector<std::string> &argvS, const std::vector<std::string> &envpS) {
 #ifdef _POSIX_VERSION
 	const pid_t pid = execvesFork(argvS, envpS);
-	int status;
+	int status = 0;
 	waitpid(pid, &status, 0);
 	return status;
 #else /* ndef _POSIX_VERSION */
@@ -104,26 +109,26 @@ const bool classSysSetRoot(bool root) {
 #endif /* 0 */
 	} else {
 # if 0 && defined LINUX // TODO: pam_loginuid.so(8) // https://stackoverflow.com/questions/10272784/how-do-i-get-the-users-real-uid-if-the-program-is-run-with-sudo/10272881#10272881
-		uid_t sudo_uid = audit_getloginuid();
+		uid_t sudoUid = audit_getloginuid();
 # else /* !def linux */
-		uid_t sudo_uid = getuid();
-		if(0 == sudo_uid) {
-			char *sudo_uid_str = getenv("SUDO_UID"), *sudo_uid_str_it;
-			if(NULL == sudo_uid_str) {
-				SUSUWU_PRINT(WARNING, "classSysSetRoot(false) {(NULL == getenv(\"SUDO_UID\")) /* stuck as root */}");
+		uid_t sudoUid = getuid();
+		if(0 == sudoUid) {
+			char *sudoUidStr = getenv("SUDO_UID") /* NOLINT(concurrency-mt-unsafe) */, *sudoUidStrIt = nullptr;
+			if(nullptr == sudoUidStr) {
+				SUSUWU_PRINT(WARNING, "classSysSetRoot(false) {(nullptr == getenv(\"SUDO_UID\")) /* stuck as root */}");
 				return true;
 			} else {
-				sudo_uid = (uid_t)strtol(sudo_uid_str, &sudo_uid_str_it, 10);
-				if(sudo_uid_str == sudo_uid_str_it || -1 == setuid(sudo_uid)) { /* prevent reescalation to root */
-					SUSUWU_PRINT(WARNING, "classSysSetRoot(false) {(-1 == setuid(sudo_uid)) /* can't prevent reescalation to root */}");
+				sudoUid = static_cast<uid_t>(strtol(sudoUidStr, &sudoUidStrIt, 10));
+				if(sudoUidStr == sudoUidStrIt || -1 == setuid(sudoUid)) { /* prevent reescalation to root */
+					SUSUWU_PRINT(WARNING, "classSysSetRoot(false) {(-1 == setuid(sudoUid)) /* can't prevent reescalation to root */}");
 				}
 			}
 		}
 # endif /* !def LINUX */
-		if(0 == sudo_uid) {
-			SUSUWU_PRINT(WARNING, "classSysSetRoot(false) {(0 == sudo_uid) /* stuck as root */}");
-		} else if(-1 == seteuid(sudo_uid)) {
-			SUSUWU_PRINT(WARNING, "classSysSetRoot(false) {(-1 == seteuid(sudo_uid)) /* stuck as root */}");
+		if(0 == sudoUid) {
+			SUSUWU_PRINT(WARNING, "classSysSetRoot(false) {(0 == sudoUid) /* stuck as root */}");
+		} else if(-1 == seteuid(sudoUid)) {
+			SUSUWU_PRINT(WARNING, "classSysSetRoot(false) {(-1 == seteuid(sudoUid)) /* stuck as root */}");
 		}
 	}
 /* #elif defined __WIN32__ */ //TODO: https://stackoverflow.com/questions/6418791/requesting-administrator-privileges-at-run-time says you must spawn new processes to do this

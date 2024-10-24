@@ -8,7 +8,7 @@
 #include <iomanip> /* std::dec std::hex */
 #include <iostream> /* std::cerr std::cin std::endl */
 #include <sstream> /* std::stringstream */
-#include <string> /* std::string */
+#include <string> /* std::string std::to_string */
 #ifdef _POSIX_VERSION
 #include <sys/types.h> /* pid_t */
 #else
@@ -23,12 +23,12 @@ extern const char **classSysArgs;
  * Much simpler to use path from args[0] (versus https://stackoverflow.com/questions/1528298/get-path-of-executable/34109000#34109000)
  * @pre @code (0 < argc && nullptr != args && nullptr != args[0]
  * @post @code (0 < classSysArgc && nullptr != classSysArgs && nullptr != classSysArgs[0] */
-const bool classSysInit(int argc, const char *args[]);
+const bool classSysInit(int argc, const char **args);
 
-typedef long long ClassSysUSeconds;
-inline const ClassSysUSeconds classSysUSecondClock() {
+inline const auto classSysUSecondClock() {
 	return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 }
+typedef decltype(classSysUSecondClock()) ClassSysUSeconds;
 
 /* `argv = argvS + NULL; envp = envpS + NULL: pid_t pid = fork() || (envpS.empty() ? execv(argv[0], &argv[0]) : execve(argv[0], &argv[0], &envp[0])); return pid;`
  * @throw std::runtime_error("execvesFork(): {-1 == pid}, errno=" + std::to_string(errno))
@@ -51,7 +51,7 @@ const bool classSysSetConsoleInput(bool input); /* Set to `false` for unit tests
 template<class Os, class Str>
 inline Os &classSysHexOs(Os &os, const Str &value) {
 	os << std::hex;
-	for(char ch : value) {
+	for(const char ch : value) {
 		os << static_cast<int>(ch);
 	}
 	os << std::dec;
