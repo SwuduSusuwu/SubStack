@@ -153,12 +153,13 @@ inline const auto classSysUSecondClock() {
 }
 typedef decltype(classSysUSecondClock()) ClassSysUSeconds;
 
-/* `argv = argvS + NULL; envp = envpS + NULL: pid_t pid = fork() || (envpS.empty() ? execv(argv[0], &argv[0]) : execve(argv[0], &argv[0], &envp[0])); return pid;`
+/* `std::array<char *>argv = argvS; argv += NULL; envp = envpS + NULL: pid_t pid = fork() || (envpS.empty() ? execv(argv[0], &argv[0]) : execve(argv[0], &argv[0], &envp[0])); return pid;`
  * @throw std::runtime_error("execvesFork(): {-1 == pid}, errno=" + std::to_string(errno))
- * @pre @code (-1 != access(argv[0], X_OK) @endcode */
+ * @pre @code (-1 != access(argvS[0], X_OK) @endcode */
 const pid_t execvesFork(/* const std::string &pathname, -- `execve` requires `&pathname == &argv[0]` */ const std::vector<std::string> &argvS = {}, const std::vector<std::string> &envpS = {});
 static const pid_t execvexFork(const std::string &toSh) {return execvesFork({"/bin/sh", "-c", toSh});}
-/* `pid_t pid = execvesFork(argvS, envpS); int status; waitpid(pid, &status, 0); return status;}` */
+/* `pid_t pid = execvesFork(argvS, envpS); int status; waitpid(pid, &wstatus, 0); return wstatus;}`
+ * @pre @code (-1 != access(argvS[0], X_OK) @endcode */
 const int execves(const std::vector<std::string> &argvS = {}, const std::vector<std::string> &envpS = {});
 static const int execvex(const std::string &toSh) {return execves({"/bin/sh", "-c", toSh});}
 
@@ -252,12 +253,29 @@ const pid_t execvesFork(const std::vector<std::string> &argvS, const std::vector
 	throw std::runtime_error(SUSUWU_ERRSTR(ERROR, "execvesFork: {#ifndef _POSIX_VERSION /* TODO: convert to win32 */}"));
 #endif /* ndef _POSIX_VERSION */
 }
+static const std::string vectorToStr(const std::vector<std::string> &argvS) {
+	std::string str = "{";
+	for(const auto &it: argvS) {
+		str += SUSUWU_SH_BLUE;
+		str += it;
+		str += ", " SUSUWU_SH_DEFAULT;
+	}
+	str += '}';
+	return str;
+}
 const int execves(const std::vector<std::string> &argvS, const std::vector<std::string> &envpS) {
 #ifdef _POSIX_VERSION
 	const pid_t pid = execvesFork(argvS, envpS);
-	int status = 0;
-	waitpid(pid, &status, 0);
-	return status;
+	int wstatus = 0;
+	waitpid(pid, &wstatus, 0);
+# ifndef NDEBUG
+	if(WIFEXITED(wstatus) && 0 != WEXITSTATUS(wstatus)) {
+		SUSUWU_PRINT(WARNING, "execves(" + vectorToStr(argvS) + ", " + vectorToStr(envpS) + ") {if(WIFEXITED(wstatus) && 0 != WEXITSTATUS(wstatus)) {SUSUWU_DEBUG(...);}}: WEXITSTATUS(wstatus) is " SUSUWU_SH_PURPLE + std::to_string(WEXITSTATUS(wstatus)) + SUSUWU_SH_DEFAULT);
+	} else if(WIFSIGNALED(wstatus)) {
+		SUSUWU_PRINT(WARNING, "execves(" + vectorToStr(argvS) + ", " + vectorToStr(envpS) + ") {if(WIFSIGNALED(wstatus)) {SUSUWU_PRINT(WARNING, ...);}}: WTERMSIG(wstatus) is " SUSUWU_SH_PURPLE + std::to_string(WTERMSIG(wstatus)) + SUSUWU_SH_DEFAULT);
+	}
+# endif /* ndef NDEBUG */
+	return wstatus;
 #else /* ndef _POSIX_VERSION */
 	throw std::runtime_error(SUSUWU_ERRSTR(ERROR, "execves: {#ifndef _POSIX_VERSION /* TODO: convert to win32 */}"));
 # define ERROR 0 /* redo `shlobj.h`'s `#define ERROR 0` */

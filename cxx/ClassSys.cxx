@@ -1,7 +1,7 @@
 /* Dual licenses: choose "Creative Commons" or "Apache 2" (allows all uses) */
 #ifndef INCLUDES_cxx_ClassSys_cxx
 #define INCLUDES_cxx_ClassSys_cxx
-#include "Macros.hxx" /* ERROR SUSUWU_PRINT SUSUWU_ERRSTR WARNING */
+#include "Macros.hxx" /* ERROR SUSUWU_ERRSTR SUSUWU_PRINT WARNING */
 #include "ClassSys.hxx" /* std::string std::to_string std::vector */
 #include <cassert> /* assert */
 #include <cerrno> /* errno */
@@ -70,12 +70,29 @@ const pid_t execvesFork(const std::vector<std::string> &argvS, const std::vector
 	throw std::runtime_error(SUSUWU_ERRSTR(ERROR, "execvesFork: {#ifndef _POSIX_VERSION /* TODO: convert to win32 */}"));
 #endif /* ndef _POSIX_VERSION */
 }
+static const std::string vectorToStr(const std::vector<std::string> &argvS) {
+	std::string str = "{";
+	for(const auto &it: argvS) {
+		str += SUSUWU_SH_BLUE;
+		str += it;
+		str += ", " SUSUWU_SH_DEFAULT;
+	}
+	str += '}';
+	return str;
+}
 const int execves(const std::vector<std::string> &argvS, const std::vector<std::string> &envpS) {
 #ifdef _POSIX_VERSION
 	const pid_t pid = execvesFork(argvS, envpS);
-	int status = 0;
-	waitpid(pid, &status, 0);
-	return status;
+	int wstatus = 0;
+	waitpid(pid, &wstatus, 0);
+# ifndef NDEBUG
+	if(WIFEXITED(wstatus) && 0 != WEXITSTATUS(wstatus)) {
+		SUSUWU_PRINT(WARNING, "execves(" + vectorToStr(argvS) + ", " + vectorToStr(envpS) + ") {if(WIFEXITED(wstatus) && 0 != WEXITSTATUS(wstatus)) {SUSUWU_DEBUG(...);}}: WEXITSTATUS(wstatus) is " SUSUWU_SH_PURPLE + std::to_string(WEXITSTATUS(wstatus)) + SUSUWU_SH_DEFAULT);
+	} else if(WIFSIGNALED(wstatus)) {
+		SUSUWU_PRINT(WARNING, "execves(" + vectorToStr(argvS) + ", " + vectorToStr(envpS) + ") {if(WIFSIGNALED(wstatus)) {SUSUWU_PRINT(WARNING, ...);}}: WTERMSIG(wstatus) is " SUSUWU_SH_PURPLE + std::to_string(WTERMSIG(wstatus)) + SUSUWU_SH_DEFAULT);
+	}
+# endif /* ndef NDEBUG */
+	return wstatus;
 #else /* ndef _POSIX_VERSION */
 	throw std::runtime_error(SUSUWU_ERRSTR(ERROR, "execves: {#ifndef _POSIX_VERSION /* TODO: convert to win32 */}"));
 # define ERROR 0 /* redo `shlobj.h`'s `#define ERROR 0` */
